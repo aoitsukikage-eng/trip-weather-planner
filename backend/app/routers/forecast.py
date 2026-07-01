@@ -18,7 +18,7 @@ from app.schemas.weather import (
     Town,
 )
 from app.services.ai_summary import AiSummaryService
-from app.services.weather import normalize_to_daily, pick_target_day
+from app.services.weather import normalize_to_daily
 
 router = APIRouter(prefix="/api", tags=["forecast"])
 
@@ -76,8 +76,9 @@ async def forecast(
 
     adapter = CWAAdapter(settings)
     slices, source = await adapter.fetch_time_slices(town_obj, parsed_date)
-    all_days = normalize_to_daily(slices)
-    days = pick_target_day(all_days, target_date)
+    # Return the full forecast horizon (multi-day). The target date is carried in
+    # ForecastData.target_date so the frontend can highlight it among the days.
+    days = normalize_to_daily(slices)
 
     forecast_data = ForecastData(
         town=town_obj,

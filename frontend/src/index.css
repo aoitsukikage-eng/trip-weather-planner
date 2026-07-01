@@ -150,6 +150,17 @@ header h1 {
   margin-top: 0.5rem;
 }
 
+.section-title {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1.1rem;
+  color: #334155;
+}
+
+.card-target {
+  border: 2px solid #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
 footer {
   margin-top: 3rem;
   color: #64748b;
