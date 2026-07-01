@@ -1,0 +1,156 @@
+:root {
+  font-family: system-ui, "Noto Sans TC", sans-serif;
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.tagline {
+  color: #475569;
+  margin-top: 0.25rem;
+}
+
+.trip-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  background: #fff;
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.trip-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.trip-form select,
+.trip-form input {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.trip-form button {
+  padding: 0.6rem 1.3rem;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.trip-form button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 2rem;
+}
+
+.ai-summary {
+  background: #eef2ff;
+  border-left: 4px solid #6366f1;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.ai-summary .badge {
+  display: inline-block;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+
+.ai-summary p {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.ai-summary small {
+  color: #64748b;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card-date {
+  font-weight: 600;
+}
+
+.card-weather {
+  color: #475569;
+  margin: 0.35rem 0;
+}
+
+.card-temp {
+  font-size: 1.4rem;
+}
+
+.pop-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.6rem 0 0.3rem;
+}
+
+.pop-fill {
+  height: 100%;
+}
+
+.card-pop {
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+.card-advice {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 0.5rem;
+}
+
+footer {
+  margin-top: 3rem;
+  color: #64748b;
+}
