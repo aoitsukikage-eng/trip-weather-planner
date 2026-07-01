@@ -1,8 +1,11 @@
 """Starter township registry (town -> city + centroid coordinates).
 
-This is a representative subset covering popular travel destinations across
-Taiwan, enough to drive Phase 1/2 demos. It is NOT the full 368-township list;
-the full set can be loaded from CWA's location list or a data file later.
+This is a curated subset used ONLY in no-key mock mode. It now spans all 22
+counties/cities (>= one township each) so demos cover the whole country. It is
+NOT the full 368-township list: in production (CWA key present) the complete
+township list is sourced from CWA's aggregate dataset F-D0047-091, which returns
+every township in one response — so /api/towns loads from CWA when live, and this
+dict is the offline fallback only.
 
 The `city` field is what TDX's city-scoped Tourism API expects (Phase 2), and
 the lat/lon centroid is used to radius-filter attractions down to the chosen
@@ -34,6 +37,13 @@ _TOWNS: dict[str, tuple[str, str, float, float]] = {
     "hualien-hualien": ("花蓮市", "花蓮縣", 23.9769, 121.6044),
     "taitung-taitung": ("臺東市", "臺東縣", 22.7583, 121.1444),
     "penghu-magong": ("馬公市", "澎湖縣", 23.5655, 119.5794),
+    "hsinchu-county-zhubei": ("竹北市", "新竹縣", 24.8386, 121.0177),
+    "miaoli-miaoli": ("苗栗市", "苗栗縣", 24.5602, 120.8214),
+    "changhua-changhua": ("彰化市", "彰化縣", 24.0809, 120.5416),
+    "yunlin-douliu": ("斗六市", "雲林縣", 23.7075, 120.5439),
+    "chiayi-county-alishan": ("阿里山鄉", "嘉義縣", 23.5083, 120.8027),
+    "kinmen-jincheng": ("金城鎮", "金門縣", 24.4166, 118.3171),
+    "lienchiang-nangan": ("南竿鄉", "連江縣", 26.1520, 119.9500),
 }
 
 

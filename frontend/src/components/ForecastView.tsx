@@ -21,10 +21,22 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
         <small>模式:{ai_summary.mode} · 資料來源:{forecast.source_dataset}</small>
       </div>
 
+      <h3 className="section-title">
+        本週預報
+        {forecast.days.length > 1
+          ? `（共 ${forecast.days.length} 天,已標示旅遊日 ${forecast.target_date}）`
+          : ""}
+      </h3>
       <div className="cards">
         {forecast.days.map((d) => (
-          <div className="card" key={d.date}>
-            <div className="card-date">{d.date}</div>
+          <div
+            className={`card${d.date === forecast.target_date ? " card-target" : ""}`}
+            key={d.date}
+          >
+            <div className="card-date">
+              {d.date}
+              {d.date === forecast.target_date ? " ★" : ""}
+            </div>
             <div className="card-weather">{d.weather ?? "—"}</div>
             <div className="card-temp">
               {d.temp_low_c ?? "—"}° / <strong>{d.temp_high_c ?? "—"}°</strong>
