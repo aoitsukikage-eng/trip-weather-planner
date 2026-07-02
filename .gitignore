@@ -28,3 +28,6 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Local verification artifacts
+VERIFICATION_REPORT.txt

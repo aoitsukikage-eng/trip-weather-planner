@@ -34,12 +34,14 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
     daily: list[DailyForecast] = []
     for day in sorted(buckets):
         day_slices = buckets[day]
+        highs = [s.temp_high_c for s in day_slices if s.temp_high_c is not None]
+        lows = [s.temp_low_c for s in day_slices if s.temp_low_c is not None]
         temps = [s.temp_c for s in day_slices if s.temp_c is not None]
         pops = [s.pop_percent for s in day_slices if s.pop_percent is not None]
         weathers = [s.weather for s in day_slices if s.weather]
 
-        temp_high = max(temps) if temps else None
-        temp_low = min(temps) if temps else None
+        temp_high = max(highs) if highs else (max(temps) if temps else None)
+        temp_low = min(lows) if lows else (min(temps) if temps else None)
         max_pop = max(pops) if pops else None
         # Representative weather = most frequent phenomenon that day.
         weather = Counter(weathers).most_common(1)[0][0] if weathers else None

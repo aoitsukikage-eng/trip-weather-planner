@@ -6,11 +6,7 @@ shape regardless of success or failure.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel
-
-T = TypeVar("T")
 
 
 class Meta(BaseModel):
@@ -24,7 +20,7 @@ class ErrorInfo(BaseModel):
     message: str
 
 
-class ApiResponse(BaseModel, Generic[T]):
+class ApiResponse[T](BaseModel):
     success: bool = True
     data: T | None = None
     error: ErrorInfo | None = None

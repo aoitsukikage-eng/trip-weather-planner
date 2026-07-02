@@ -26,6 +26,8 @@ class TimeSlice(BaseModel):
     start: str  # ISO datetime string
     end: str
     temp_c: float | None = None
+    temp_high_c: float | None = None
+    temp_low_c: float | None = None
     pop_percent: int | None = None  # probability of precipitation
     weather: str | None = None  # Wx phenomenon text
 

@@ -2,17 +2,36 @@
 
 from __future__ import annotations
 
+import os
 from datetime import date, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
 from app.main import app
+from app.main import settings as app_settings
 
 client = TestClient(app)
 
 
 def _future(days: int) -> str:
     return (date.today() + timedelta(days=days)).isoformat()
+
+
+@pytest.fixture(autouse=True)
+def force_mock_mode():
+    original = os.environ.get("CWA_API_KEY")
+    os.environ["CWA_API_KEY"] = ""
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = ""
+    yield
+    if original is None:
+        os.environ.pop("CWA_API_KEY", None)
+    else:
+        os.environ["CWA_API_KEY"] = original
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = original or ""
 
 
 def test_health_mock_mode():

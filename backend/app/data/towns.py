@@ -1,11 +1,8 @@
 """Starter township registry (town -> city + centroid coordinates).
 
-This is a curated subset used ONLY in no-key mock mode. It now spans all 22
-counties/cities (>= one township each) so demos cover the whole country. It is
-NOT the full 368-township list: in production (CWA key present) the complete
-township list is sourced from CWA's aggregate dataset F-D0047-091, which returns
-every township in one response — so /api/towns loads from CWA when live, and this
-dict is the offline fallback only.
+This is the app's current selectable subset. It spans all 22 counties/cities
+with at least one representative township so both mock mode and live CWA mode
+can stay on the same stable town codes during Phase 1.
 
 The `city` field is what TDX's city-scoped Tourism API expects (Phase 2), and
 the lat/lon centroid is used to radius-filter attractions down to the chosen
