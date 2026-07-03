@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
 from math import cos, radians, sqrt
@@ -119,31 +120,62 @@ class UVStation:
     lon: float
 
 
+@dataclass(frozen=True)
+class ForecastSlices:
+    daily: list[TimeSlice]
+    hourly: list[TimeSlice]
+    source_label: str
+
+
 class CWAAdapter:
     def __init__(self, settings: Settings, cache: TTLCache | None = None) -> None:
         self._settings = settings
         self._cache = cache
 
-    async def fetch_time_slices(self, town: Town, target_date: date) -> tuple[list[TimeSlice], str]:
-        logical_dataset = select_dataset(target_date)
+    async def fetch_forecast_slices(self, town: Town) -> ForecastSlices:
         if self._settings.use_mock:
-            return mock_time_slices(logical_dataset, town), f"mock:{logical_dataset}"
+            return ForecastSlices(
+                daily=mock_time_slices(DATASET_WEEK, town, horizon_start=date.today()),
+                hourly=mock_time_slices(DATASET_NEAR, town, horizon_start=date.today()),
+                source_label=f"mock:{DATASET_WEEK}+{DATASET_NEAR}",
+            )
 
-        resolved = ResolvedDataset(
-            logical_dataset=logical_dataset,
-            transport_dataset=resolve_live_dataset(logical_dataset, town),
+        weekly = ResolvedDataset(
+            logical_dataset=DATASET_WEEK,
+            transport_dataset=resolve_live_dataset(DATASET_WEEK, town),
         )
-        payload = await self._request_json(
-            resolved.transport_dataset,
+        near_term = ResolvedDataset(
+            logical_dataset=DATASET_NEAR,
+            transport_dataset=resolve_live_dataset(DATASET_NEAR, town),
+        )
+
+        weekly_payload = await self._request_json(
+            weekly.transport_dataset,
             params={"LocationName": town.name},
         )
-        slices = self._parse_forecast_payload(payload, town)
-        if not slices:
+        daily_slices = self._parse_forecast_payload(weekly_payload, town)
+        if not daily_slices:
             raise UpstreamError(
                 f"CWA payload contained no forecast rows for {town.name}.",
                 error_code="empty_forecast",
             )
-        return slices, resolved.source_label
+
+        near_payload = await self._request_json(
+            near_term.transport_dataset,
+            params={"LocationName": town.name},
+        )
+        hourly_slices = self._parse_forecast_payload(near_payload, town)
+        if not hourly_slices:
+            raise UpstreamError(
+                f"CWA payload contained no near-term forecast rows for {town.name}.",
+                error_code="empty_forecast",
+            )
+
+        return ForecastSlices(
+            daily=daily_slices,
+            hourly=hourly_slices,
+            source_label=f"{weekly.source_label} + {near_term.source_label}",
+        )
 
     async def fetch_all_towns(self) -> list[Town]:
         if self._settings.use_mock:
@@ -192,9 +224,9 @@ class CWAAdapter:
             )
         return result
 
-    async def fetch_uv_info(self, town: Town) -> UVInfo:
+    async def fetch_uv_info(self, town: Town, target_date: date) -> UVInfo:
         if self._settings.use_mock:
-            return mock_uv_info(town, date.today())
+            return _label_uv_info(mock_uv_info(town, target_date), target_date)
 
         uv_payload = await self._request_json(
             DATASET_UV,
@@ -212,7 +244,7 @@ class CWAAdapter:
                 f"No UV observation could be resolved for {town.name}.",
                 error_code="uv_not_found",
             )
-        return result
+        return _label_uv_info(result, target_date)
 
     async def _request_json(
         self,
@@ -346,21 +378,32 @@ class CWAAdapter:
             return None
         target_iso = target_date.isoformat()
         target_month_day = target_iso[5:]
+        normalized_county = _normalize_county_name(county)
         for location in _as_list(locations.get("location")):
             if not isinstance(location, dict):
                 continue
-            if str(location.get("CountyName") or "").strip() != county:
+            if _normalize_county_name(location.get("CountyName")) != normalized_county:
                 continue
             rows = [row for row in _as_list(location.get("time")) if isinstance(row, dict)]
-            exact = next((row for row in rows if row.get("Date") == target_iso), None)
+            parsed_rows = [
+                (_normalize_cwa_date(row.get("Date"), target_date.year), row) for row in rows
+            ]
+            exact = next(
+                (row for parsed_date, row in parsed_rows if parsed_date == target_iso),
+                None,
+            )
             approx = next(
-                (row for row in rows if str(row.get("Date") or "")[5:] == target_month_day),
+                (
+                    row
+                    for parsed_date, row in parsed_rows
+                    if parsed_date is not None and parsed_date[5:] == target_month_day
+                ),
                 None,
             )
             chosen = exact or approx or (rows[-1] if rows else None)
             if chosen is None:
                 return None
-            source_date = str(chosen.get("Date") or target_iso)
+            source_date = _normalize_cwa_date(chosen.get("Date"), target_date.year) or target_iso
             return SunriseSunset(
                 county=county,
                 target_date=target_iso,
@@ -506,6 +549,32 @@ def _clean_clock(value: object) -> str | None:
     return text or None
 
 
+def _normalize_county_name(value: object) -> str:
+    return str(value or "").strip().replace("台", "臺")
+
+
+def _normalize_cwa_date(value: object, target_year: int) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    try:
+        return date.fromisoformat(text[:10]).isoformat()
+    except ValueError:
+        pass
+
+    month_day_match = re.fullmatch(r"(\d{1,2})[-/](\d{1,2})", text)
+    if not month_day_match:
+        return None
+
+    month = int(month_day_match.group(1))
+    day_value = int(month_day_match.group(2))
+    try:
+        return date(target_year, month, day_value).isoformat()
+    except ValueError:
+        return None
+
+
 def _parse_uv_values(payload: dict[str, Any]) -> tuple[dict[str, float], str | None]:
     values: dict[str, float] = {}
     observed_at: str | None = None
@@ -580,3 +649,16 @@ def _uv_level(value: float) -> str:
     if value <= 10:
         return "過量"
     return "危險"
+
+
+def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
+    label = "目前紫外線" if target_date == date.today() else "目前紫外線僅供參考"
+    return UVInfo(
+        value=info.value,
+        level=info.level,
+        source_label=label,
+        source_type=info.source_type,
+        observed_at=info.observed_at,
+        station_id=info.station_id,
+        station_name=info.station_name,
+    )

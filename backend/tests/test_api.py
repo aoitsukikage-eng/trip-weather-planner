@@ -96,13 +96,13 @@ def test_forecast_returns_multiple_days_and_marks_target():
     assert body["success"] is True
     forecast = body["data"]["forecast"]
     assert forecast["target_date"] == target
-    # Multi-day: the full horizon is returned, not just the single target day.
-    assert len(forecast["days"]) > 1
+    assert len(forecast["days"]) == 7
     # The target date must be present among the returned days (so UI can highlight).
     assert any(d["date"] == target for d in forecast["days"])
-    assert forecast["hourly"] is None
+    assert forecast["hourly"] is not None
+    assert len(forecast["hourly"]) == 24
     assert forecast["sunrise_sunset"]["target_date"] == target
-    assert forecast["uv"]["source_label"] == "目前紫外線"
+    assert forecast["uv"]["source_label"] == "目前紫外線僅供參考"
 
 
 def test_forecast_includes_hourly_for_next_72_hours():
@@ -116,6 +116,20 @@ def test_forecast_includes_hourly_for_next_72_hours():
     assert first_slot["time"].startswith(date.today().isoformat())
     assert "apparent_temp_c" in first_slot
     assert "weather_code" in first_slot
+
+
+def test_forecast_week_and_hourly_are_stable_across_all_seven_chips():
+    states = []
+    for offset in range(7):
+        target = _future(offset)
+        body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
+        assert body["success"] is True
+        forecast = body["data"]["forecast"]
+        states.append((len(forecast["days"]), forecast["hourly"] is not None))
+        assert forecast["target_date"] == target
+        assert any(day["date"] == target for day in forecast["days"])
+
+    assert states == [(7, True)] * 7
 
 
 def test_forecast_cache_hit_on_second_call():
@@ -140,3 +154,10 @@ def test_summary_text_follows_selected_non_first_day():
     summary_text = body["data"]["ai_summary"]["text"]
     month, day = target.split("-")[1:]
     assert f"{int(month)}/{int(day)}" in summary_text
+
+
+def test_forecast_uses_plain_uv_label_for_today_only():
+    target = _future(0)
+    body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
+    assert body["success"] is True
+    assert body["data"]["forecast"]["uv"]["source_label"] == "目前紫外線"

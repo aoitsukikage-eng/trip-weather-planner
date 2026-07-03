@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Request
 
@@ -21,7 +22,6 @@ from app.services.ai_summary import AiSummaryService
 from app.services.weather import (
     normalize_to_daily,
     normalize_to_hourly,
-    should_include_hourly_chart,
 )
 
 router = APIRouter(prefix="/api", tags=["forecast"])
@@ -104,11 +104,11 @@ async def forecast(
         )
 
     adapter = CWAAdapter(settings, cache)
-    slices, source = await adapter.fetch_time_slices(town_obj, parsed_date)
-    # Return the full forecast horizon (multi-day). The target date is carried in
-    # ForecastData.target_date so the frontend can highlight it among the days.
-    days = normalize_to_daily(slices)
-    hourly = normalize_to_hourly(slices) if should_include_hourly_chart(parsed_date) else None
+    slices = await adapter.fetch_forecast_slices(town_obj)
+    # Return the full week plus the near-term 72h chart data in one response.
+    days = normalize_to_daily(slices.daily)
+    hourly_slots = normalize_to_hourly(slices.hourly)
+    hourly = hourly_slots or None
     sunrise_sunset = None
     uv_info = None
     try:
@@ -116,14 +116,14 @@ async def forecast(
     except UpstreamError:
         sunrise_sunset = None
     try:
-        uv_info = await adapter.fetch_uv_info(town_obj)
+        uv_info = await adapter.fetch_uv_info(town_obj, parsed_date)
     except UpstreamError:
         uv_info = None
 
     forecast_data = ForecastData(
         town=town_obj,
         target_date=target_date,
-        source_dataset=source,
+        source_dataset=slices.source_label,
         days=days,
         hourly=hourly,
         sunrise_sunset=sunrise_sunset,
@@ -140,10 +140,11 @@ async def forecast(
 
     cache.set(cache_key, result, ttl=settings.cache_ttl_seconds)
     return ApiResponse[ForecastResult](
-        data=result, meta=_meta(request, cached=False, source=source)
+        data=result, meta=_meta(request, cached=False, source=slices.source_label)
     )
 
 
-def _is_date_in_window(target: date) -> bool:
-    delta = (target - date.today()).days
+def _is_date_in_window(target: date, today: date | None = None) -> bool:
+    anchor = today or datetime.now(ZoneInfo("Asia/Taipei")).date()
+    delta = (target - anchor).days
     return 0 <= delta <= 6

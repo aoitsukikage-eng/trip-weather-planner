@@ -233,6 +233,24 @@ def _sunrise_payload() -> dict:
     }
 
 
+def _sunrise_partial_date_payload() -> dict:
+    return {
+        "records": {
+            "locations": {
+                "location": [
+                    {
+                        "CountyName": "台北市",
+                        "time": [
+                            {"Date": "07-04", "SunRiseTime": "05:08", "SunSetTime": "18:47"},
+                            {"Date": "07-05", "SunRiseTime": "05:09", "SunSetTime": "18:47"},
+                        ],
+                    }
+                ]
+            }
+        }
+    }
+
+
 def _uv_payload() -> dict:
     return {
         "records": {
@@ -336,7 +354,7 @@ def test_fetch_live_surfaces_timeout(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
     with pytest.raises(UpstreamError, match="timed out"):
-        asyncio.run(adapter.fetch_time_slices(town, date(2026, 7, 2)))
+        asyncio.run(adapter.fetch_forecast_slices(town))
 
 
 def test_normalize_groups_by_day_and_summarizes():
@@ -443,6 +461,18 @@ def test_parse_sunrise_payload_prefers_exact_target_date():
     assert result is not None
     assert result.source_date == "2026-07-04"
     assert result.sunrise_time == "05:08"
+    assert result.is_approximate is False
+
+
+def test_parse_sunrise_payload_normalizes_partial_dates_and_county_variants():
+    result = CWAAdapter._parse_sunrise_payload(
+        _sunrise_partial_date_payload(),
+        "臺北市",
+        date(2026, 7, 4),
+    )
+    assert result is not None
+    assert result.source_date == "2026-07-04"
+    assert result.sunset_time == "18:47"
     assert result.is_approximate is False
 
 
