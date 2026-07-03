@@ -9,7 +9,7 @@ uniform shape.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from app.schemas.weather import DailyForecast, HourlyForecast, TimeSlice
 
@@ -61,28 +61,96 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
 
 
 def normalize_to_hourly(slices: list[TimeSlice]) -> list[HourlyForecast]:
-    """Project normalized time slices into the 72h chart contract."""
-    hourly: list[HourlyForecast] = []
+    """Project upstream near-term slices into a uniform 3-hour chart contract."""
+    buckets: dict[str, list[tuple[datetime, TimeSlice]]] = defaultdict(list)
     for slot in slices:
-        if (
-            slot.temp_c is None
-            and slot.apparent_temp_c is None
-            and slot.pop_percent is None
-            and slot.weather is None
-            and slot.weather_code is None
-        ):
+        start_at = _parse_iso_datetime(slot.start)
+        if start_at is None:
             continue
-        hourly.append(
-            HourlyForecast(
-                time=slot.start,
-                temp_c=slot.temp_c,
-                apparent_temp_c=slot.apparent_temp_c,
-                pop_percent=slot.pop_percent,
-                weather=slot.weather,
-                weather_code=slot.weather_code,
-            )
+        bucket_start = start_at.replace(
+            hour=(start_at.hour // 3) * 3,
+            minute=0,
+            second=0,
+            microsecond=0,
         )
+        buckets[bucket_start.isoformat()].append((start_at, slot))
+
+    hourly: list[HourlyForecast] = []
+    for bucket_key in sorted(buckets):
+        entries = sorted(buckets[bucket_key], key=lambda item: item[0])
+        merged = _merge_hourly_bucket(bucket_key, entries)
+        if merged is not None:
+            hourly.append(merged)
     return hourly
+
+
+def _parse_iso_datetime(value: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _merge_hourly_bucket(
+    bucket_key: str, entries: list[tuple[datetime, TimeSlice]]
+) -> HourlyForecast | None:
+    first_slot = entries[0][1]
+    temps = [slot.temp_c for _, slot in entries if slot.temp_c is not None]
+    apparent_temps = [
+        slot.apparent_temp_c for _, slot in entries if slot.apparent_temp_c is not None
+    ]
+    pops = [slot.pop_percent for _, slot in entries if slot.pop_percent is not None]
+    weather_pairs = [
+        (slot.weather or "", slot.weather_code)
+        for _, slot in entries
+        if slot.weather or slot.weather_code
+    ]
+
+    merged = HourlyForecast(
+        time=bucket_key,
+        temp_c=round(sum(temps) / len(temps), 1) if temps else None,
+        apparent_temp_c=round(sum(apparent_temps) / len(apparent_temps), 1)
+        if apparent_temps
+        else None,
+        pop_percent=max(pops) if pops else None,
+        weather=None,
+        weather_code=None,
+    )
+
+    if weather_pairs:
+        ranked_weather = sorted(
+            Counter(weather_pairs).items(),
+            key=lambda item: (-item[1], weather_pairs.index(item[0])),
+        )
+        merged.weather, merged.weather_code = ranked_weather[0][0]
+
+    if (
+        merged.temp_c is None
+        and merged.apparent_temp_c is None
+        and merged.pop_percent is None
+        and merged.weather is None
+        and merged.weather_code is None
+    ):
+        return None
+
+    bucket_start = _parse_iso_datetime(bucket_key)
+    first_start = entries[0][0]
+    if bucket_start is not None:
+        expected_end = (bucket_start + timedelta(hours=3)).isoformat()
+        first_end = _parse_iso_datetime(first_slot.end)
+        if len(entries) == 1 and first_start == bucket_start and first_slot.end == expected_end:
+            return HourlyForecast(
+                time=first_slot.start,
+                temp_c=first_slot.temp_c,
+                apparent_temp_c=first_slot.apparent_temp_c,
+                pop_percent=first_slot.pop_percent,
+                weather=first_slot.weather,
+                weather_code=first_slot.weather_code,
+            )
+        if len(entries) == 1 and first_end == bucket_start + timedelta(hours=3):
+            merged.time = first_slot.start
+
+    return merged
 
 
 def should_include_hourly_chart(target: date, today: date | None = None) -> bool:

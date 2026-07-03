@@ -415,6 +415,72 @@ def test_normalize_to_hourly_keeps_optional_fields():
     assert hourly[1].weather == "晴"
 
 
+def test_normalize_to_hourly_collapses_mixed_1h_and_3h_slices_to_uniform_grid():
+    slices = [
+        TimeSlice(
+            start="2026-07-04T00:00:00+08:00",
+            end="2026-07-04T01:00:00+08:00",
+            temp_c=28.0,
+            apparent_temp_c=30.0,
+            pop_percent=10,
+            weather="晴",
+            weather_code="01",
+        ),
+        TimeSlice(
+            start="2026-07-04T01:00:00+08:00",
+            end="2026-07-04T02:00:00+08:00",
+            temp_c=29.0,
+            apparent_temp_c=31.0,
+            pop_percent=20,
+            weather="晴時多雲",
+            weather_code="02",
+        ),
+        TimeSlice(
+            start="2026-07-04T02:00:00+08:00",
+            end="2026-07-04T03:00:00+08:00",
+            temp_c=30.0,
+            apparent_temp_c=32.0,
+            pop_percent=40,
+            weather="多雲",
+            weather_code="04",
+        ),
+        TimeSlice(
+            start="2026-07-04T03:00:00+08:00",
+            end="2026-07-04T06:00:00+08:00",
+            temp_c=31.0,
+            apparent_temp_c=33.0,
+            pop_percent=60,
+            weather="短暫陣雨",
+            weather_code="12",
+        ),
+    ]
+
+    hourly = normalize_to_hourly(slices)
+
+    assert [slot.time for slot in hourly] == [
+        "2026-07-04T00:00:00+08:00",
+        "2026-07-04T03:00:00+08:00",
+    ]
+    assert hourly[0].temp_c == 29.0
+    assert hourly[0].apparent_temp_c == 31.0
+    assert hourly[0].pop_percent == 40
+    assert hourly[0].weather == "晴"
+    assert hourly[0].weather_code == "01"
+    assert hourly[1].temp_c == 31.0
+    assert hourly[1].weather_code == "12"
+
+
+def test_normalize_to_hourly_keeps_mock_3h_structure_unchanged():
+    town = get_town("taipei-xinyi")
+    slices = mock_time_slices(DATASET_NEAR, town, horizon_start=date(2026, 7, 1))
+
+    hourly = normalize_to_hourly(slices)
+
+    assert len(hourly) == len(slices)
+    assert [slot.time for slot in hourly] == [slot.start for slot in slices]
+    assert [slot.temp_c for slot in hourly] == [slot.temp_c for slot in slices]
+
+
 def test_hourly_chart_gate_matches_72h_window():
     today = date(2026, 7, 4)
     assert should_include_hourly_chart(date(2026, 7, 4), today=today) is True
