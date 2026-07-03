@@ -19,12 +19,33 @@ export interface DailyForecast {
   advice_hint: string | null;
 }
 
+export interface SunriseSunset {
+  county: string;
+  target_date: string;
+  source_date: string;
+  sunrise_time: string | null;
+  sunset_time: string | null;
+  is_approximate: boolean;
+}
+
+export interface UVInfo {
+  value: number | null;
+  level: string | null;
+  source_label: string;
+  source_type: string;
+  observed_at: string | null;
+  station_id: string | null;
+  station_name: string | null;
+}
+
 export interface ForecastResult {
   forecast: {
     town: Town;
     target_date: string;
     source_dataset: string;
     days: DailyForecast[];
+    sunrise_sunset: SunriseSunset | null;
+    uv: UVInfo | null;
     generated_at: string;
   };
   ai_summary: { text: string; mode: string };
@@ -40,31 +61,57 @@ interface Envelope<T> {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 const MOCK_TOWNS: Town[] = [
-  { code: "taipei-zhongzheng", name: "中正區", city: "臺北市", lat: 25.03, lon: 121.52 },
+  { code: "taipei-xinyi", name: "信義區", city: "臺北市", lat: 25.03, lon: 121.57 },
   { code: "hualien-hualien", name: "花蓮市", city: "花蓮縣", lat: 23.98, lon: 121.6 },
   { code: "tainan-west-central", name: "中西區", city: "臺南市", lat: 22.99, lon: 120.2 },
 ];
 
+function displayDate(isoDate: string): string {
+  const [_, month, day] = isoDate.split("-");
+  return `${Number(month)}/${Number(day)}`;
+}
+
 function mockForecast(town: Town, date: string): ForecastResult {
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(date);
+    current.setDate(current.getDate() + index);
+    const isoDate = current.toISOString().slice(0, 10);
+    return {
+      date: isoDate,
+      temp_high_c: 29 + (index % 3),
+      temp_low_c: 23 + (index % 2),
+      max_pop_percent: 20 + index * 8,
+      weather: index % 2 === 0 ? "多雲時陰" : "晴時多雲",
+      advice_hint: index >= 4 ? "午後對流機率升高,建議備妥雨具。" : "白天偏熱,記得補水與防曬。",
+    };
+  });
   return {
     forecast: {
       town,
       target_date: date,
       source_dataset: "mock:frontend-fallback",
-      days: [
-        {
-          date,
-          temp_high_c: 30,
-          temp_low_c: 24,
-          max_pop_percent: 60,
-          weather: "多雲時陰",
-          advice_hint: "天氣多變,建議攜帶輕便雨具。",
-        },
-      ],
+      days,
+      sunrise_sunset: {
+        county: town.city,
+        target_date: date,
+        source_date: date,
+        sunrise_time: "05:12",
+        sunset_time: "18:46",
+        is_approximate: false,
+      },
+      uv: {
+        value: 8,
+        level: "過量",
+        source_label: "目前紫外線",
+        source_type: "observation",
+        observed_at: `${date}T12:00:00+08:00`,
+        station_id: "mock-station",
+        station_name: `${town.name} mock station`,
+      },
       generated_at: new Date().toISOString(),
     },
     ai_summary: {
-      text: `${town.city}${town.name}在 ${date} 預報為「多雲時陰」,氣溫約 24–30°C。建議攜帶輕便雨具。`,
+      text: `${town.city}${town.name}在 ${displayDate(date)} 預報為「多雲時陰」,氣溫約 23–29°C。建議攜帶輕便雨具並留意防曬。`,
       mode: "rule-based (frontend mock)",
     },
   };

@@ -3,6 +3,12 @@ import TripForm from "./components/TripForm";
 import ForecastView from "./components/ForecastView";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
 
+function todayIsoDate(): string {
+  const current = new Date();
+  current.setHours(0, 0, 0, 0);
+  return current.toISOString().slice(0, 10);
+}
+
 export default function App() {
   const [towns, setTowns] = useState<Town[]>([]);
   const [result, setResult] = useState<ForecastResult | null>(null);
@@ -11,6 +17,13 @@ export default function App() {
   useEffect(() => {
     getTowns().then(setTowns);
   }, []);
+
+  useEffect(() => {
+    if (!towns.length || result) {
+      return;
+    }
+    void handleSubmit(towns[0], todayIsoDate());
+  }, [towns, result]);
 
   const handleSubmit = async (town: Town, date: string) => {
     setLoading(true);
@@ -26,7 +39,7 @@ export default function App() {
       <header>
         <h1>旅遊行前天氣規劃</h1>
         <p className="tagline">
-          Trip Weather Planner — 選目的地與日期,取得天氣預報與 AI 行前建議
+          Trip Weather Planner — 選目的地與日期,取得天氣預報與行前建議
         </p>
       </header>
 
