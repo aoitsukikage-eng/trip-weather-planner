@@ -32,7 +32,7 @@ def _weather_text(pop: int) -> str:
 def mock_time_slices(
     dataset_id: str, town: Town, horizon_start: date | None = None
 ) -> list[TimeSlice]:
-    cadence_hours, days = (3, 2) if dataset_id.endswith("093") else (12, 7)
+    cadence_hours, days = (3, 3) if dataset_id.endswith("093") else (12, 7)
     start = horizon_start or date.today()
     # Warmer in the south (lower latitude), cooler in the north.
     base_temp = 30.0 - (town.lat - 22.0) * 1.1
@@ -46,14 +46,19 @@ def mock_time_slices(
         diurnal = -4.0 if 0 <= hour < 9 else (3.5 if 9 <= hour < 18 else -1.0)
         noise = (_stable_unit(town.code, ts.isoformat()) - 0.5) * 3.0
         temp = round(base_temp + diurnal + noise, 1)
+        apparent_offset = (_stable_unit("at", town.code, ts.isoformat()) - 0.5) * 2.4
+        apparent_temp = round(temp + apparent_offset, 1)
         pop = int(_stable_unit("pop", town.code, ts.date().isoformat(), str(hour)) * 100)
+        weather_code = _weather_code(pop)
         slices.append(
             TimeSlice(
                 start=ts.isoformat(),
                 end=(ts + timedelta(hours=cadence_hours)).isoformat(),
                 temp_c=temp,
+                apparent_temp_c=apparent_temp,
                 pop_percent=pop,
                 weather=_weather_text(pop),
+                weather_code=weather_code,
             )
         )
     return slices
@@ -107,3 +112,13 @@ def _uv_level(value: float) -> str:
     if value <= 10:
         return "過量"
     return "危險"
+
+
+def _weather_code(pop: int) -> str:
+    if pop >= 70:
+        return "12"
+    if pop >= 40:
+        return "07"
+    if pop >= 20:
+        return "04"
+    return "01"

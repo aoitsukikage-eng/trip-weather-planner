@@ -299,7 +299,7 @@ class CWAAdapter:
                     continue
                 slot = by_time.setdefault(start, TimeSlice(start=start, end=end))
                 slot.end = end
-                _apply_element(slot, name, _first_value(row.get("ElementValue")))
+                _apply_element(slot, name, _extract_element_values(row.get("ElementValue")))
         return [by_time[key] for key in sorted(by_time)]
 
     @staticmethod
@@ -420,23 +420,53 @@ class CWAAdapter:
         return f"cwa:{dataset}:{suffix}"
 
 
-def _first_value(element_value: object) -> str | None:
-    if isinstance(element_value, list) and element_value:
-        first = element_value[0]
-        if isinstance(first, dict):
-            for value in first.values():
-                if value not in ("", None):
-                    return str(value)
+def _extract_element_values(element_value: object) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not isinstance(element_value, list):
+        return values
+    for item in element_value:
+        if not isinstance(item, dict):
+            continue
+        for key, value in item.items():
+            if value in ("", None):
+                continue
+            text = str(value).strip()
+            if text:
+                values[str(key)] = text
+    return values
+
+
+def _pick_value(values: dict[str, str], *preferred_keys: str) -> str | None:
+    for key in preferred_keys:
+        value = values.get(key)
+        if value:
+            return value
+    for value in values.values():
+        if value:
+            return value
     return None
 
 
-def _apply_element(slot: TimeSlice, name: str, value: str | None) -> None:
-    if value is None:
+def _apply_element(slot: TimeSlice, name: str, values: dict[str, str]) -> None:
+    if not values:
         return
+
+    value = _pick_value(values, name)
+    weather_value = _pick_value(values, "Weather", "Wx", "天氣現象", "Value")
+    weather_code = _pick_value(
+        values,
+        "WeatherCode",
+        "WxCode",
+        "天氣代碼",
+        "weatherCode",
+        "weather_code",
+    )
 
     try:
         if name in {"溫度", "平均溫度", "T", "Temperature"}:
             slot.temp_c = float(value)
+        elif name in {"體感溫度", "AT", "ApparentTemperature", "Apparent Temperature"}:
+            slot.apparent_temp_c = float(value)
         elif name in {"最高溫度", "MaxT", "MaxTemperature"}:
             slot.temp_high_c = float(value)
         elif name in {"最低溫度", "MinT", "MinTemperature"}:
@@ -444,9 +474,20 @@ def _apply_element(slot: TimeSlice, name: str, value: str | None) -> None:
         elif "降雨機率" in name or "PoP" in name:
             slot.pop_percent = int(float(value))
         elif name in {"天氣現象", "Wx", "Weather"}:
-            slot.weather = str(value)
+            slot.weather = str(weather_value or value)
+            slot.weather_code = weather_code or slot.weather_code
     except (ValueError, TypeError):
-        return
+        pass
+
+    if (
+        slot.weather is None
+        and weather_value
+        and name not in {"溫度", "平均溫度", "T", "Temperature"}
+    ):
+        if name in {"天氣現象", "Wx", "Weather"}:
+            slot.weather = weather_value
+    if slot.weather_code is None and weather_code:
+        slot.weather_code = weather_code
 
 
 def _as_list(value: object) -> list[Any]:

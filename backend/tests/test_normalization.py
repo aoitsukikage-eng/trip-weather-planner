@@ -21,7 +21,12 @@ from app.core.errors import UpstreamError
 from app.data.towns import get_town
 from app.schemas.weather import DailyForecast, TimeSlice
 from app.services.ai_summary import AiSummaryService
-from app.services.weather import normalize_to_daily, pick_target_day
+from app.services.weather import (
+    normalize_to_daily,
+    normalize_to_hourly,
+    pick_target_day,
+    should_include_hourly_chart,
+)
 
 
 def _near_payload() -> dict:
@@ -53,11 +58,15 @@ def _near_payload() -> dict:
                                     "Time": [
                                         {
                                             "DataTime": "2026-07-02T06:00:00+08:00",
-                                            "ElementValue": [{"ProbabilityOfPrecipitation": "20"}],
+                                            "ElementValue": [
+                                                {"ProbabilityOfPrecipitation": "20"}
+                                            ],
                                         },
                                         {
                                             "DataTime": "2026-07-02T09:00:00+08:00",
-                                            "ElementValue": [{"ProbabilityOfPrecipitation": "80"}],
+                                            "ElementValue": [
+                                                {"ProbabilityOfPrecipitation": "80"}
+                                            ],
                                         },
                                     ],
                                 },
@@ -66,11 +75,28 @@ def _near_payload() -> dict:
                                     "Time": [
                                         {
                                             "DataTime": "2026-07-02T06:00:00+08:00",
-                                            "ElementValue": [{"Weather": "多雲"}],
+                                            "ElementValue": [
+                                                {"Weather": "多雲", "WeatherCode": "04"}
+                                            ],
                                         },
                                         {
                                             "DataTime": "2026-07-02T09:00:00+08:00",
-                                            "ElementValue": [{"Weather": "短暫陣雨"}],
+                                            "ElementValue": [
+                                                {"Weather": "短暫陣雨", "WeatherCode": "12"}
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    "ElementName": "體感溫度",
+                                    "Time": [
+                                        {
+                                            "DataTime": "2026-07-02T06:00:00+08:00",
+                                            "ElementValue": [{"ApparentTemperature": "34"}],
+                                        },
+                                        {
+                                            "DataTime": "2026-07-02T09:00:00+08:00",
+                                            "ElementValue": [{"ApparentTemperature": "37"}],
                                         },
                                     ],
                                 },
@@ -272,6 +298,8 @@ def test_parse_near_payload_and_normalize():
     town = get_town("taipei-xinyi")
     slices = CWAAdapter._parse_forecast_payload(_near_payload(), town)
     assert len(slices) == 2
+    assert slices[0].apparent_temp_c == 34.0
+    assert slices[1].weather_code == "12"
     days = normalize_to_daily(slices)
     assert len(days) == 1
     assert days[0].date == "2026-07-02"
@@ -345,6 +373,37 @@ def test_normalize_groups_by_day_and_summarizes():
     assert "攜傘" in day1.advice_hint
 
 
+def test_normalize_to_hourly_keeps_optional_fields():
+    slices = [
+        TimeSlice(
+            start="2026-07-01T00:00:00",
+            end="2026-07-01T03:00:00",
+            temp_c=27.0,
+            apparent_temp_c=30.5,
+            pop_percent=40,
+            weather="多雲",
+            weather_code="04",
+        ),
+        TimeSlice(
+            start="2026-07-01T03:00:00",
+            end="2026-07-01T06:00:00",
+            weather="晴",
+        ),
+    ]
+    hourly = normalize_to_hourly(slices)
+    assert len(hourly) == 2
+    assert hourly[0].apparent_temp_c == 30.5
+    assert hourly[0].weather_code == "04"
+    assert hourly[1].weather == "晴"
+
+
+def test_hourly_chart_gate_matches_72h_window():
+    today = date(2026, 7, 4)
+    assert should_include_hourly_chart(date(2026, 7, 4), today=today) is True
+    assert should_include_hourly_chart(date(2026, 7, 6), today=today) is True
+    assert should_include_hourly_chart(date(2026, 7, 7), today=today) is False
+
+
 def test_pick_target_day_prefers_exact():
     slices = mock_time_slices(
         DATASET_WEEK,
@@ -364,6 +423,10 @@ def test_mock_is_deterministic():
     b = mock_time_slices(DATASET_WEEK, town, horizon_start=start)
     assert [s.temp_c for s in a] == [s.temp_c for s in b]
     assert len(a) == 14
+    near = mock_time_slices(DATASET_NEAR, town, horizon_start=start)
+    assert len(near) == 24
+    assert near[0].apparent_temp_c is not None
+    assert near[0].weather_code is not None
 
 
 def test_parse_live_town_payload_includes_non_curated_town():

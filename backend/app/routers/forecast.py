@@ -18,7 +18,11 @@ from app.schemas.weather import (
     Town,
 )
 from app.services.ai_summary import AiSummaryService
-from app.services.weather import normalize_to_daily
+from app.services.weather import (
+    normalize_to_daily,
+    normalize_to_hourly,
+    should_include_hourly_chart,
+)
 
 router = APIRouter(prefix="/api", tags=["forecast"])
 
@@ -104,6 +108,7 @@ async def forecast(
     # Return the full forecast horizon (multi-day). The target date is carried in
     # ForecastData.target_date so the frontend can highlight it among the days.
     days = normalize_to_daily(slices)
+    hourly = normalize_to_hourly(slices) if should_include_hourly_chart(parsed_date) else None
     sunrise_sunset = None
     uv_info = None
     try:
@@ -120,6 +125,7 @@ async def forecast(
         target_date=target_date,
         source_dataset=source,
         days=days,
+        hourly=hourly,
         sunrise_sunset=sunrise_sunset,
         uv=uv_info,
         generated_at=datetime.now(UTC).isoformat(),

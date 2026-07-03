@@ -100,8 +100,22 @@ def test_forecast_returns_multiple_days_and_marks_target():
     assert len(forecast["days"]) > 1
     # The target date must be present among the returned days (so UI can highlight).
     assert any(d["date"] == target for d in forecast["days"])
+    assert forecast["hourly"] is None
     assert forecast["sunrise_sunset"]["target_date"] == target
     assert forecast["uv"]["source_label"] == "目前紫外線"
+
+
+def test_forecast_includes_hourly_for_next_72_hours():
+    target = _future(1)
+    body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
+    assert body["success"] is True
+    forecast = body["data"]["forecast"]
+    assert forecast["hourly"] is not None
+    assert len(forecast["hourly"]) == 24
+    first_slot = forecast["hourly"][0]
+    assert first_slot["time"].startswith(date.today().isoformat())
+    assert "apparent_temp_c" in first_slot
+    assert "weather_code" in first_slot
 
 
 def test_forecast_cache_hit_on_second_call():

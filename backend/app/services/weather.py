@@ -9,8 +9,9 @@ uniform shape.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from datetime import date
 
-from app.schemas.weather import DailyForecast, TimeSlice
+from app.schemas.weather import DailyForecast, HourlyForecast, TimeSlice
 
 
 def _advice_hint(temp_high: float | None, temp_low: float | None, max_pop: int | None) -> str:
@@ -57,6 +58,37 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
             )
         )
     return daily
+
+
+def normalize_to_hourly(slices: list[TimeSlice]) -> list[HourlyForecast]:
+    """Project normalized time slices into the 72h chart contract."""
+    hourly: list[HourlyForecast] = []
+    for slot in slices:
+        if (
+            slot.temp_c is None
+            and slot.apparent_temp_c is None
+            and slot.pop_percent is None
+            and slot.weather is None
+            and slot.weather_code is None
+        ):
+            continue
+        hourly.append(
+            HourlyForecast(
+                time=slot.start,
+                temp_c=slot.temp_c,
+                apparent_temp_c=slot.apparent_temp_c,
+                pop_percent=slot.pop_percent,
+                weather=slot.weather,
+                weather_code=slot.weather_code,
+            )
+        )
+    return hourly
+
+
+def should_include_hourly_chart(target: date, today: date | None = None) -> bool:
+    """Only the next 72h window is eligible for the 3-hour chart."""
+    delta = (target - (today or date.today())).days
+    return 0 <= delta <= 2
 
 
 def pick_target_day(days: list[DailyForecast], target_date: str) -> list[DailyForecast]:

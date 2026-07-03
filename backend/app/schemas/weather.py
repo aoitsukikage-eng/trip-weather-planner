@@ -26,10 +26,23 @@ class TimeSlice(BaseModel):
     start: str  # ISO datetime string
     end: str
     temp_c: float | None = None
+    apparent_temp_c: float | None = None
     temp_high_c: float | None = None
     temp_low_c: float | None = None
     pop_percent: int | None = None  # probability of precipitation
     weather: str | None = None  # Wx phenomenon text
+    weather_code: str | None = None
+
+
+class HourlyForecast(BaseModel):
+    """One normalized 3-hour forecast slot for the 72h chart."""
+
+    time: str  # ISO datetime string
+    temp_c: float | None = None
+    apparent_temp_c: float | None = None
+    pop_percent: int | None = None
+    weather: str | None = None
+    weather_code: str | None = None
 
 
 class DailyForecast(BaseModel):
@@ -50,6 +63,7 @@ class ForecastData(BaseModel):
     target_date: str
     source_dataset: str  # which CWA dataset produced this (F-D0047-091 / -093 / mock)
     days: list[DailyForecast]
+    hourly: list[HourlyForecast] | None = None
     sunrise_sunset: SunriseSunset | None = None
     uv: UVInfo | None = None
     generated_at: str
