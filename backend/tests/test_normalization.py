@@ -19,7 +19,8 @@ from app.adapters.mock_data import mock_time_slices
 from app.core.config import Settings
 from app.core.errors import UpstreamError
 from app.data.towns import get_town
-from app.schemas.weather import TimeSlice
+from app.schemas.weather import DailyForecast, TimeSlice
+from app.services.ai_summary import AiSummaryService
 from app.services.weather import normalize_to_daily, pick_target_day
 
 
@@ -162,6 +163,99 @@ def _week_payload() -> dict:
     }
 
 
+def _towns_payload() -> dict:
+    return {
+        "records": {
+            "Locations": [
+                {
+                    "LocationsName": "新北市",
+                    "Location": [
+                        {
+                            "LocationName": "板橋區",
+                            "Geocode": "65000010",
+                            "Latitude": "25.01154",
+                            "Longitude": "121.450888",
+                        },
+                        {
+                            "LocationName": "貢寮區",
+                            "Geocode": "65000270",
+                            "Latitude": "25.021273",
+                            "Longitude": "121.910293",
+                        },
+                    ],
+                }
+            ]
+        }
+    }
+
+
+def _sunrise_payload() -> dict:
+    return {
+        "records": {
+            "locations": {
+                "location": [
+                    {
+                        "CountyName": "臺北市",
+                        "time": [
+                            {"Date": "2026-07-04", "SunRiseTime": "05:08", "SunSetTime": "18:47"},
+                            {"Date": "2025-07-05", "SunRiseTime": "05:09", "SunSetTime": "18:47"},
+                        ],
+                    }
+                ]
+            }
+        }
+    }
+
+
+def _uv_payload() -> dict:
+    return {
+        "records": {
+            "weatherElement": {
+                "Date": "2026-07-03",
+                "location": [
+                    {"StationID": "467280", "UVIndex": 9.0},
+                    {"StationID": "467490", "UVIndex": 4.0},
+                ],
+            }
+        }
+    }
+
+
+def _station_payload() -> dict:
+    return {
+        "records": {
+            "Station": [
+                {
+                    "StationName": "臺北",
+                    "StationId": "467280",
+                    "GeoInfo": {
+                        "Coordinates": [
+                            {
+                                "CoordinateName": "WGS84",
+                                "StationLatitude": "25.037658",
+                                "StationLongitude": "121.514853",
+                            }
+                        ]
+                    },
+                },
+                {
+                    "StationName": "花蓮",
+                    "StationId": "467490",
+                    "GeoInfo": {
+                        "Coordinates": [
+                            {
+                                "CoordinateName": "WGS84",
+                                "StationLatitude": "23.976944",
+                                "StationLongitude": "121.605556",
+                            }
+                        ]
+                    },
+                },
+            ]
+        }
+    }
+
+
 def test_select_dataset_near_vs_week():
     today = date(2026, 7, 1)
     assert select_dataset(date(2026, 7, 2), today=today) == DATASET_NEAR
@@ -170,13 +264,13 @@ def test_select_dataset_near_vs_week():
 
 
 def test_resolve_live_dataset_maps_city_specific_codes():
-    assert resolve_live_dataset(DATASET_NEAR, get_town("taipei-zhongzheng")) == "F-D0047-061"
+    assert resolve_live_dataset(DATASET_NEAR, get_town("taipei-xinyi")) == "F-D0047-061"
     assert resolve_live_dataset(DATASET_WEEK, get_town("hualien-hualien")) == "F-D0047-043"
 
 
 def test_parse_near_payload_and_normalize():
-    town = get_town("taipei-zhongzheng")
-    slices = CWAAdapter._parse_payload(_near_payload(), town)
+    town = get_town("taipei-xinyi")
+    slices = CWAAdapter._parse_forecast_payload(_near_payload(), town)
     assert len(slices) == 2
     days = normalize_to_daily(slices)
     assert len(days) == 1
@@ -188,7 +282,7 @@ def test_parse_near_payload_and_normalize():
 
 def test_parse_week_payload_uses_max_min_temperatures():
     town = get_town("hualien-hualien")
-    slices = CWAAdapter._parse_payload(_week_payload(), town)
+    slices = CWAAdapter._parse_forecast_payload(_week_payload(), town)
     assert len(slices) == 2
     assert slices[0].temp_high_c == 31.0
     assert slices[1].temp_low_c == 24.0
@@ -200,14 +294,13 @@ def test_parse_week_payload_uses_max_min_temperatures():
     assert days[0].max_pop_percent == 60
 
 
-def test_parse_payload_rejects_unexpected_shape():
-    town = get_town("taipei-zhongzheng")
-    with pytest.raises(UpstreamError, match="Unexpected CWA payload shape"):
-        CWAAdapter._parse_payload({"records": {}}, town)
+def test_parse_payload_tolerates_unexpected_shape():
+    town = get_town("taipei-xinyi")
+    assert CWAAdapter._parse_forecast_payload({"records": {}}, town) == []
 
 
 def test_fetch_live_surfaces_timeout(monkeypatch: pytest.MonkeyPatch):
-    town = get_town("taipei-zhongzheng")
+    town = get_town("taipei-xinyi")
     adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
 
     async def fake_get(self, url, params):  # noqa: ARG001
@@ -215,19 +308,7 @@ def test_fetch_live_surfaces_timeout(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
     with pytest.raises(UpstreamError, match="timed out"):
-        asyncio.run(
-            adapter._fetch_live(  # noqa: SLF001
-                resolved=type(
-                    "Resolved",
-                    (),
-                    {
-                        "transport_dataset": "F-D0047-061",
-                        "logical_dataset": DATASET_NEAR,
-                    },
-                )(),
-                town=town,
-            )
-        )
+        asyncio.run(adapter.fetch_time_slices(town, date(2026, 7, 2)))
 
 
 def test_normalize_groups_by_day_and_summarizes():
@@ -277,9 +358,66 @@ def test_pick_target_day_prefers_exact():
 
 
 def test_mock_is_deterministic():
-    town = get_town("taipei-zhongzheng")
+    town = get_town("taipei-xinyi")
     start = date(2026, 7, 1)
     a = mock_time_slices(DATASET_WEEK, town, horizon_start=start)
     b = mock_time_slices(DATASET_WEEK, town, horizon_start=start)
     assert [s.temp_c for s in a] == [s.temp_c for s in b]
     assert len(a) == 14
+
+
+def test_parse_live_town_payload_includes_non_curated_town():
+    towns = CWAAdapter._parse_town_payload(_towns_payload())
+    codes = {town.code for town in towns}
+    assert "cwa-65000270" in codes
+    gongliao = next(town for town in towns if town.code == "cwa-65000270")
+    assert gongliao.city == "新北市"
+    assert gongliao.name == "貢寮區"
+
+
+def test_parse_sunrise_payload_prefers_exact_target_date():
+    result = CWAAdapter._parse_sunrise_payload(_sunrise_payload(), "臺北市", date(2026, 7, 4))
+    assert result is not None
+    assert result.source_date == "2026-07-04"
+    assert result.sunrise_time == "05:08"
+    assert result.is_approximate is False
+
+
+def test_parse_sunrise_payload_falls_back_to_last_available_row():
+    result = CWAAdapter._parse_sunrise_payload(_sunrise_payload(), "臺北市", date(2026, 12, 31))
+    assert result is not None
+    assert result.source_date == "2025-07-05"
+    assert result.is_approximate is True
+
+
+def test_parse_uv_payload_selects_nearest_station_deterministically():
+    town = get_town("taipei-xinyi")
+    result = CWAAdapter._parse_uv_payload(_uv_payload(), _station_payload(), town)
+    assert result is not None
+    assert result.station_id == "467280"
+    assert result.level == "過量"
+    assert result.source_label == "目前紫外線"
+
+
+def test_rule_based_summary_uses_selected_target_date():
+    service = AiSummaryService(Settings())
+    days = [
+        DailyForecast(
+            date="2026-07-04",
+            weather="晴",
+            temp_low_c=25,
+            temp_high_c=32,
+            max_pop_percent=10,
+        ),
+        DailyForecast(
+            date="2026-07-05",
+            weather="雨",
+            temp_low_c=24,
+            temp_high_c=28,
+            max_pop_percent=80,
+        ),
+    ]
+    text, mode = service.summarize(get_town("taipei-xinyi"), days, "2026-07-05")
+    assert mode == "rule-based"
+    assert "7/5" in text
+    assert "7/4" not in text

@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 class Town(BaseModel):
     """A selectable township/district."""
 
-    code: str = Field(..., description="Stable identifier, e.g. 'taipei-zhongzheng'")
+    code: str = Field(..., description="Stable identifier, e.g. 'taipei-xinyi'")
     name: str = Field(..., description="Township name, e.g. '中正區'")
     city: str = Field(..., description="Parent city/county, e.g. '臺北市'")
     lat: float
@@ -50,7 +50,28 @@ class ForecastData(BaseModel):
     target_date: str
     source_dataset: str  # which CWA dataset produced this (F-D0047-091 / -093 / mock)
     days: list[DailyForecast]
+    sunrise_sunset: SunriseSunset | None = None
+    uv: UVInfo | None = None
     generated_at: str
+
+
+class SunriseSunset(BaseModel):
+    county: str
+    target_date: str
+    source_date: str
+    sunrise_time: str | None = None
+    sunset_time: str | None = None
+    is_approximate: bool = False
+
+
+class UVInfo(BaseModel):
+    value: float | None = None
+    level: str | None = None
+    source_label: str
+    source_type: str
+    observed_at: str | None = None
+    station_id: str | None = None
+    station_name: str | None = None
 
 
 class AiSummary(BaseModel):

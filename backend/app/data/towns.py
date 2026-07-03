@@ -16,11 +16,8 @@ from app.schemas.weather import Town
 
 # code: (name, city, lat, lon)
 _TOWNS: dict[str, tuple[str, str, float, float]] = {
-    "taipei-zhongzheng": ("中正區", "臺北市", 25.0324, 121.5199),
     "taipei-xinyi": ("信義區", "臺北市", 25.0330, 121.5654),
-    "taipei-datong": ("大同區", "臺北市", 25.0630, 121.5130),
     "newtaipei-banqiao": ("板橋區", "新北市", 25.0143, 121.4677),
-    "newtaipei-tamsui": ("淡水區", "新北市", 25.1695, 121.4406),
     "keelung-ren-ai": ("仁愛區", "基隆市", 25.1276, 121.7392),
     "taoyuan-taoyuan": ("桃園區", "桃園市", 24.9937, 121.3010),
     "hsinchu-east": ("東區", "新竹市", 24.8015, 120.9718),

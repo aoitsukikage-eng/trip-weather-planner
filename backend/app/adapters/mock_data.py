@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 from datetime import date, datetime, timedelta
 
-from app.schemas.weather import TimeSlice, Town
+from app.schemas.weather import SunriseSunset, TimeSlice, Town, UVInfo
 
 
 def _stable_unit(*parts: str) -> float:
@@ -57,3 +57,53 @@ def mock_time_slices(
             )
         )
     return slices
+
+
+def mock_sunrise_sunset(town: Town, target_date: date) -> SunriseSunset:
+    day_of_year = target_date.timetuple().tm_yday
+    seasonal_shift = int(18 * (1 - abs(182 - day_of_year) / 182))
+    latitude_shift = int((town.lat - 23.5) * 2)
+    sunrise_minutes = 360 - seasonal_shift + latitude_shift
+    sunset_minutes = 1080 + seasonal_shift - latitude_shift
+    return SunriseSunset(
+        county=town.city,
+        target_date=target_date.isoformat(),
+        source_date=target_date.isoformat(),
+        sunrise_time=_format_minutes(sunrise_minutes),
+        sunset_time=_format_minutes(sunset_minutes),
+        is_approximate=False,
+    )
+
+
+def mock_uv_info(town: Town, target_date: date) -> UVInfo:
+    base = 6 + int((24.5 - town.lat) * 0.7)
+    seasonal = 1 if 4 <= target_date.month <= 9 else -1
+    value = float(max(1, min(12, base + seasonal)))
+    return UVInfo(
+        value=value,
+        level=_uv_level(value),
+        source_label="目前紫外線",
+        source_type="observation",
+        observed_at=f"{target_date.isoformat()}T12:00:00+08:00",
+        station_id=f"mock-{town.code}",
+        station_name=f"{town.name} mock station",
+    )
+
+
+def _format_minutes(total_minutes: int) -> str:
+    total_minutes %= 24 * 60
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    return f"{hours:02d}:{minutes:02d}"
+
+
+def _uv_level(value: float) -> str:
+    if value <= 2:
+        return "低"
+    if value <= 5:
+        return "中"
+    if value <= 7:
+        return "高"
+    if value <= 10:
+        return "過量"
+    return "危險"
