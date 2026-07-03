@@ -1,6 +1,7 @@
 # CI/CD 流程
 
-實作於 `.github/workflows/ci.yml`。
+驗證實作於 `.github/workflows/ci.yml`，部署骨架位於
+`.github/workflows/deploy-demo.yml`。
 
 ```mermaid
 flowchart LR
@@ -25,13 +26,16 @@ flowchart LR
 - **前端**:`npm ci` + `npm run build`(TypeScript 型別檢查 + Vite 建置)。**Node 鎖 22 LTS**(避免非 LTS 版本在 CI 出意外)。
 - **Infra**:`terraform fmt -check` + `terraform validate`。
 
-## CD 階段(設計)
+## CD 階段(部署骨架已補)
 
-- Staging 自動部署;Production 需人工核准。
-- 前端 build 上傳靜態託管;後端部署 Cloud Run。
+- `deploy-demo.yml` 採 `workflow_dispatch` + `dry_run`，先做 build / validate，
+  有 OIDC 與專案 secrets 時才進入真正 cloud 步驟。
+- 真部署仍需人工觸發與環境核准，不會在這個 repo 內假裝「一 push 就已上雲」。
+- 前端 build 產物上傳靜態託管;後端容器推 Artifact Registry 後部署 Cloud Run。
 
 ## 加分細節
 
 - 雲端認證用 **OIDC** 而非長期 access key。
 - `main` 分支保護,CI 未過不能 merge。
 - Terraform **plan 與 apply 分離**(plan 在 PR、apply 在核准後)。
+- `dry_run=true` 可演練 deploy path 而不建立任何真實雲端資源。

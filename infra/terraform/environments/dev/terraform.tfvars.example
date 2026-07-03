@@ -1,0 +1,28 @@
+project_id           = "your-gcp-project-id"
+region               = "asia-east1"
+backend_service_name = "twp-api-demo"
+backend_image        = "asia-east1-docker.pkg.dev/your-gcp-project-id/trip-weather-planner/backend:demo"
+
+# Use either the raw GCS website endpoint later in the flow, or preferably the
+# CDN/custom domain that fronts it.
+frontend_bucket_name = "your-unique-frontend-bucket-name"
+frontend_origin      = "https://demo.example.com"
+
+cache_ttl_seconds        = 1800
+upstream_timeout_seconds = 10
+request_timeout_seconds  = 30
+min_instance_count       = 0
+max_instance_count       = 2
+
+# Secret Manager bindings. Omit optional secrets if you want the backend to
+# stay in its built-in degraded mode.
+backend_secret_env = {
+  CWA_API_KEY = {
+    secret  = "cwa-api-key"
+    version = "latest"
+  }
+  GEMINI_API_KEY = {
+    secret  = "gemini-api-key"
+    version = "latest"
+  }
+}

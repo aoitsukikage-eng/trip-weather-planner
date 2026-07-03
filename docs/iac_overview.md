@@ -25,15 +25,22 @@ infra/terraform/
     └── backend_service/       # Cloud Run 服務(scale-to-zero + 公開 invoker)
 ```
 
+`environments/dev/terraform.tfvars.example` 提供 deploy-ready 範本，包含
+image、bucket、frontend origin 與 Secret Manager 綁定欄位。
+
 ## 涵蓋資源
 
 - **前端**(題目明確要求「IaC 建置前端架構」):靜態託管 bucket + SPA fallback + 公開讀取。生產再前掛 CDN + TLS;若改 Cloudflare Pages,替換為 `cloudflare_pages_project` 即可。
-- **後端**:Cloud Run 服務(容器映像、埠 8080、min/max instance、公開 invoker)。密鑰由 Secret Manager 注入,不寫進映像。
+- **後端**:Cloud Run 服務(容器映像、埠 8080、min/max instance、timeout、
+  公開 invoker)。非敏感 env 直接由 Terraform 傳入;敏感值由 Secret
+  Manager 注入,不寫進映像。
 
-## CI 驗證
+## CI 驗證與部署前置
 
-CI 的 `infra` job 跑 `terraform fmt -check` + `terraform validate`(見 `cicd_flow.md`)。生產流程 plan 與 apply 分離、apply 需人工核准。
+CI 的 `infra` job 跑 `terraform fmt -check` + `terraform validate`(見
+`cicd_flow.md`)。`deploy-demo.yml` 則提供 gated deployment skeleton，只有
+在 GitHub OIDC 與專案 secrets 就緒時才會真的進入 deploy 階段。
 
 ## 備註
 
-AWS 版 IaC(VPC / ECS / RDS / ElastiCache …)為設計附錄示意;demo 不落地 AWS(ALB/Fargate/RDS 對長期免費不友善)。
+AWS 版 IaC(VPC / ECS / RDS / ElastiCache …)為設計附錄示意;demo 不落地 AWS(ALB/Fargate/RDS 對長期免費不友善)。實際落地順序與 smoke test 見 `public_demo_runbook.md`。

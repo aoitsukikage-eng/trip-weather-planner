@@ -71,5 +71,15 @@ docs/       設計文件與流程圖
 ## 狀態
 
 - ✅ Phase 1:後端 mock 與 CWA live 皆可跑通(健康檢查 / 鄉鎮清單 / 預報 / 快取 / 錯誤處理),保留無 key demoability;前端建置通過。
-- ⏳ 待部署:Cloud Run / 正式公開 URL。
+- ✅ Public-demo deployment readiness: Docker build、Terraform 範本、deploy workflow skeleton、runbook 已整理完成。
+- ⏳ 待外部 auth / 平台參數:Cloud Run / 正式公開 URL。
 - ⏳ Phase 2/3:景點、交通、聊天機器人 overlay。
+
+## Public Demo Readiness
+
+- Deployment runbook:`docs/public_demo_runbook.md`
+- Terraform example:`infra/terraform/environments/dev/terraform.tfvars.example`
+- Deploy workflow skeleton:`.github/workflows/deploy-demo.yml`
+
+目前 repo 狀態是 **deploy-ready, not actually deployed**。未提供 GCP /
+GitHub OIDC auth 之前,不聲稱已有公開 URL 或已建立雲端資源。
