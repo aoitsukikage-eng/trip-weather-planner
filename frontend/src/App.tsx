@@ -12,6 +12,7 @@ export default function App() {
   const [towns, setTowns] = useState<Town[]>([]);
   const [result, setResult] = useState<ForecastResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getTowns().then(setTowns);
@@ -26,8 +27,12 @@ export default function App() {
 
   const handleSubmit = async (town: Town, date: string) => {
     setLoading(true);
+    setError(null);
     try {
       setResult(await getForecast(town, date));
+    } catch (caughtError) {
+      setResult(null);
+      setError(caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。");
     } finally {
       setLoading(false);
     }
@@ -46,6 +51,13 @@ export default function App() {
         <TripForm towns={towns} loading={loading} onSubmit={handleSubmit} />
       ) : (
         <p>載入鄉鎮清單中…</p>
+      )}
+
+      {error && (
+        <section className="error-panel" role="alert">
+          <strong>查詢失敗</strong>
+          <p>{error}</p>
+        </section>
       )}
 
       {result && <ForecastView result={result} />}

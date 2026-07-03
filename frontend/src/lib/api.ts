@@ -69,6 +69,18 @@ interface Envelope<T> {
   meta: { request_id: string; cached: boolean; source: string | null };
 }
 
+export class ApiError extends Error {
+  readonly errorCode: string;
+  readonly status: number;
+
+  constructor(message: string, errorCode = "request_failed", status = 500) {
+    super(message);
+    this.name = "ApiError";
+    this.errorCode = errorCode;
+    this.status = status;
+  }
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 const MOCK_TOWNS: Town[] = [
@@ -187,14 +199,38 @@ export async function getTowns(): Promise<Town[]> {
 }
 
 export async function getForecast(town: Town, date: string): Promise<ForecastResult> {
+  let res: Response;
   try {
-    const res = await fetch(
+    res = await fetch(
       `${API_BASE}/api/forecast?town=${encodeURIComponent(town.code)}&date=${date}`,
     );
-    const body: Envelope<ForecastResult> = await res.json();
-    if (body.success && body.data) return body.data;
-    throw new Error(body.error?.message ?? "request failed");
-  } catch {
+  } catch (error) {
+    if (!_isNetworkFailure(error)) {
+      throw error;
+    }
     return mockForecast(town, date);
+  }
+
+  const body = (await _readJsonSafely(res)) as Envelope<ForecastResult> | null;
+  if (res.ok && body?.success && body.data) {
+    return body.data;
+  }
+
+  throw new ApiError(
+    body?.error?.message ?? `Request failed with status ${res.status}.`,
+    body?.error?.error_code ?? "request_failed",
+    res.status,
+  );
+}
+
+function _isNetworkFailure(error: unknown): boolean {
+  return error instanceof TypeError;
+}
+
+async function _readJsonSafely(res: Response): Promise<unknown> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
   }
 }
