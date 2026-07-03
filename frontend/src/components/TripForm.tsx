@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import type { Town } from "../lib/api";
+import {
+  addLocalDays,
+  buildDateOptions as buildLocalDateOptions,
+  formatLocalDate,
+} from "../lib/localDate";
 
 interface Props {
   towns: Town[];
@@ -9,23 +14,11 @@ interface Props {
 
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 
-function addDays(days: number): Date {
-  const current = new Date();
-  current.setHours(0, 0, 0, 0);
-  current.setDate(current.getDate() + days);
-  return current;
-}
-
-function toIsoDate(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
-
 function buildDateOptions(): Array<{ iso: string; label: string }> {
-  return Array.from({ length: 7 }, (_, index) => {
-    const current = addDays(index);
+  return buildLocalDateOptions(7).map(({ iso, date }) => {
     return {
-      iso: toIsoDate(current),
-      label: `${current.getMonth() + 1}/${current.getDate()}（${WEEKDAY_LABELS[current.getDay()]}）`,
+      iso,
+      label: `${date.getMonth() + 1}/${date.getDate()}（${WEEKDAY_LABELS[date.getDay()]}）`,
     };
   });
 }
@@ -33,7 +26,7 @@ function buildDateOptions(): Array<{ iso: string; label: string }> {
 export default function TripForm({ towns, loading, onSubmit }: Props) {
   const [city, setCity] = useState("");
   const [townCode, setTownCode] = useState("");
-  const [date, setDate] = useState(() => toIsoDate(addDays(0)));
+  const [date, setDate] = useState(() => formatLocalDate(addLocalDays(new Date(), 0)));
 
   const cities = Array.from(new Set(towns.map((town) => town.city))).sort((left, right) =>
     left.localeCompare(right, "zh-Hant"),

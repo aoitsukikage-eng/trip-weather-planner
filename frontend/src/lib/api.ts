@@ -1,6 +1,7 @@
 // API client for the Trip Weather Planner backend.
 // Falls back to inline mock data when the backend is unreachable, so the
 // frontend is demoable standalone (mirrors the backend's own mock mode).
+import { formatLocalDate } from "./localDate";
 
 export interface Town {
   code: string;
@@ -129,9 +130,9 @@ function mockHourlyForecast(town: Town, date: string): HourlyForecast[] {
 
 function mockForecast(town: Town, date: string): ForecastResult {
   const days = Array.from({ length: 7 }, (_, index) => {
-    const current = new Date(date);
+    const current = new Date(`${date}T00:00:00`);
     current.setDate(current.getDate() + index);
-    const isoDate = current.toISOString().slice(0, 10);
+    const isoDate = formatLocalDate(current);
     return {
       date: isoDate,
       temp_high_c: 29 + (index % 3),

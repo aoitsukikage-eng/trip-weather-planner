@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import TripForm from "./components/TripForm";
 import ForecastView from "./components/ForecastView";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
+import { formatLocalDate, startOfLocalDay } from "./lib/localDate";
 
 function todayIsoDate(): string {
-  const current = new Date();
-  current.setHours(0, 0, 0, 0);
-  return current.toISOString().slice(0, 10);
+  return formatLocalDate(startOfLocalDay());
 }
 
 export default function App() {
