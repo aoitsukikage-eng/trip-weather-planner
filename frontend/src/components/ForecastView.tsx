@@ -47,7 +47,24 @@ function buildLinePath(points: Array<{ x: number; y: number }>): string {
   return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 }
 
-function HourlyForecastChart({ hourly }: { hourly: HourlyForecast[] }) {
+export function getHourlyAnnotationStep(hourlyCount: number, plotWidth: number): number {
+  if (hourlyCount <= 1) return 1;
+  const slotGap = plotWidth / (hourlyCount - 1);
+  const minAnnotationGap = 56;
+  return Math.max(1, Math.ceil(minAnnotationGap / Math.max(slotGap, 1)));
+}
+
+function shouldShowHourlyAnnotation(index: number, total: number, step: number): boolean {
+  return index === 0 || index === total - 1 || index % step === 0;
+}
+
+function HourlyForecastChart({
+  hourly,
+  placeLabel,
+}: {
+  hourly: HourlyForecast[];
+  placeLabel: string;
+}) {
   const width = 960;
   const height = 360;
   const padding = { top: 118, right: 18, bottom: 62, left: 52 };
@@ -56,6 +73,7 @@ function HourlyForecastChart({ hourly }: { hourly: HourlyForecast[] }) {
   const popBaseY = 310;
   const popHeight = 42;
   const slotGap = hourly.length > 1 ? plotWidth / (hourly.length - 1) : 0;
+  const annotationStep = getHourlyAnnotationStep(hourly.length, plotWidth);
   const allTemps = hourly.flatMap((slot) =>
     [slot.temp_c, slot.apparent_temp_c].filter((value): value is number => value !== null),
   );
@@ -103,6 +121,7 @@ function HourlyForecastChart({ hourly }: { hourly: HourlyForecast[] }) {
       <div className="hourly-chart-header">
         <div>
           <h3>72 小時逐 3 小時預報</h3>
+          <small className="chart-place">{placeLabel}</small>
           <p>雙曲線為氣溫與體感溫度，底部藍柱為各時段降雨機率。</p>
         </div>
         <div className="chart-legend">
@@ -168,14 +187,26 @@ function HourlyForecastChart({ hourly }: { hourly: HourlyForecast[] }) {
             const x = padding.left + slotGap * index;
             const pop = slot.pop_percent ?? 0;
             const barHeight = (pop / 100) * popHeight;
+            const showAnnotation = shouldShowHourlyAnnotation(index, hourly.length, annotationStep);
             return (
               <g key={slot.time}>
-                <text x={x} y={64} textAnchor="middle" fontSize="18">
-                  {slotIcon(slot)}
-                </text>
-                <text x={x} y={90} textAnchor="middle" fontSize="11" fill="#3d556d">
-                  {formatHourLabel(slot.time)}
-                </text>
+                {showAnnotation && (
+                  <text x={x} y={64} textAnchor="middle" fontSize="18">
+                    {slotIcon(slot)}
+                  </text>
+                )}
+                {showAnnotation && (
+                  <text
+                    x={x}
+                    y={90}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#3d556d"
+                    data-testid="hourly-time-label"
+                  >
+                    {formatHourLabel(slot.time)}
+                  </text>
+                )}
                 <line
                   x1={x}
                   x2={x}
@@ -191,15 +222,17 @@ function HourlyForecastChart({ hourly }: { hourly: HourlyForecast[] }) {
                   rx="6"
                   fill={popColor(slot.pop_percent)}
                 />
-                <text
-                  x={x}
-                  y={popBaseY - barHeight - 6}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="#32526e"
-                >
-                  {slot.pop_percent ?? "—"}%
-                </text>
+                {showAnnotation && (
+                  <text
+                    x={x}
+                    y={popBaseY - barHeight - 6}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="#32526e"
+                  >
+                    {slot.pop_percent ?? "—"}%
+                  </text>
+                )}
               </g>
             );
           })}
@@ -245,11 +278,12 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
   const { forecast, ai_summary } = result;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
+  const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
 
   return (
     <section className="result">
       <h2>
-        {forecast.town.city} {forecast.town.name} · {formatDateLabel(forecast.target_date)}
+        {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
 
       <div className="summary-panel">
@@ -285,7 +319,9 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
         )}
       </div>
 
-      {forecast.hourly && forecast.hourly.length > 0 && <HourlyForecastChart hourly={forecast.hourly} />}
+      {forecast.hourly && forecast.hourly.length > 0 && (
+        <HourlyForecastChart hourly={forecast.hourly} placeLabel={placeLabel} />
+      )}
 
       <h3 className="section-title">
         本週預報
