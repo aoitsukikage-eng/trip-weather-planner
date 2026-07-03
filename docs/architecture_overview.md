@@ -9,7 +9,7 @@
 ## 設計原則
 
 1. **模組化單體,不做微服務**:規模尚小,微服務徒增複雜度;評審更重視「知道何時不該 over-engineer」。後端內部拆 `weather / poi / route / ai_summary` service。
-2. **Adapter 邊界**:`external → adapter → normalized schema → service → API`。換第三方只改 adapter,不動 schema 與前端。
+2. **Adapter 邊界**:`external → adapter → normalized schema → service → API`。換第三方只改 adapter,不動 schema 與前端。P1 延伸資料(日出日落、UV、town catalog)也走同一條 adapter 邊界,不讓前端直接打第三方。
 3. **後端代理第三方**:金鑰不進前端;統一格式、可加快取限流監控。
 4. **架構圖畫滿、部署精簡**:圖展示 production 系統理解,Phase 1 只部署脊椎(FastAPI + CWA adapter + 快取 + 靜態前端)。
 5. **零憑證可跑**:未設 key 時 mock 模式,讓每個階段都可 demo。
@@ -24,7 +24,7 @@
 
 ## 分階段
 
-- **Phase 1(基本盤,可交)**:選鄉鎮 + 日期 → 天氣預報 + AI 摘要;後端 + 前端 + 部署 + CI/CD + IaC。
+- **Phase 1(基本盤,可交)**:縣市/鄉鎮選擇 + 7 天日期 chips → 天氣預報 + 行前建議 + 日出日落 + UV;後端 + 前端 + 部署 + CI/CD + IaC。
 - **Phase 2**:TDX 景點,行前規劃頁。
 - **Phase 3**:TDX 交通建議(門到門需自組或搭 Google Directions)。
 - **Overlay**:聊天機器人入口——把服務當 tool,LLM 以 tool-calling 編排;與表單前端共用後端,是加法不是重做。
@@ -37,3 +37,17 @@
 - `git_workflow.md` — Git 協作
 - `iac_overview.md` — Terraform
 - `ai_driven.md` — AI 在產品與開發的角色 + 資料治理
+
+## P1 已出貨行為
+
+- `GET /api/towns`
+  - mock mode:回傳靜態 22 筆鄉鎮名單,維持零憑證可 demo。
+  - live mode:由 22 個 CWA `F-D0047-091` 縣市資料集彙整全臺約 368 筆鄉鎮市區,並以 process-local cache 保存。
+- `GET /api/forecast`
+  - weather forecast 仍維持 `adapter -> normalize -> service -> router` 契約。
+  - summary service 會聚焦 `target_date`,避免多日 horizon 時誤描述第一天。
+  - auxiliary data 追加 `A-B0062-001` 日出日落與 `O-A0005-001` UV,其中 UV 會再 join `O-A0001-001` 測站座標後,以 township centroid 選最近站。
+- 前端
+  - 表單拆成縣市 → 鄉鎮兩階段。
+  - 日期 UI 只允許 today..today+6,並以 `M/D（週X）` 顯示。
+  - 行前建議面板移除 AI branding,rule-based 模式保持誠實標示。

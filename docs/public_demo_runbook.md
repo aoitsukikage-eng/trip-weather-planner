@@ -121,7 +121,7 @@ gcloud storage rsync dist "gs://your-frontend-bucket-name" \
 - `curl https://<cloud-run-url>/` returns JSON with `name`, `version`, and
   `docs`.
 - `curl https://<cloud-run-url>/api/towns` returns `success: true`.
-- `curl "https://<cloud-run-url>/api/forecast?town=taipei-zhongzheng&date=YYYY-MM-DD"`
+- `curl "https://<cloud-run-url>/api/forecast?town=taipei-xinyi&date=YYYY-MM-DD"`
   returns normalized forecast payload.
 - Open the frontend URL and confirm:
   - Town list loads.
