@@ -19,6 +19,15 @@ export interface DailyForecast {
   advice_hint: string | null;
 }
 
+export interface HourlyForecast {
+  time: string;
+  temp_c: number | null;
+  apparent_temp_c: number | null;
+  pop_percent: number | null;
+  weather: string | null;
+  weather_code: string | null;
+}
+
 export interface SunriseSunset {
   county: string;
   target_date: string;
@@ -44,6 +53,7 @@ export interface ForecastResult {
     target_date: string;
     source_dataset: string;
     days: DailyForecast[];
+    hourly: HourlyForecast[] | null;
     sunrise_sunset: SunriseSunset | null;
     uv: UVInfo | null;
     generated_at: string;
@@ -71,6 +81,52 @@ function displayDate(isoDate: string): string {
   return `${Number(month)}/${Number(day)}`;
 }
 
+function toLocalIso(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:00:00`;
+}
+
+function stableUnit(...parts: string[]): number {
+  let hash = 2166136261;
+  const text = parts.join("|");
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) % 10000) / 10000;
+}
+
+function mockHourlyForecast(town: Town, date: string): HourlyForecast[] {
+  const start = new Date(`${date}T00:00:00`);
+  return Array.from({ length: 24 }, (_, index) => {
+    const slotTime = new Date(start);
+    slotTime.setHours(slotTime.getHours() + index * 3);
+    const slotIso = toLocalIso(slotTime);
+    const hour = slotTime.getHours();
+    const baseTemp = 30 - (town.lat - 22) * 1.1;
+    const diurnal = hour < 9 ? -4 : hour < 18 ? 3.5 : -1;
+    const noise = (stableUnit(town.code, slotIso) - 0.5) * 3;
+    const temp = Number((baseTemp + diurnal + noise).toFixed(1));
+    const apparentTemp = Number(
+      (temp + (stableUnit("at", town.code, slotIso) - 0.5) * 2.4).toFixed(1),
+    );
+    const pop = Math.round(stableUnit("pop", town.code, date, String(hour)) * 100);
+    const weatherCode = pop >= 70 ? "12" : pop >= 40 ? "07" : pop >= 20 ? "04" : "01";
+    const weather = pop >= 70 ? "陰時多雲短暫雨" : pop >= 40 ? "多雲時陰" : pop >= 20 ? "多雲" : "晴時多雲";
+    return {
+      time: slotIso,
+      temp_c: temp,
+      apparent_temp_c: apparentTemp,
+      pop_percent: pop,
+      weather,
+      weather_code: weatherCode,
+    };
+  });
+}
+
 function mockForecast(town: Town, date: string): ForecastResult {
   const days = Array.from({ length: 7 }, (_, index) => {
     const current = new Date(date);
@@ -91,6 +147,7 @@ function mockForecast(town: Town, date: string): ForecastResult {
       target_date: date,
       source_dataset: "mock:frontend-fallback",
       days,
+      hourly: mockHourlyForecast(town, date),
       sunrise_sunset: {
         county: town.city,
         target_date: date,
