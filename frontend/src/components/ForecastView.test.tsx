@@ -193,6 +193,7 @@ describe("ForecastView", () => {
 
     await user.click(secondCard);
     expect(secondCard.getAttribute("aria-pressed")).toBe("true");
+    expect(secondCard.getAttribute("aria-current")).toBe("date");
     expect(secondCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
     expect(screen.getByText(/7\/5（日） 日出 05:12 · 日落 18:48/)).not.toBeNull();
@@ -200,6 +201,7 @@ describe("ForecastView", () => {
     thirdCard.focus();
     await user.keyboard("{Enter}");
     expect(thirdCard.getAttribute("aria-pressed")).toBe("true");
+    expect(thirdCard.getAttribute("aria-current")).toBe("date");
     expect(thirdCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-06")).not.toBeNull();
     expect(screen.getByText(/7\/6（一） 日出 05:12 · 日落 18:48/)).not.toBeNull();

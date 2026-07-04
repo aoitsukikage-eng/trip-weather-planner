@@ -370,6 +370,7 @@ export default function ForecastView({
               const isSelected = day.date === forecast.target_date;
               return (
                 <button
+                  aria-current={isSelected ? "date" : undefined}
                   aria-pressed={isSelected}
                   aria-label={buildDayAriaLabel(day, isSelected)}
                   className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
