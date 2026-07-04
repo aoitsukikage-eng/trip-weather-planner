@@ -223,9 +223,11 @@ describe("App", () => {
     await screen.findByText("7/4 留意午後陣雨。");
     await user.click(screen.getByRole("button", { name: /7\/5/ }));
 
+    const selectedButton = await screen.findByRole("button", { name: /7\/5/ });
     await screen.findByText("7/5 白天炎熱，記得補水。");
     expect(screen.getByText("7/5（日） 日出 05:13 · 日落 18:48")).not.toBeNull();
-    expect(screen.getByRole("button", { name: /7\/5/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
+    expect(document.activeElement).toBe(selectedButton);
     expect(screen.queryByText("帶傘。")).toBeNull();
     expect(window.scrollY).toBe(scrollYBeforeClick);
   });

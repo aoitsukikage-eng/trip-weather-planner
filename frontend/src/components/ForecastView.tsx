@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { isMockForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 
 function popColor(pop: number | null): string {
@@ -314,6 +315,16 @@ export default function ForecastView({
   const uv = forecast.uv;
   const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
   const showMockBadge = isMockForecast(result);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const pendingFocusDateRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (loading || pendingFocusDateRef.current !== forecast.target_date) {
+      return;
+    }
+    buttonRefs.current[forecast.target_date]?.focus({ preventScroll: true });
+    pendingFocusDateRef.current = null;
+  }, [forecast.target_date, loading]);
 
   return (
     <section className="result" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
@@ -335,10 +346,21 @@ export default function ForecastView({
               return (
                 <button
                   aria-pressed={isSelected}
+                  aria-label={`${formatDateLabel(day.date)} ${day.weather ?? "天氣資料不足"} 高溫 ${
+                    day.temp_high_c ?? "—"
+                  } 度 低溫 ${day.temp_low_c ?? "—"} 度 降雨 ${day.max_pop_percent ?? "—"}%${
+                    isSelected ? "，已選擇" : ""
+                  }`}
                   className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
                   disabled={loading}
                   key={day.date}
-                  onClick={() => onSelectDate?.(day.date)}
+                  onClick={() => {
+                    pendingFocusDateRef.current = day.date;
+                    onSelectDate?.(day.date);
+                  }}
+                  ref={(node) => {
+                    buttonRefs.current[day.date] = node;
+                  }}
                   type="button"
                 >
                   <span className="day-strip-date">
@@ -352,8 +374,8 @@ export default function ForecastView({
                     {dailyWeatherIcon(day.weather)}
                   </span>
                   <span className="day-strip-temp">
-                    <strong>{day.temp_high_c ?? "—"}°</strong>
-                    <span>{day.temp_low_c ?? "—"}°</span>
+                    <strong>高 {day.temp_high_c ?? "—"}°</strong>
+                    <span>低 {day.temp_low_c ?? "—"}°</span>
                   </span>
                   <span className="day-strip-pop">降雨 {day.max_pop_percent ?? "—"}%</span>
                 </button>

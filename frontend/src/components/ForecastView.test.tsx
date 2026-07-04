@@ -119,11 +119,12 @@ describe("ForecastView", () => {
     expect(summaryPanel).not.toBeNull();
     expect(factGrid).not.toBeNull();
     expect(hourlyChart).not.toBeNull();
+    expect(screen.getByTestId("day-strip-scroll")).not.toBeNull();
     expect(buttons).toHaveLength(7);
     expect(buttons[0].textContent).toContain("7/4");
     expect(buttons[0].textContent).toContain("週六");
-    expect(buttons[0].textContent).toContain("32°");
-    expect(buttons[0].textContent).toContain("25°");
+    expect(buttons[0].textContent).toContain("高 32°");
+    expect(buttons[0].textContent).toContain("低 25°");
     expect(buttons[0].textContent).toContain("降雨 20%");
     expect(buttons[0].textContent).not.toContain("帶傘");
     expect(buttons[0].getAttribute("aria-pressed")).toBe("true");
