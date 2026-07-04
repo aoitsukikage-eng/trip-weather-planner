@@ -44,8 +44,7 @@ header h1 {
   backdrop-filter: blur(10px);
 }
 
-.form-field,
-.date-picker {
+.form-field {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -60,46 +59,6 @@ header h1 {
   background: #fdfefe;
   color: #17324d;
   font-size: 1rem;
-}
-
-.date-picker {
-  grid-column: 1 / -1;
-}
-
-.date-picker-title {
-  font-weight: 600;
-}
-
-.date-chip-row {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.date-chip {
-  padding: 0.75rem 0.4rem;
-  border: 1px solid #c9dae9;
-  border-radius: 14px;
-  background: #f7fbff;
-  color: #35506a;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition:
-    transform 150ms ease,
-    border-color 150ms ease,
-    background 150ms ease;
-}
-
-.date-chip:hover {
-  transform: translateY(-1px);
-  border-color: #5f93c4;
-}
-
-.date-chip-active {
-  border-color: #0d6fb8;
-  background: linear-gradient(135deg, #d7f0ff 0%, #c6e1ff 100%);
-  color: #0b4b7f;
-  box-shadow: inset 0 0 0 1px rgba(13, 111, 184, 0.15);
 }
 
 .submit-button {
@@ -150,6 +109,12 @@ header h1 {
   box-shadow: 0 12px 28px rgba(77, 110, 143, 0.1);
 }
 
+.summary-badges {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
 .badge {
   display: inline-block;
   background: #0e74b7;
@@ -158,6 +123,11 @@ header h1 {
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   margin-bottom: 0.55rem;
+}
+
+.badge-muted {
+  background: #e2eef7;
+  color: #355670;
 }
 
 .summary-panel p {
@@ -206,10 +176,14 @@ header h1 {
 }
 
 .hourly-chart-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) minmax(0, 1fr);
   gap: 1rem;
-  align-items: flex-start;
+  align-items: center;
+}
+
+.chart-copy {
+  min-width: 0;
 }
 
 .hourly-chart-header h3 {
@@ -217,16 +191,18 @@ header h1 {
   font-size: 1.15rem;
 }
 
+.chart-place-wrap {
+  display: flex;
+  justify-content: center;
+}
+
 .chart-place {
-  display: inline-block;
-  margin-top: 0.35rem;
-  padding: 0.18rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(38, 92, 136, 0.1);
-  color: #264f72;
-  font-size: 0.8rem;
+  margin: 0;
+  color: #1f4967;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
+  text-align: center;
 }
 
 .hourly-chart-header p,
@@ -286,11 +262,36 @@ header h1 {
 }
 
 .card {
+  text-align: left;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 16px;
   padding: 1rem;
   border: 1px solid rgba(123, 153, 180, 0.16);
   box-shadow: 0 10px 24px rgba(69, 100, 130, 0.08);
+}
+
+.card-button {
+  width: 100%;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.card-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(14, 116, 183, 0.45);
+  box-shadow: 0 16px 34px rgba(62, 102, 138, 0.14);
+}
+
+.card-button:focus-visible {
+  outline: 3px solid rgba(14, 116, 183, 0.28);
+  outline-offset: 3px;
+}
+
+.card-button:disabled {
+  cursor: wait;
 }
 
 .card-date {
@@ -351,15 +352,11 @@ footer {
     grid-template-columns: 1fr;
   }
 
-  .date-chip-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .hourly-chart-header {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .chart-legend {
-    justify-content: flex-start;
+    justify-content: center;
   }
 }

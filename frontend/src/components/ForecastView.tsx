@@ -1,4 +1,4 @@
-import type { ForecastResult, HourlyForecast } from "../lib/api";
+import { isMockForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -119,10 +119,14 @@ function HourlyForecastChart({
   return (
     <section className="hourly-chart">
       <div className="hourly-chart-header">
-        <div>
+        <div className="chart-copy">
           <h3>72 小時逐 3 小時預報</h3>
-          <small className="chart-place">{placeLabel}</small>
           <p>雙曲線為氣溫與體感溫度，底部藍柱為各時段降雨機率。</p>
+        </div>
+        <div className="chart-place-wrap">
+          <p className="chart-place" data-testid="chart-place">
+            {placeLabel}
+          </p>
         </div>
         <div className="chart-legend">
           <span className="legend-item">
@@ -274,22 +278,41 @@ function HourlyForecastChart({
   );
 }
 
-export default function ForecastView({ result }: { result: ForecastResult }) {
+function formatSunriseSourceLabel(sourceDate: string): string {
+  return `參考 ${sourceDate} 天文資料`;
+}
+
+function formatUvSourceLabel(sourceType: string): string {
+  return sourceType === "observation" ? "觀測值" : "預報值";
+}
+
+export default function ForecastView({
+  result,
+  loading = false,
+  onSelectDate,
+}: {
+  result: ForecastResult;
+  loading?: boolean;
+  onSelectDate?: (date: string) => void;
+}) {
   const { forecast, ai_summary } = result;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
   const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
+  const showMockBadge = isMockForecast(result);
 
   return (
-    <section className="result">
+    <section className="result" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
       <h2>
         {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
 
-      <div className="summary-panel">
-        <span className="badge">行前建議</span>
+      <div className="summary-panel" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
+        <div className="summary-badges">
+          <span className="badge">行前建議</span>
+          {showMockBadge && <span className="badge badge-muted">示範資料</span>}
+        </div>
         <p>{ai_summary.text}</p>
-        <small>模式:{ai_summary.mode} · 資料來源:{forecast.source_dataset}</small>
       </div>
 
       <div className="fact-grid">
@@ -297,11 +320,12 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
           <article className="fact-card">
             <h3>日出日落</h3>
             <p>
-              日出 {sunrise.sunrise_time ?? "—"} · 日落 {sunrise.sunset_time ?? "—"}
+              {formatDateLabel(forecast.target_date)} 日出 {sunrise.sunrise_time ?? "—"} · 日落{" "}
+              {sunrise.sunset_time ?? "—"}
             </p>
             <small>
               {sunrise.county}
-              {sunrise.is_approximate ? ` · 對應資料日 ${sunrise.source_date}` : ""}
+              {sunrise.is_approximate ? ` · ${formatSunriseSourceLabel(sunrise.source_date)}` : ""}
             </small>
           </article>
         )}
@@ -312,8 +336,8 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
               指數 {uv.value ?? "—"} · {uv.level ?? "資料不足"}
             </p>
             <small>
-              {uv.source_type === "observation" ? "觀測值" : "預報值"}
-              {uv.station_name ? ` · 測站 ${uv.station_name}` : ""}
+              {formatUvSourceLabel(uv.source_type)}
+              {!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}
             </small>
           </article>
         )}
@@ -325,19 +349,21 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
 
       <h3 className="section-title">
         本週預報
-        {forecast.days.length > 1
-          ? `（共 ${forecast.days.length} 天,已標示旅遊日 ${formatDateLabel(forecast.target_date)}）`
-          : ""}
+        {forecast.days.length > 1 ? `（共 ${forecast.days.length} 天）` : ""}
       </h3>
       <div className="cards">
         {forecast.days.map((day) => (
-          <div
-            className={`card${day.date === forecast.target_date ? " card-target" : ""}`}
+          <button
+            aria-pressed={day.date === forecast.target_date}
+            className={`card card-button${day.date === forecast.target_date ? " card-target" : ""}`}
+            disabled={loading}
             key={day.date}
+            onClick={() => onSelectDate?.(day.date)}
+            type="button"
           >
             <div className="card-date">
               {formatDateLabel(day.date)}
-              {day.date === forecast.target_date ? " ★" : ""}
+              {day.date === forecast.target_date ? " · 已選擇" : ""}
             </div>
             <div className="card-weather">{day.weather ?? "—"}</div>
             <div className="card-temp">
@@ -354,7 +380,7 @@ export default function ForecastView({ result }: { result: ForecastResult }) {
             </div>
             <div className="card-pop">降雨機率 {day.max_pop_percent ?? "—"}%</div>
             <div className="card-advice">{day.advice_hint}</div>
-          </div>
+          </button>
         ))}
       </div>
     </section>

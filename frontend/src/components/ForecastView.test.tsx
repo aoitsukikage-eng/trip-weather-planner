@@ -34,7 +34,7 @@ function buildResult(
         lon: 121.5,
       },
       target_date: "2026-07-04",
-      source_dataset: "mock:test",
+      source_dataset: "cwa-live",
       days: [
         {
           date: "2026-07-04",
@@ -44,10 +44,33 @@ function buildResult(
           weather: "多雲",
           advice_hint: "帶傘。",
         },
+        {
+          date: "2026-07-05",
+          temp_high_c: 31,
+          temp_low_c: 25,
+          max_pop_percent: 20,
+          weather: "晴時多雲",
+          advice_hint: "適合輕鬆出遊。",
+        },
       ],
       hourly,
-      sunrise_sunset: null,
-      uv: null,
+      sunrise_sunset: {
+        county: city,
+        target_date: "2026-07-04",
+        source_date: "2026-06-29",
+        sunrise_time: "05:12",
+        sunset_time: "18:48",
+        is_approximate: true,
+      },
+      uv: {
+        value: 8,
+        level: "過量",
+        source_label: "目前紫外線",
+        source_type: "observation",
+        observed_at: "2026-07-04T12:00:00+08:00",
+        station_id: "466920",
+        station_name: "臺北",
+      },
       generated_at: "2026-07-04T00:00:00Z",
     },
     ai_summary: {
@@ -71,6 +94,14 @@ describe("ForecastView", () => {
 
     expect(screen.getByText("臺北市 信義區")).not.toBeNull();
     expect(screen.queryByText("新北市 貢寮區")).toBeNull();
+  });
+
+  test("shows selected sunrise date and centered chart place label", () => {
+    render(<ForecastView result={buildResult("臺北市", "信義區")} />);
+
+    expect(screen.getByText(/7\/4（六） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
+    expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {

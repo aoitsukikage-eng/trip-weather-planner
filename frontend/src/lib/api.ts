@@ -223,6 +223,10 @@ export async function getForecast(town: Town, date: string): Promise<ForecastRes
   );
 }
 
+export function isMockForecast(result: ForecastResult): boolean {
+  return result.forecast.source_dataset.toLowerCase().includes("mock");
+}
+
 function _isNetworkFailure(error: unknown): boolean {
   return error instanceof TypeError;
 }

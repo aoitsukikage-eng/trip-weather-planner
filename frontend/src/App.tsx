@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TripForm from "./components/TripForm";
 import ForecastView from "./components/ForecastView";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
@@ -13,6 +13,8 @@ export default function App() {
   const [result, setResult] = useState<ForecastResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTown, setSelectedTown] = useState<Town | null>(null);
+  const activeRequestRef = useRef(0);
 
   useEffect(() => {
     getTowns().then(setTowns);
@@ -22,29 +24,51 @@ export default function App() {
     if (!towns.length || result) {
       return;
     }
-    void handleSubmit(towns[0], todayIsoDate());
+    void runForecastQuery(towns[0], todayIsoDate());
   }, [towns, result]);
 
-  const handleSubmit = async (town: Town, date: string) => {
+  const runForecastQuery = async (town: Town, date: string) => {
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
+    setSelectedTown(town);
     setLoading(true);
     setError(null);
     try {
-      setResult(await getForecast(town, date));
+      const nextResult = await getForecast(town, date);
+      if (requestId !== activeRequestRef.current) {
+        return;
+      }
+      setResult(nextResult);
     } catch (caughtError) {
+      if (requestId !== activeRequestRef.current) {
+        return;
+      }
       setResult(null);
       setError(caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。");
     } finally {
-      setLoading(false);
+      if (requestId === activeRequestRef.current) {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleSubmit = async (town: Town) => {
+    await runForecastQuery(town, todayIsoDate());
+  };
+
+  const handleSelectDate = async (date: string) => {
+    const town = result?.forecast.town ?? selectedTown;
+    if (!town) {
+      return;
+    }
+    await runForecastQuery(town, date);
   };
 
   return (
     <main className="app">
       <header>
         <h1>旅遊行前天氣規劃</h1>
-        <p className="tagline">
-          Trip Weather Planner — 選目的地與日期,取得天氣預報與行前建議
-        </p>
+        <p className="tagline">選擇目的地後即可查看一週天氣、未來 72 小時趨勢與行前提醒。</p>
       </header>
 
       {towns.length > 0 ? (
@@ -60,12 +84,10 @@ export default function App() {
         </section>
       )}
 
-      {result && <ForecastView result={result} />}
+      {result && <ForecastView result={result} loading={loading} onSelectDate={handleSelectDate} />}
 
       <footer>
-        <small>
-          天氣資料:中央氣象署開放資料(未設 key 時為 mock)。景點與交通為後續階段。
-        </small>
+        <small>出發前先看一眼天氣與日照資訊，行程安排更從容。</small>
       </footer>
     </main>
   );
