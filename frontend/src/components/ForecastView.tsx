@@ -13,6 +13,11 @@ function formatDateLabel(isoDate: string): string {
   return `${current.getMonth() + 1}/${current.getDate()}（${weekday}）`;
 }
 
+function formatWeekdayLabel(isoDate: string): string {
+  const current = new Date(`${isoDate}T00:00:00`);
+  return `週${["日", "一", "二", "三", "四", "五", "六"][current.getDay()]}`;
+}
+
 function formatDayLabel(isoDateTime: string): string {
   const current = new Date(isoDateTime);
   return `${current.getMonth() + 1}/${current.getDate()}`;
@@ -36,6 +41,15 @@ function slotIcon(slot: HourlyForecast): string {
   }
 
   const weather = slot.weather ?? "";
+  if (weather.includes("雷")) return "⛈️";
+  if (weather.includes("雨")) return "🌧️";
+  if (weather.includes("晴")) return "☀️";
+  if (weather.includes("雲") || weather.includes("陰")) return "☁️";
+  return "·";
+}
+
+function dailyWeatherIcon(weather: string | null): string {
+  if (!weather) return "·";
   if (weather.includes("雷")) return "⛈️";
   if (weather.includes("雨")) return "🌧️";
   if (weather.includes("晴")) return "☀️";
@@ -307,6 +321,48 @@ export default function ForecastView({
         {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
 
+      <section className="day-strip-section" aria-label="七天預報選擇列">
+        <div className="day-strip-header">
+          <h3 className="section-title">
+            本週預報
+            {forecast.days.length > 1 ? `（共 ${forecast.days.length} 天）` : ""}
+          </h3>
+        </div>
+        <div className="day-strip-scroll" data-testid="day-strip-scroll">
+          <div className="day-strip" data-testid="day-strip">
+            {forecast.days.map((day) => {
+              const isSelected = day.date === forecast.target_date;
+              return (
+                <button
+                  aria-pressed={isSelected}
+                  className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
+                  disabled={loading}
+                  key={day.date}
+                  onClick={() => onSelectDate?.(day.date)}
+                  type="button"
+                >
+                  <span className="day-strip-date">
+                    <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
+                    <span className="day-strip-weekday">
+                      {formatWeekdayLabel(day.date)}
+                      {isSelected ? " · 已選擇" : ""}
+                    </span>
+                  </span>
+                  <span aria-hidden="true" className="day-strip-icon">
+                    {dailyWeatherIcon(day.weather)}
+                  </span>
+                  <span className="day-strip-temp">
+                    <strong>{day.temp_high_c ?? "—"}°</strong>
+                    <span>{day.temp_low_c ?? "—"}°</span>
+                  </span>
+                  <span className="day-strip-pop">降雨 {day.max_pop_percent ?? "—"}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <div className="summary-panel" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
         <div className="summary-badges">
           <span className="badge">行前建議</span>
@@ -346,43 +402,6 @@ export default function ForecastView({
       {forecast.hourly && forecast.hourly.length > 0 && (
         <HourlyForecastChart hourly={forecast.hourly} placeLabel={placeLabel} />
       )}
-
-      <h3 className="section-title">
-        本週預報
-        {forecast.days.length > 1 ? `（共 ${forecast.days.length} 天）` : ""}
-      </h3>
-      <div className="cards">
-        {forecast.days.map((day) => (
-          <button
-            aria-pressed={day.date === forecast.target_date}
-            className={`card card-button${day.date === forecast.target_date ? " card-target" : ""}`}
-            disabled={loading}
-            key={day.date}
-            onClick={() => onSelectDate?.(day.date)}
-            type="button"
-          >
-            <div className="card-date">
-              {formatDateLabel(day.date)}
-              {day.date === forecast.target_date ? " · 已選擇" : ""}
-            </div>
-            <div className="card-weather">{day.weather ?? "—"}</div>
-            <div className="card-temp">
-              {day.temp_low_c ?? "—"}° / <strong>{day.temp_high_c ?? "—"}°</strong>
-            </div>
-            <div className="pop-bar">
-              <div
-                className="pop-fill"
-                style={{
-                  width: `${day.max_pop_percent ?? 0}%`,
-                  background: popColor(day.max_pop_percent),
-                }}
-              />
-            </div>
-            <div className="card-pop">降雨機率 {day.max_pop_percent ?? "—"}%</div>
-            <div className="card-advice">{day.advice_hint}</div>
-          </button>
-        ))}
-      </div>
     </section>
   );
 }

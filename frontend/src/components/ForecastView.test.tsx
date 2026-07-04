@@ -24,6 +24,16 @@ function buildResult(
   town: string,
   hourly: HourlyForecast[] = buildHourly(6),
 ): ForecastResult {
+  const dates = [
+    "2026-07-04",
+    "2026-07-05",
+    "2026-07-06",
+    "2026-07-07",
+    "2026-07-08",
+    "2026-07-09",
+    "2026-07-10",
+  ];
+
   return {
     forecast: {
       town: {
@@ -35,24 +45,14 @@ function buildResult(
       },
       target_date: "2026-07-04",
       source_dataset: "cwa-live",
-      days: [
-        {
-          date: "2026-07-04",
-          temp_high_c: 32,
-          temp_low_c: 26,
-          max_pop_percent: 40,
-          weather: "多雲",
-          advice_hint: "帶傘。",
-        },
-        {
-          date: "2026-07-05",
-          temp_high_c: 31,
-          temp_low_c: 25,
-          max_pop_percent: 20,
-          weather: "晴時多雲",
-          advice_hint: "適合輕鬆出遊。",
-        },
-      ],
+      days: dates.map((date, index) => ({
+        date,
+        temp_high_c: 32 - (index % 3),
+        temp_low_c: 25 - (index % 2),
+        max_pop_percent: 20 + index * 10,
+        weather: index % 2 === 0 ? "多雲" : "晴時多雲",
+        advice_hint: index % 2 === 0 ? "帶傘。" : "適合輕鬆出遊。",
+      })),
       hourly,
       sunrise_sunset: {
         county: city,
@@ -102,6 +102,40 @@ describe("ForecastView", () => {
     expect(screen.getByText(/7\/4（六） 日出 05:12 · 日落 18:48/)).not.toBeNull();
     expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
+  });
+
+  test("renders the day strip before advice and chart with seven compact cells", () => {
+    const { container } = render(<ForecastView result={buildResult("臺北市", "信義區")} />);
+
+    const result = container.querySelector(".result");
+    const dayStripSection = container.querySelector(".day-strip-section");
+    const summaryPanel = container.querySelector(".summary-panel");
+    const factGrid = container.querySelector(".fact-grid");
+    const hourlyChart = container.querySelector(".hourly-chart");
+    const buttons = screen.getAllByRole("button");
+
+    expect(result).not.toBeNull();
+    expect(dayStripSection).not.toBeNull();
+    expect(summaryPanel).not.toBeNull();
+    expect(factGrid).not.toBeNull();
+    expect(hourlyChart).not.toBeNull();
+    expect(buttons).toHaveLength(7);
+    expect(buttons[0].textContent).toContain("7/4");
+    expect(buttons[0].textContent).toContain("週六");
+    expect(buttons[0].textContent).toContain("32°");
+    expect(buttons[0].textContent).toContain("25°");
+    expect(buttons[0].textContent).toContain("降雨 20%");
+    expect(buttons[0].textContent).not.toContain("帶傘");
+    expect(buttons[0].getAttribute("aria-pressed")).toBe("true");
+    expect(
+      dayStripSection?.compareDocumentPosition(summaryPanel as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+    expect(
+      summaryPanel?.compareDocumentPosition(factGrid as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+    expect(
+      factGrid?.compareDocumentPosition(hourlyChart as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {

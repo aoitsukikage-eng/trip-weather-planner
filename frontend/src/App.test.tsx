@@ -44,6 +44,46 @@ const liveForecastBody = {
           weather: "晴時多雲",
           advice_hint: "記得補水。",
         },
+        {
+          date: "2026-07-06",
+          temp_high_c: 32,
+          temp_low_c: 25,
+          max_pop_percent: 30,
+          weather: "多雲",
+          advice_hint: "午後留意陣雨。",
+        },
+        {
+          date: "2026-07-07",
+          temp_high_c: 33,
+          temp_low_c: 26,
+          max_pop_percent: 50,
+          weather: "陰短暫雨",
+          advice_hint: "雨具備用。",
+        },
+        {
+          date: "2026-07-08",
+          temp_high_c: 34,
+          temp_low_c: 26,
+          max_pop_percent: 60,
+          weather: "多雲時陰",
+          advice_hint: "留意悶熱。",
+        },
+        {
+          date: "2026-07-09",
+          temp_high_c: 33,
+          temp_low_c: 25,
+          max_pop_percent: 30,
+          weather: "晴時多雲",
+          advice_hint: "適合外出。",
+        },
+        {
+          date: "2026-07-10",
+          temp_high_c: 32,
+          temp_low_c: 25,
+          max_pop_percent: 20,
+          weather: "多雲",
+          advice_hint: "補水防曬。",
+        },
       ],
       hourly: [
         {
@@ -165,6 +205,7 @@ describe("App", () => {
   test("clicking a day card re-queries that date and updates advice plus sunrise", async () => {
     const user = userEvent.setup();
     let forecastCallCount = 0;
+    const scrollYBeforeClick = window.scrollY;
     vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
       const url = String(input);
       if (url.includes("/api/towns")) {
@@ -184,6 +225,8 @@ describe("App", () => {
 
     await screen.findByText("7/5 白天炎熱，記得補水。");
     expect(screen.getByText("7/5（日） 日出 05:13 · 日落 18:48")).not.toBeNull();
-    expect(screen.getByRole("button", { name: /7\/5（日） · 已選擇/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /7\/5/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByText("帶傘。")).toBeNull();
+    expect(window.scrollY).toBe(scrollYBeforeClick);
   });
 });

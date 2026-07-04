@@ -81,6 +81,10 @@ header h1 {
   margin-top: 2rem;
 }
 
+.result h2 {
+  margin-bottom: 1rem;
+}
+
 .error-panel {
   margin-top: 1.25rem;
   padding: 0.95rem 1.1rem;
@@ -255,91 +259,124 @@ header h1 {
   display: block;
 }
 
-.cards {
+.day-strip-section {
+  margin: 1rem 0 1.2rem;
+}
+
+.day-strip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.day-strip-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.35rem;
+}
+
+.day-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
-  gap: 1rem;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(116px, 1fr);
+  gap: 0.75rem;
+  min-width: max-content;
 }
 
-.card {
+.day-strip-card {
   text-align: left;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 16px;
-  padding: 1rem;
+  display: grid;
+  grid-template-areas:
+    "date icon"
+    "temp icon"
+    "pop pop";
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 0.65rem;
+  align-items: center;
+  min-width: 116px;
+  padding: 0.78rem 0.82rem;
+  border-radius: 18px;
   border: 1px solid rgba(123, 153, 180, 0.16);
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 10px 24px rgba(69, 100, 130, 0.08);
-}
-
-.card-button {
-  width: 100%;
   cursor: pointer;
   transition:
     transform 150ms ease,
     border-color 150ms ease,
-    box-shadow 150ms ease;
+    box-shadow 150ms ease,
+    background-color 150ms ease;
 }
 
-.card-button:hover:not(:disabled) {
+.day-strip-card:hover:not(:disabled) {
   transform: translateY(-2px);
   border-color: rgba(14, 116, 183, 0.45);
   box-shadow: 0 16px 34px rgba(62, 102, 138, 0.14);
 }
 
-.card-button:focus-visible {
+.day-strip-card:focus-visible {
   outline: 3px solid rgba(14, 116, 183, 0.28);
   outline-offset: 3px;
 }
 
-.card-button:disabled {
+.day-strip-card:disabled {
   cursor: wait;
 }
 
-.card-date {
+.day-strip-card-selected {
+  border: 2px solid #0e74b7;
+  background: linear-gradient(180deg, rgba(231, 245, 255, 0.98), rgba(245, 250, 255, 0.96));
+  box-shadow: 0 14px 30px rgba(14, 116, 183, 0.18);
+}
+
+.day-strip-date {
+  grid-area: date;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.day-strip-date-main {
   font-weight: 700;
+  font-size: 1rem;
 }
 
-.card-weather {
+.day-strip-weekday {
+  color: #5b7287;
+  font-size: 0.8rem;
+}
+
+.day-strip-icon {
+  grid-area: icon;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.day-strip-temp {
+  grid-area: temp;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.92rem;
   color: #47637a;
-  margin: 0.35rem 0;
 }
 
-.card-temp {
-  font-size: 1.4rem;
+.day-strip-temp strong {
+  font-size: 1.1rem;
+  color: #17324d;
 }
 
-.pop-bar {
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-  margin: 0.6rem 0 0.3rem;
-}
-
-.pop-fill {
-  height: 100%;
-}
-
-.card-pop {
-  font-size: 0.85rem;
+.day-strip-pop {
+  grid-area: pop;
+  font-size: 0.82rem;
   color: #334155;
-}
-
-.card-advice {
-  font-size: 0.85rem;
-  color: #475569;
-  margin-top: 0.5rem;
-  line-height: 1.5;
 }
 
 .section-title {
-  margin: 1.6rem 0 0.8rem;
+  margin: 0;
   font-size: 1.1rem;
   color: #334155;
-}
-
-.card-target {
-  border: 2px solid #0e74b7;
-  box-shadow: 0 12px 30px rgba(14, 116, 183, 0.18);
 }
 
 footer {
