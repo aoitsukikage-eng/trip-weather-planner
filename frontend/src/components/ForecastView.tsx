@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { isMockForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
+import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -301,6 +301,22 @@ function formatUvSourceLabel(sourceType: string): string {
   return sourceType === "observation" ? "觀測值" : "預報值";
 }
 
+function buildDayAriaLabel(day: DailyForecast, isSelected: boolean): string {
+  const parts = [
+    formatDateLabel(day.date),
+    day.weather ?? "天氣資料不足",
+    `高溫 ${day.temp_high_c ?? "—"} 度`,
+    `低溫 ${day.temp_low_c ?? "—"} 度`,
+  ];
+  if (day.max_pop_percent !== null) {
+    parts.push(`降雨 ${day.max_pop_percent}%`);
+  }
+  if (isSelected) {
+    parts.push("已選擇");
+  }
+  return parts.join(" ");
+}
+
 export default function ForecastView({
   result,
   loading = false,
@@ -340,18 +356,19 @@ export default function ForecastView({
           </h3>
         </div>
         <div className="day-strip-scroll" data-testid="day-strip-scroll">
-          <div className="day-strip" data-testid="day-strip">
+          <div
+            className="day-strip"
+            data-testid="day-strip"
+            style={{ ["--day-count" as string]: forecast.days.length }}
+          >
             {forecast.days.map((day) => {
               const isSelected = day.date === forecast.target_date;
               return (
                 <button
                   aria-pressed={isSelected}
-                  aria-label={`${formatDateLabel(day.date)} ${day.weather ?? "天氣資料不足"} 高溫 ${
-                    day.temp_high_c ?? "—"
-                  } 度 低溫 ${day.temp_low_c ?? "—"} 度 降雨 ${day.max_pop_percent ?? "—"}%${
-                    isSelected ? "，已選擇" : ""
-                  }`}
+                  aria-label={buildDayAriaLabel(day, isSelected)}
                   className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
+                  data-testid={`day-card-${day.date}`}
                   disabled={loading}
                   key={day.date}
                   onClick={() => {
@@ -363,21 +380,24 @@ export default function ForecastView({
                   }}
                   type="button"
                 >
-                  <span className="day-strip-date">
-                    <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
-                    <span className="day-strip-weekday">
-                      {formatWeekdayLabel(day.date)}
-                      {isSelected ? " · 已選擇" : ""}
+                  <span className="day-strip-head">
+                    <span aria-hidden="true" className="day-strip-icon">
+                      {dailyWeatherIcon(day.weather)}
+                    </span>
+                    <span className="day-strip-date">
+                      <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
+                      <span className="day-strip-weekday">
+                        {formatWeekdayLabel(day.date)}
+                        {isSelected ? " · 已選擇" : ""}
+                      </span>
                     </span>
                   </span>
-                  <span aria-hidden="true" className="day-strip-icon">
-                    {dailyWeatherIcon(day.weather)}
-                  </span>
+                  <span className="day-strip-weather">{day.weather ?? "天氣資料不足"}</span>
                   <span className="day-strip-temp">
                     <strong>高 {day.temp_high_c ?? "—"}°</strong>
                     <span>低 {day.temp_low_c ?? "—"}°</span>
                   </span>
-                  <span className="day-strip-pop">降雨 {day.max_pop_percent ?? "—"}%</span>
+                  {day.max_pop_percent !== null && <span className="day-strip-pop">降雨 {day.max_pop_percent}%</span>}
                 </button>
               );
             })}

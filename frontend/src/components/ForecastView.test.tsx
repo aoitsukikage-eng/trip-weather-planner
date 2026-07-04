@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test } from "vitest";
 import ForecastView, { getHourlyAnnotationStep } from "./ForecastView";
 import type { ForecastResult, HourlyForecast } from "../lib/api";
@@ -23,6 +25,7 @@ function buildResult(
   city: string,
   town: string,
   hourly: HourlyForecast[] = buildHourly(6),
+  dayOverrides: Partial<ForecastResult["forecast"]["days"][number]>[] = [],
 ): ForecastResult {
   const dates = [
     "2026-07-04",
@@ -52,6 +55,7 @@ function buildResult(
         max_pop_percent: 20 + index * 10,
         weather: index % 2 === 0 ? "多雲" : "晴時多雲",
         advice_hint: index % 2 === 0 ? "帶傘。" : "適合輕鬆出遊。",
+        ...dayOverrides[index],
       })),
       hourly,
       sunrise_sunset: {
@@ -114,6 +118,8 @@ describe("ForecastView", () => {
     const hourlyChart = container.querySelector(".hourly-chart");
     const buttons = screen.getAllByRole("button");
     const firstButton = buttons[0];
+    const firstCardHeader = container.querySelector(".day-strip-head");
+    const dayStrip = screen.getByTestId("day-strip");
 
     expect(result).not.toBeNull();
     expect(dayStripSection).not.toBeNull();
@@ -124,10 +130,13 @@ describe("ForecastView", () => {
       throw new Error("expected layout sections to exist");
     }
     expect(screen.getByTestId("day-strip-scroll")).not.toBeNull();
+    expect(dayStrip.getAttribute("style")).toContain("--day-count: 7");
     expect(buttons).toHaveLength(7);
     expect(firstButton).toBeDefined();
+    expect(firstCardHeader?.firstElementChild?.className).toContain("day-strip-icon");
     expect(firstButton?.textContent).toContain("7/4");
     expect(firstButton?.textContent).toContain("週六");
+    expect(firstButton?.textContent).toContain("多雲");
     expect(firstButton?.textContent).toContain("高 32°");
     expect(firstButton?.textContent).toContain("低 25°");
     expect(firstButton?.textContent).toContain("降雨 20%");
@@ -136,6 +145,63 @@ describe("ForecastView", () => {
     expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
+  test("hides the rain row entirely when PoP is null", () => {
+    render(
+      <ForecastView
+        result={buildResult("臺北市", "信義區", buildHourly(6), [{}, {}, {}, { max_pop_percent: null }])}
+      />,
+    );
+
+    const fourthCard = screen.getByTestId("day-card-2026-07-07");
+
+    expect(fourthCard.textContent).toContain("7/7");
+    expect(fourthCard.textContent).not.toContain("降雨");
+    expect(fourthCard.querySelector(".day-strip-pop")).toBeNull();
+    expect(fourthCard.getAttribute("aria-label")).not.toContain("降雨");
+  });
+
+  test("keeps click and keyboard selection interactions in place", async () => {
+    function Harness() {
+      const [targetDate, setTargetDate] = useState("2026-07-04");
+      const result = buildResult("臺北市", "信義區");
+      return (
+        <ForecastView
+          onSelectDate={setTargetDate}
+          result={{
+            ...result,
+            forecast: {
+              ...result.forecast,
+              target_date: targetDate,
+            },
+            ai_summary: {
+              ...result.ai_summary,
+              text: `summary for ${targetDate}`,
+            },
+          }}
+        />
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const secondCard = screen.getByTestId("day-card-2026-07-05");
+    const thirdCard = screen.getByTestId("day-card-2026-07-06");
+
+    await user.click(secondCard);
+    expect(secondCard.getAttribute("aria-pressed")).toBe("true");
+    expect(secondCard).toBe(document.activeElement);
+    expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
+    expect(screen.getByText(/7\/5（日） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+
+    thirdCard.focus();
+    await user.keyboard("{Enter}");
+    expect(thirdCard.getAttribute("aria-pressed")).toBe("true");
+    expect(thirdCard).toBe(document.activeElement);
+    expect(screen.getByText("summary for 2026-07-06")).not.toBeNull();
+    expect(screen.getByText(/7\/6（一） 日出 05:12 · 日落 18:48/)).not.toBeNull();
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {
