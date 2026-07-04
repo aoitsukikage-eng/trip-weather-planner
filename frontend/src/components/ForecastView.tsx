@@ -301,6 +301,10 @@ function formatUvSourceLabel(sourceType: string): string {
   return sourceType === "observation" ? "觀測值" : "預報值";
 }
 
+function hasDailyPop(pop: number | null): pop is number {
+  return pop !== null;
+}
+
 function buildDayAriaLabel(day: DailyForecast, isSelected: boolean): string {
   const parts = [
     formatDateLabel(day.date),
@@ -308,7 +312,7 @@ function buildDayAriaLabel(day: DailyForecast, isSelected: boolean): string {
     `高溫 ${day.temp_high_c ?? "—"} 度`,
     `低溫 ${day.temp_low_c ?? "—"} 度`,
   ];
-  if (day.max_pop_percent !== null) {
+  if (hasDailyPop(day.max_pop_percent)) {
     parts.push(`降雨 ${day.max_pop_percent}%`);
   }
   if (isSelected) {
@@ -397,7 +401,9 @@ export default function ForecastView({
                     <strong>高 {day.temp_high_c ?? "—"}°</strong>
                     <span>低 {day.temp_low_c ?? "—"}°</span>
                   </span>
-                  {day.max_pop_percent !== null && <span className="day-strip-pop">降雨 {day.max_pop_percent}%</span>}
+                  {hasDailyPop(day.max_pop_percent) && (
+                    <span className="day-strip-pop">降雨 {day.max_pop_percent}%</span>
+                  )}
                 </button>
               );
             })}
