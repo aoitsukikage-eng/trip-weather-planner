@@ -113,30 +113,29 @@ describe("ForecastView", () => {
     const factGrid = container.querySelector(".fact-grid");
     const hourlyChart = container.querySelector(".hourly-chart");
     const buttons = screen.getAllByRole("button");
+    const firstButton = buttons[0];
 
     expect(result).not.toBeNull();
     expect(dayStripSection).not.toBeNull();
     expect(summaryPanel).not.toBeNull();
     expect(factGrid).not.toBeNull();
     expect(hourlyChart).not.toBeNull();
+    if (!dayStripSection || !summaryPanel || !factGrid || !hourlyChart) {
+      throw new Error("expected layout sections to exist");
+    }
     expect(screen.getByTestId("day-strip-scroll")).not.toBeNull();
     expect(buttons).toHaveLength(7);
-    expect(buttons[0].textContent).toContain("7/4");
-    expect(buttons[0].textContent).toContain("週六");
-    expect(buttons[0].textContent).toContain("高 32°");
-    expect(buttons[0].textContent).toContain("低 25°");
-    expect(buttons[0].textContent).toContain("降雨 20%");
-    expect(buttons[0].textContent).not.toContain("帶傘");
-    expect(buttons[0].getAttribute("aria-pressed")).toBe("true");
-    expect(
-      dayStripSection?.compareDocumentPosition(summaryPanel as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(
-      summaryPanel?.compareDocumentPosition(factGrid as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(
-      factGrid?.compareDocumentPosition(hourlyChart as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
+    expect(firstButton).toBeDefined();
+    expect(firstButton?.textContent).toContain("7/4");
+    expect(firstButton?.textContent).toContain("週六");
+    expect(firstButton?.textContent).toContain("高 32°");
+    expect(firstButton?.textContent).toContain("低 25°");
+    expect(firstButton?.textContent).toContain("降雨 20%");
+    expect(firstButton?.textContent).not.toContain("帶傘");
+    expect(firstButton?.getAttribute("aria-pressed")).toBe("true");
+    expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {

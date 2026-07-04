@@ -279,6 +279,7 @@ header h1 {
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   padding-bottom: 0.35rem;
+  scrollbar-gutter: stable both-edges;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -392,6 +393,15 @@ footer {
 @media (max-width: 760px) {
   .trip-form {
     grid-template-columns: 1fr;
+  }
+
+  .day-strip {
+    grid-auto-columns: 112px;
+  }
+
+  .day-strip-scroll {
+    margin-inline: -0.15rem;
+    padding-inline: 0.15rem;
   }
 
   .hourly-chart-header {
