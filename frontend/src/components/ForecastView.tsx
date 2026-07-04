@@ -385,7 +385,12 @@ export default function ForecastView({
         </div>
       </section>
 
-      <div className="summary-panel" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
+      <div
+        aria-live="polite"
+        className="summary-panel"
+        data-source-dataset={forecast.source_dataset}
+        data-summary-mode={ai_summary.mode}
+      >
         <div className="summary-badges">
           <span className="badge">行前建議</span>
           {showMockBadge && <span className="badge badge-muted">示範資料</span>}

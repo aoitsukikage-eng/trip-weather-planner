@@ -225,6 +225,9 @@ describe("App", () => {
 
     const selectedButton = await screen.findByRole("button", { name: /7\/5/ });
     await screen.findByText("7/5 白天炎熱，記得補水。");
+    expect(screen.getByText("7/5 白天炎熱，記得補水。").closest(".summary-panel")?.getAttribute("aria-live")).toBe(
+      "polite",
+    );
     expect(screen.getByText("7/5（日） 日出 05:13 · 日落 18:48")).not.toBeNull();
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(document.activeElement).toBe(selectedButton);
