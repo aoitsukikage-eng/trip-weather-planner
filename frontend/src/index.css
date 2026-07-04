@@ -419,7 +419,7 @@ footer {
   color: #64748b;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 700px) {
   .trip-form {
     grid-template-columns: 1fr;
   }

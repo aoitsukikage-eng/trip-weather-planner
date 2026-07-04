@@ -362,6 +362,7 @@ export default function ForecastView({
         <div className="day-strip-scroll" data-testid="day-strip-scroll">
           <div
             className="day-strip"
+            data-layout="single-row"
             data-testid="day-strip"
             style={{ ["--day-count" as string]: forecast.days.length }}
           >

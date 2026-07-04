@@ -130,6 +130,7 @@ describe("ForecastView", () => {
       throw new Error("expected layout sections to exist");
     }
     expect(screen.getByTestId("day-strip-scroll")).not.toBeNull();
+    expect(dayStrip.getAttribute("data-layout")).toBe("single-row");
     expect(dayStrip.getAttribute("style")).toContain("--day-count: 7");
     expect(buttons).toHaveLength(7);
     expect(firstButton).toBeDefined();
