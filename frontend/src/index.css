@@ -263,6 +263,7 @@ header h1 {
 .day-strip-section {
   margin: 1rem 0 1.2rem;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .day-strip-header {
@@ -412,6 +413,41 @@ header h1 {
   margin: 0;
   font-size: 1.1rem;
   color: #334155;
+}
+
+@container (max-width: 1120px) {
+  .day-strip {
+    gap: 0.55rem;
+  }
+
+  .day-strip-card {
+    padding: 0.74rem 0.7rem 0.72rem;
+  }
+
+  .day-strip-head {
+    gap: 0.5rem;
+  }
+
+  .day-strip-icon {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 1rem;
+  }
+
+  .day-strip-date-main {
+    font-size: 0.96rem;
+  }
+
+  .day-strip-weekday,
+  .day-strip-weather,
+  .day-strip-temp,
+  .day-strip-pop {
+    font-size: 0.78rem;
+  }
+
+  .day-strip-temp strong {
+    font-size: 0.94rem;
+  }
 }
 
 footer {
