@@ -1,0 +1,9 @@
+title = "Trip Weather Planner gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Terraform Container Apps registry password secret name is a secret reference, not a secret value."
+paths = ['''^infra/terraform/modules/backend_service/main\.tf$''']
+regexes = ['''password_secret_name\s*=\s*"acr-admin-password"''']
