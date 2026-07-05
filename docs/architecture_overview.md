@@ -13,18 +13,20 @@
 3. **後端代理第三方**:金鑰不進前端;統一格式、可加快取限流監控。
 4. **架構圖畫滿、部署精簡**:圖展示 production 系統理解,Phase 1 只部署脊椎(FastAPI + CWA adapter + 快取 + 靜態前端)。
 5. **零憑證可跑**:未設 key 時 mock 模式,讓每個階段都可 demo。
-6. **AI 定位在加值不失焦**:產品層做摘要(可降級),開發層輔助流程。
+
 
 ## 技術選型理由
 
 - **FastAPI**:切題(Python 雲端後端)、型別清楚、**自動 OpenAPI 直接產出 API 規格交付物**、async 適合本案「一次打多個外部 API」的 I/O-bound 特性。
   - trade-off:相對於重用既有 Flask 經驗,需適應 async 心智模型;但淨值為正(自動文件 + 並發 + 型別即文件)。
 - **React + Vite + TS**:展示型前端開發快、前後端分離清楚。
-- **Gemini via 標準 SDK**:不使用任何本機私有 wrapper,作品自我完備。
+
 
 ## 分階段
 
 - **Phase 1(基本盤,可交)**:縣市/鄉鎮選擇 + 7 天日期 chips → 天氣預報 + 行前建議 + 日出日落 + UV;後端 + 前端 + 部署 + CI/CD + IaC。
+
+開發中
 - **Phase 2**:TDX 景點,行前規劃頁。
 - **Phase 3**:TDX 交通建議(門到門需自組或搭 Google Directions)。
 - **Overlay**:聊天機器人入口——把服務當 tool,LLM 以 tool-calling 編排;與表單前端共用後端,是加法不是重做。
