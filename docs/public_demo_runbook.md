@@ -47,9 +47,6 @@ These values must come from operator input or CI secrets, never tracked files:
 | Env var | Required for public demo? | Azure handling |
 |---|---|---|
 | `CWA_API_KEY` | Yes for live weather | Stored as Container Apps secret `cwa-api-key` |
-| `GEMINI_API_KEY` | Optional | Not required for the current public demo |
-| `TDX_CLIENT_ID` | No for this phase | Reserved for later itinerary features |
-| `TDX_CLIENT_SECRET` | No for this phase | Reserved for later itinerary features |
 
 ## Validation Before Deploy
 
@@ -179,7 +176,7 @@ curl -i \
 
 ## GitHub Actions Deployment Skeleton
 
-`.github/workflows/deploy-demo.yml` mirrors this flow for a future manual
-deployment path: validate, authenticate to Azure with OIDC, build the backend
-image in ACR, update Container Apps, build the frontend with `VITE_API_BASE`, and
-upload the static bundle to `$web`.
+`.github/workflows/deploy-demo.yml` mirrors this manual deployment path: validate,
+authenticate to Azure with OIDC, build the backend image in ACR, update Container
+Apps, build the frontend with `VITE_API_BASE`, and upload the static bundle to
+`$web`.
