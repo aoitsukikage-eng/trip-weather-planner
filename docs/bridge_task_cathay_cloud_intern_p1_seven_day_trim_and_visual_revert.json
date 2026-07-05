@@ -1,0 +1,75 @@
+{
+  "task_id": "cathay-cloud-intern-p1-seven-day-trim-and-visual-revert",
+  "title": "P0 fix：日卡嚴格裁切為 7 天（今天+6），視覺完整回滾至 3622a0a 驗收版",
+  "priority": "P0",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "30-60m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-horizon-window-alignment (approved)"
+  ],
+  "context": {
+    "background": "User review REJECTED the previous card's visible outcome. The horizon-alignment card made all 8 rendered days clickable, but the correct product answer is: never render 8 days. The 8th entry is only the partial-day residue of CWA's evening issuance (12-hourly slots crossing midnight) — not a full-day forecast; the official CWA site shows 7 days. Squeezing 8 cells also wrecked the approved card visuals (narrower cells, ugly boxes/gridline emphasis). Management acknowledges the previous card's acceptance criterion pointed the wrong direction.",
+    "product_spec": "The week is exactly: today (current weather day) + 6 following days = 7 cards, anchored to Asia/Taipei today. The leftmost card IS today.",
+    "visual_baseline": "The approved look is the day-card-refinement version — inspect it with: git show 3622a0a:frontend/src/components/ForecastView.tsx and git show 3622a0a:frontend/src/index.css. Restore that card styling exactly (widths, spacing, typography); remove the extra box/gridline affordance added later — the 點選任一天 hint copy is sufficient affordance."
+  },
+  "scope": {
+    "in_scope": [
+      "T1 backend: trim the daily cards to exactly today..today+6 (Asia/Taipei) — discard any partial 8th-day residue from the rolling CWA horizon; days array length is at most 7",
+      "T2 frontend: heading returns to the fixed 本週預報（共 7 天）(no dynamic count)",
+      "T3 frontend visual revert: day-card styling restored to the 3622a0a approved baseline — same cell width/spacing/typography, no added borders/boxes/gridline emphasis introduced by the horizon card; with 7 cells the single-row no-scrollbar desktop layout returns naturally",
+      "T4 KEEP (do not revert): inline day-click error resilience (no page reset), the backend loose pre-screen + horizon validation (now a dormant defense since only 7 days render), the 點選任一天 hint copy, pinned 72h chart, exact sunrise, selected-state styling from selected-state-polish",
+      "T5 tests: days array capped at 7 anchored today; last card (today+6) clickable end-to-end; visual-structure assertions updated back to the 7-card baseline"
+    ],
+    "out_of_scope": [
+      "Any new features or styling beyond the revert",
+      "72h chart, sunrise, UV logic",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: Asia/Taipei anchoring, no hardcoded dates, tolerant parsing preserved",
+    "R2: Mock mode intact (already 7 days anchored today)",
+    "R3: English-only code comments; no secrets",
+    "R4: No regression of kept behaviors listed in T4"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: Live mode renders exactly 7 day cards (today..today+6) even while CWA's horizon contains an 8th partial day; heading reads 共 7 天",
+    "AC3: Day-card visuals match the 3622a0a baseline (cell width/spacing/typography; no extra borders/gridlines) — verify by diffing rendered structure/classes against git show 3622a0a",
+    "AC4: The last card (today+6) is clickable and returns correct advice/sunrise; day-click failure still shows inline error without reset",
+    "AC5: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "backend/app/services/weather.py",
+    "backend/app/routers/forecast.py",
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/index.css",
+    "git show 3622a0a:frontend/src/components/ForecastView.tsx (approved visual baseline)",
+    "git show 3622a0a:frontend/src/index.css (approved visual baseline)"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000110); read from live /api/towns before manual testing.",
+    "Live fact at dispatch: upstream weekly horizon currently spans 7/5..7/12 (8 calendar days) — perfect condition to verify the 7-day trim.",
+    "Ports 18082/5173 are free at dispatch time; clean up any verification servers afterward."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Cap the week at exactly 7 cards (today+6, discarding CWA's partial 8th-day residue), restore the approved 3622a0a card visuals and fixed 共 7 天 heading, drop the added gridline emphasis, and keep only the invisible defenses (inline click-error handling, loose backend window) from the horizon card.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
+}

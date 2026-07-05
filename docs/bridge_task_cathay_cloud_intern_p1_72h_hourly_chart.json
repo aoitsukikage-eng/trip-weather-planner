@@ -1,0 +1,79 @@
+{
+  "task_id": "cathay-cloud-intern-p1-72h-hourly-chart",
+  "title": "P1.6：72 小時逐 3 小時預報圖（比照 CWA 官網雙溫度曲線）",
+  "priority": "P2",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-03",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "60-120m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-ux-refresh-and-cwa-data-expansion (must be accepted first)"
+  ],
+  "gate": "GATE SATISFIED 2026-07-04: depends_on card was accepted (approved) with buffer before the 2026-07-06 12:00 deadline. Cleared for execution by management.",
+  "operational_notes": [
+    "Live-mode town codes are now CWA-sourced (e.g. cwa-65000260 for 貢寮區), NOT the old starter slugs like newtaipei-gongliao. For any live testing, read codes from the live /api/towns response first.",
+    "The forecast payload now also carries sunrise/sunset and UV fields added by the previous card; do not regress them when extending the response with hourly slices.",
+    "Backend now validates date within today..today+6; the 72h chart gating must stay consistent with that window."
+  ],
+  "context": {
+    "background": "User reviewed the CWA official website's 72-hour forecast chart (dual temperature curves + weather icons per time slot) and asked for the same view. Investigation confirmed the backend CWA adapter already fetches the 3-hourly township dataset (F-D0047-093 family) for near-term dates, but normalize_to_daily collapses slices into daily highs/lows and discards the intra-day sequence. This card stops discarding that granularity and renders it.",
+    "honesty_note": "The public opendata township feed is 3-hourly; the official website chart is 1-hourly (internal data). We ship the same chart style at 3-hour resolution and must not claim hourly precision.",
+    "value": "For trips happening tomorrow / day after / +3 days, an intra-day curve (morning chill, midday peak, evening rain window) is more actionable than a single daily high/low pair."
+  },
+  "scope": {
+    "in_scope": [
+      "S1 backend: when the requested window overlaps the next 72h, include the raw-but-normalized 3-hourly slices in the forecast response (new field, e.g. hourly: [{time, temp_c, apparent_temp_c, pop_percent, weather, weather_code}]) sourced from the 3-hourly dataset; keep the existing daily summary untouched; mock mode returns deterministic mock slices",
+      "S2 backend: extend the TimeSlice normalization to carry apparent temperature (AT) and weather code alongside existing fields, with tolerant parsing (2026-07-06 CWA format change applies here too)",
+      "S3 frontend: a 72h chart on the result view — temperature and apparent-temperature curves, weather icon row (map CWA weather codes to a small emoji/icon set), 3-hour tick x-axis with day boundaries marked, PoP shown per slot (bar or label)",
+      "S4 frontend: chart implementation must be dependency-light (inline SVG or a tiny chart util); do not add a heavy charting library to the bundle",
+      "S5 chart only renders when the selected/travel window is within the next 72h; otherwise the daily cards remain the sole view",
+      "S6 tests: normalization of 3-hourly payload (mock-based), 72h window gating logic"
+    ],
+    "out_of_scope": [
+      "1-hourly resolution or scraping the CWA website",
+      "一週溫度曲線 / 體感曲線 / 過去24小時 tabs from the official site",
+      "Any AI/Gemini work, AQI, weather warnings",
+      "Backend architecture changes beyond the response extension described"
+    ]
+  },
+  "requirements": [
+    "R1: Mock mode remains fully functional end-to-end with deterministic 3-hourly mock slices",
+    "R2: Tolerant parsing for all new fields; missing AT or weather code degrades gracefully (curve omitted or icon blank), never a crash",
+    "R3: UI labels the chart truthfully as 逐3小時 (no hourly claim)",
+    "R4: English-only code comments"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest pass on Ubuntu including new tests",
+    "AC2: npm run build passes; no new heavy chart dependency in package.json",
+    "AC3: Live mode: selecting a town with travel date = tomorrow renders the 72h chart with both temperature curves, icons, and PoP from non-mock data",
+    "AC4: Travel date beyond 72h: chart is absent, daily cards unaffected",
+    "AC5: Mock mode renders the chart from deterministic mock slices",
+    "AC6: Changes committed and pushed to origin"
+  ],
+  "references": [
+    "backend/app/adapters/cwa.py",
+    "backend/app/services/weather.py",
+    "backend/app/schemas/weather.py",
+    "backend/app/routers/forecast.py",
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/lib/api.ts"
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "After the UX-refresh card is accepted and if time allows before the 7/6 deadline, add a CWA-website-style 72h chart: expose the already-fetched 3-hourly slices from the backend and render dual temperature curves with weather icons, honestly labeled as 3-hourly resolution.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "If accepted with time remaining, revisit deferred items in order: Gemini activation with honest AI labeling, then MOENV AQI."
+}

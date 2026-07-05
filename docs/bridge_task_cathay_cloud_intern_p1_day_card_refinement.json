@@ -1,0 +1,76 @@
+{
+  "task_id": "cathay-cloud-intern-p1-day-card-refinement",
+  "title": "P1 UX：日卡回歸舊版視覺並瘦身至單行無捲軸、null 降雨機率隱藏",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "45-90m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-day-strip-layout (approved, HEAD 40eaf1a)"
+  ],
+  "context": {
+    "background": "User review of the day strip: (1) the pre-strip card design (as of commit ec4a13b) was visually better — the strip over-simplified; the only real problem with the old cards was width (7 cards wrapped to two rows); (2) current strip cells are still too wide and even scroll on desktop; the weather icon floats far right leaving dead space; (3) days 4-7 show 降雨 —% because CWA only publishes PoP for the first ~3 days (verified: max_pop_percent is null from day 4) — rendering a dash reads as broken.",
+    "design_direction": "This card is a SLIMMED SINGLE-ROW VERSION OF THE OLD CARD DESIGN, not a new invention. Before coding, inspect the old implementation: git show ec4a13b:frontend/src/components/ForecastView.tsx — reuse its card aesthetic (rounded card, date/weekday header, high/low emphasis) and compress it.",
+    "layout_targets": "Move the weather icon left, grouped near the date/weekday instead of right-aligned. Compress each cell toward ~150-170px so 7 cells total ~1050-1200px and fit a 13-inch laptop viewport (~1280 logical px) in ONE row with NO horizontal scrollbar at desktop width. Stack or shrink 高/低 typography as needed. Below ~700px viewport keep the existing container-internal horizontal scroll (industry standard on mobile)."
+  },
+  "scope": {
+    "in_scope": [
+      "C1 rebuild day cells based on the ec4a13b card visual language, compressed: icon left near date/weekday, no dead space on the right, target cell width ~150-170px",
+      "C2 desktop/laptop (>= ~1280px viewport): all 7 cells render in one row with no horizontal scrollbar; verify at 1280px",
+      "C3 mobile/narrow (< ~700px): container-internal horizontal scroll retained; never wrap to two rows; never page-level horizontal scroll",
+      "C4 PoP display: when max_pop_percent is null (CWA publishes PoP only for first ~3 days), hide the 降雨 row entirely — no dash, no placeholder; when present, show 降雨 N% as now",
+      "C5 keep all interaction intact: click switches highlight + 行前建議 + 日出日落 in place, keyboard accessible, no scroll jump; selected-state styling adapted to the refined cell",
+      "C6 tests: update frontend tests for the refined cell content (icon placement can be structural), null-PoP hiding, and one-row layout class/structure"
+    ],
+    "out_of_scope": [
+      "Backend changes of any kind",
+      "72h chart, advice, sunrise sections (untouched)",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: No regression of prior cards: layout order (form -> strip -> advice/sunrise -> 72h chart), day-click switching, technical-string purge with 示範資料 badge rule, sunrise date labeling, local-date correctness",
+    "R2: Mock mode end-to-end intact; deterministic tests unaffected",
+    "R3: English-only code comments; no secrets in tracked files"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: At 1280px viewport width, 7 day cells render in one row with no horizontal scrollbar (no container overflow at desktop width)",
+    "AC3: Weather icon sits left near the date/weekday group; no large dead space inside a cell",
+    "AC4: Days with null PoP show no 降雨 row at all; days with PoP show 降雨 N%",
+    "AC5: Narrow viewport keeps single-row container-internal horizontal scroll; no wrapping",
+    "AC6: Click/keyboard interaction and in-place advice/sunrise switching unchanged",
+    "AC7: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/index.css",
+    "frontend/src/components/ForecastView.test.tsx",
+    "git show ec4a13b:frontend/src/components/ForecastView.tsx (old card design reference)"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; use them or any free ports for live verification and clean up afterward.",
+    "Frontend-only card; do not touch backend files.",
+    "Verified data fact for C4: /api/forecast max_pop_percent is null from day 4 onward in live mode — this is CWA data coverage, not a backend bug."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Refine the 7-day strip cells back toward the ec4a13b card visual language but compressed to fit one scrollbar-free row at laptop width (icon moved left beside the date, ~150-170px cells), hide the 降雨 row when CWA publishes no PoP (days 4-7), and keep mobile horizontal scroll and all click interactions unchanged.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining after this: Gemini activation decision, MOENV AQI (deferred), actual cloud deploy (waiting on deploy auth). Submission deadline 2026-07-06 12:00."
+}

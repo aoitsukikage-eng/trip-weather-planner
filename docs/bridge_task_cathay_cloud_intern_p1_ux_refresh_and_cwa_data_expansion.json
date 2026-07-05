@@ -1,0 +1,96 @@
+{
+  "task_id": "cathay-cloud-intern-p1-ux-refresh-and-cwa-data-expansion",
+  "title": "P1：全鄉鎮兩階段表單、日期精簡、行前建議正名、UV 與日出日落接入",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-03",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "90-180m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-cwa-live-integration (approved)",
+    "cathay-cloud-intern-p1-ubuntu-runtime-smoke (approved)"
+  ],
+  "context": {
+    "background": "User performed the first real hands-on session (Mac browser via SSH tunnel, backend live mode on port 18082) and returned four findings: (1) the town dropdown only shows the curated 22-entry starter list, while the towns.py docstring promises full CWA-sourced coverage in live mode — this promise is not implemented, /api/towns unconditionally serves the static dict; (2) the date picker shows a full calendar with year although the CWA township horizon is only ~7 days; (3) the summary panel is branded 'AI 行前建議' while running rule-based mode with no Gemini key, which is misleading; (4) UV index and sunrise/sunset are natural trip-planning data available from the same CWA platform but absent from the product.",
+    "design": "Keep the adapter -> normalized schema -> service -> router contract. All new upstream calls go through backend adapters with caching and tolerant parsing; no key or third-party call ever reaches the frontend. AI (Gemini) work is explicitly deferred: this card ships a stable non-AI version first, per user decision.",
+    "known_bug": "backend/app/services/ai_summary.py summarize() always describes days[0] (first forecast day), not the user-selected travel date. router passes full-horizon days and never focuses the target date. Visible whenever target_date != first horizon day.",
+    "deadline_note": "Exam submission deadline is 2026-07-06 12:00. CWA has announced a forecast-API format change effective 2026-07-06 — tolerant parsing (.get() access, try/except, no hardcoded deep paths) is an explicit acceptance requirement, not a nice-to-have."
+  },
+  "scope": {
+    "in_scope": [
+      "S1 full town coverage: in live mode (CWA_API_KEY set), /api/towns serves the complete ~368-township list sourced from CWA (F-D0047 aggregate family, e.g. F-D0047-091, or better dataset per current Swagger), cached in-process with a long TTL; keep the curated 22-entry static dict as the only source in mock mode and as live-failure fallback",
+      "S2 two-stage destination form: frontend TripForm becomes county select -> township select (township options filtered by chosen county); town payload/schema may add a grouping field if needed",
+      "S3 date simplification: replace the year-bearing date input with a 7-day chip/selector row rendered as M/D plus weekday (e.g. 7/4（六）), values constrained to today..today+6; default view (no explicit selection) loads and shows the full week immediately; optionally add quick-select shortcuts 今天/明天/週末 mapping to dates within the window (nice-to-have, skip if time-constrained)",
+      "S4 target-date focus fix: when a day is selected, the summary must describe that selected date (fix ai_summary primary-day logic and/or router wiring so the focused day is the target date, falling back to first day only when the target is outside the horizon)",
+      "S5 label honesty: rename the summary panel to 行前建議 (no AI branding) in frontend and any response fields/docs that surface the label; keep the dual-mode gemini/rule-based backend code intact but dormant — do not remove it, do not enable it",
+      "S6 sunrise/sunset: new CWA adapter for dataset A-B0062 (日出日沒時刻), county-level, cached; surface sunrise/sunset for the selected county alongside the forecast",
+      "S7 UV index: integrate the best currently-available CWA UV dataset (verify on the CWA Swagger at implementation time; observation family O-A0005 station-based is the known baseline — map township to nearest station by lat/lon); display UV with a simple level label (低/中/高/過量/危險); if only observation (not forecast) exists, present it as 目前紫外線 and say so honestly in the UI",
+      "S8 tests: unit tests for the new adapters (mock-based, no live calls in CI), town-list live/mock switching, 7-day date window validation, and the target-date focus fix",
+      "S9 docs: update README status section (currently stale at 2026-07-02 scaffold wording) and architecture docs to reflect this card's shipped behavior"
+    ],
+    "out_of_scope": [
+      "Gemini / any AI-generated summary activation (deferred to a later phase by user decision)",
+      "MOENV air-quality (AQI) integration (deferred to a later phase by user decision)",
+      "CWA weather warnings/advisories (W-C0033) — backlog, not this card",
+      "TDX attractions and transport (Phase 2/3)",
+      "Cloud Run deployment and public URL work",
+      "Visual redesign beyond the form and label changes described above"
+    ]
+  },
+  "requirements": [
+    "R1: Zero-credential mock mode keeps working end-to-end exactly as before (22 towns, deterministic data)",
+    "R2: With CWA_API_KEY set, town coverage is the full CWA township list, not the curated subset",
+    "R3: All new upstream parsing is tolerant (.get() access, try/except, timeouts, no hardcoded deep field paths) because of the announced 2026-07-06 CWA format change",
+    "R4: No secrets hardcoded or committed; frontend continues to talk only to our backend",
+    "R5: Summary text always matches the user-focused date (bug fix S4)",
+    "R6: English-only code comments per coding standards"
+  ],
+  "acceptance_criteria": [
+    "AC1: Ubuntu ruff check passes for backend",
+    "AC2: Ubuntu backend pytest passes including new tests for S1/S3/S4/S6/S7",
+    "AC3: Frontend npm run build passes",
+    "AC4: Live mode /api/towns returns >= 300 townships; a non-curated township (e.g. 新北市貢寮區) is selectable through county->township form and returns a valid forecast",
+    "AC5: Mock mode (CWA_API_KEY unset) still returns the deterministic 22-town list and mock forecast",
+    "AC6: Date UI shows no year anywhere; selectable range is exactly today..today+6; with no selection the full week renders by default",
+    "AC7: Selecting a non-first day produces a summary describing that day (regression test included)",
+    "AC8: Sunrise/sunset for the selected destination's county is displayed and sourced from A-B0062 via backend adapter with cache",
+    "AC9: UV information is displayed with level label and honest wording about observation vs forecast; township-to-station mapping is deterministic and tested",
+    "AC10: Summary panel label reads 行前建議 with no AI wording while in rule-based mode",
+    "AC11: README status section is updated and consistent with shipped behavior",
+    "AC12: Resulting Ubuntu changes are committed to the mainline (not left as dirty tree) and pushed to origin"
+  ],
+  "references": [
+    "docs/architecture_overview.md",
+    "docs/台灣公開API接入清單_旅行目的地評估.md",
+    "backend/app/data/towns.py",
+    "backend/app/routers/forecast.py",
+    "backend/app/adapters/cwa.py",
+    "backend/app/services/ai_summary.py",
+    "backend/app/services/weather.py",
+    "backend/app/core/cache.py",
+    "frontend/src/components/TripForm.tsx",
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/lib/api.ts"
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Start Ubuntu-side coding on cathay-cloud-intern-p1-ux-refresh-and-cwa-data-expansion: full township coverage with a county->township two-stage form, year-free 7-day date chips defaulting to the whole week, fix the summary-describes-wrong-day bug, rename the panel to 行前建議, and add CWA sunrise/sunset plus UV display. AI and AQI stay deferred.",
+  "monitor_commands": {
+    "git_status": "git -C /home/esgcenter0/python/Academic/trip-weather-planner status -sb",
+    "lint": "/home/esgcenter0/venvs/python-env/bin/ruff check /home/esgcenter0/python/Academic/trip-weather-planner/backend",
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build",
+    "towns_count_live": "curl -s http://127.0.0.1:18082/api/towns | /home/esgcenter0/venvs/python-env/bin/python -c \"import json,sys;print(len(json.load(sys.stdin)['data']))\""
+  },
+  "next_task_hint": "After AC1-AC12 pass, the natural follow-ups are (a) Gemini activation with honest AI labeling, (b) MOENV AQI integration, then (c) actual cloud deploy once a deploy auth path is completed."
+}

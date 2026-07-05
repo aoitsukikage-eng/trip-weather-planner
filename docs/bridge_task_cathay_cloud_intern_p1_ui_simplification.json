@@ -1,0 +1,76 @@
+{
+  "task_id": "cathay-cloud-intern-p1-ui-simplification",
+  "title": "P1 UX：拔日期籤改日卡點選聯動、清除前台技術字串、日出日落標日期、72h 地區標籤放大",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "60-120m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-72h-chart-polish (approved, HEAD 058ba3d)"
+  ],
+  "context": {
+    "background": "Third user hands-on round produced UX-level feedback. All items are frontend-layer; the backend already returns the full week + normalized 72h slices + target-date-focused advice and sunrise per query (cached), so the interaction redesign needs no schema change. User's product insight: the date chips duplicate the 7-day forecast cards, and the only true query variable is the region — date should be selected by clicking the day cards themselves.",
+    "user_decisions": "行前建議 stays (one-line conclusion on top of the data; future Gemini mount point). Date chips are removed entirely."
+  },
+  "scope": {
+    "in_scope": [
+      "U1 remove ALL technical/internal strings from the visible UI: mode labels (rule-based / frontend mock / gemini), data-source strings (mock:frontend-fallback, F-D0047-*, cache/source metadata), and anything describing runtime internals. EXCEPTION: when the rendered data is mock (backend mock mode or frontend network-failure fallback), show exactly one small friendly badge 示範資料 with no further technical detail. Keep technical detail available in console.log or data-* attributes for debugging if desired",
+      "U2 sunrise/sunset card labels the travel date it applies to, e.g. 7/5（日）日出 05:12 · 日落 18:48; reword the approximate-source line to friendlier copy (e.g. 參考 2025-06-29 天文資料) while keeping honesty",
+      "U3 72h chart header: move the 縣市＋鄉鎮 label into the large empty center area of the title row and enlarge its font for readability; keep it bound to the queried result",
+      "U4 remove the 旅遊日期 chip row from TripForm — the form becomes 縣市 -> 鄉鎮 -> 查詢天氣 only; default focus after query is today",
+      "U5 make the 7-day forecast cards clickable and keyboard-accessible: clicking a day highlights it and switches 行前建議 and 日出日落 to that date via a lightweight re-query of the same town+date (backend cache makes this near-instant); preserve scroll position — do not jump the page; visually indicate the selected card and add a subtle hover/cursor affordance so clickability is discoverable",
+      "U6 tests: form submits with region only; day-card click updates advice/sunrise and highlight; no technical strings render in any mode; mock badge appears only for mock data"
+    ],
+    "out_of_scope": [
+      "Backend schema or dataset changes",
+      "Gemini/AQI/warnings/deployment",
+      "Any change to the 72h chart data pipeline (only the header label moves/resizes)"
+    ]
+  },
+  "requirements": [
+    "R1: No regression of prior cards: local-date correctness (Asia/Taipei), stable full-week cards, stable normalized 72h chart, target-date advice focus, sunrise exact-date lookup, UV wording, 368-town two-stage form",
+    "R2: Mock mode end-to-end intact; deterministic tests unaffected",
+    "R3: English-only code comments; no secrets in tracked files",
+    "R4: Visible-error behavior from the tz-fix card stays: 4xx shows an error, mock fallback only on network failure (now with the 示範資料 badge instead of technical strings)"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: UI renders zero technical mode/source strings in live and mock modes; mock data shows only the single 示範資料 badge",
+    "AC3: Sunrise/sunset card shows the selected travel date and updates when a different day card is clicked",
+    "AC4: 72h chart header shows the enlarged 縣市＋鄉鎮 label in the center area",
+    "AC5: Date chips are gone; clicking each of the 7 day cards switches highlight + 行前建議 + 日出日落 without full page reload or scroll jump",
+    "AC6: Default view after a region query focuses today with full week + chart visible",
+    "AC7: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/TripForm.tsx",
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/lib/api.ts",
+    "frontend/src/index.css"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; use them or any free ports for live verification and clean up afterward.",
+    "Backend responses are cached per town+date, so per-click re-query is the intended cheap mechanism for advice/sunrise switching — do not duplicate advice logic client-side."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Simplify the UI per user review: remove the date-chip row and make the 7-day cards the date selector (click switches advice + sunrise via cached re-query), purge all technical mode/source strings from the frontend (single 示範資料 badge for mock data), label sunrise/sunset with its travel date, and enlarge/center the place label on the 72h chart header.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "After acceptance: redeploy the Ubuntu demo for user re-test; remaining backlog is Gemini activation, MOENV AQI, and actual cloud deploy (waiting on deploy auth)."
+}

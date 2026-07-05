@@ -1,0 +1,76 @@
+{
+  "task_id": "cathay-cloud-intern-p1-cwa-live-integration",
+  "title": "P1：CWA 真資料接入與 Ubuntu 主線驗證",
+  "priority": "P1",
+  "status": "pending",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Codex (Management)",
+  "created_at": "2026-07-02",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "30-90m",
+  "detach_required": false,
+  "depends_on": [
+    "cathay-cloud-intern-p1-ubuntu-takeover-and-reaccept (approved)",
+    "CWA authorization key available",
+    "TDX client credentials available"
+  ],
+  "context": {
+    "background": "Phase 1 mock scaffold is already approved. The next step is not a rebuild but a controlled transition from mock-backed forecast responses to real CWA-backed data while preserving the current no-credential demo path.",
+    "design": "Keep the adapter-service-router contract stable. Validate real upstream behavior through the existing CWA adapter boundary. TDX remains credential-ready but functionally deferred."
+  },
+  "scope": {
+    "in_scope": [
+      "Place secrets into Ubuntu-side runtime configuration without hardcoding values into tracked files",
+      "Verify CWA adapter dataset selection for F-D0047-093 and F-D0047-091",
+      "Harden live payload parsing in backend/app/adapters/cwa.py",
+      "Preserve mock fallback when CWA_API_KEY is absent",
+      "Add or update tests for dataset selection, parsing, and error handling",
+      "Update runtime documentation for Ubuntu-side real-data verification"
+    ],
+    "out_of_scope": [
+      "Full TDX attraction feature",
+      "Full TDX transport feature",
+      "Cloud Run deployment",
+      "Public production URL release",
+      "Major frontend redesign",
+      "Expanded Gemini feature work"
+    ]
+  },
+  "requirements": [
+    "R1: Backend continues to run in mock mode when CWA_API_KEY is empty",
+    "R2: Backend returns normalized real forecast data when CWA_API_KEY is configured",
+    "R3: Ubuntu-side verification commands and results are documented for acceptance"
+  ],
+  "acceptance_criteria": [
+    "AC1: Ubuntu venv ruff check passes for backend",
+    "AC2: Ubuntu venv pytest passes for backend",
+    "AC3: Frontend npm run build still passes",
+    "AC4: With CWA_API_KEY configured, at least one real-town query returns non-mock source metadata and valid normalized forecast data",
+    "AC5: With CWA_API_KEY unset, the backend still returns deterministic mock data",
+    "AC6: No secrets are hardcoded or committed into tracked source files",
+    "AC7: Resulting Ubuntu changes are committed instead of left only in a dirty working tree"
+  ],
+  "references": [
+    "docs/architecture_overview.md",
+    "docs/phase1_real_data_execution_brief.md",
+    "docs/ubuntu_phase1_real_data_handoff.md",
+    "backend/.env.example",
+    "backend/app/adapters/cwa.py",
+    "backend/app/core/config.py",
+    "backend/app/services/weather.py"
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Start Ubuntu-side coding on cathay-cloud-intern-p1-cwa-live-integration using the repo-local handoff docs and keep Mac as mirror only.",
+  "monitor_commands": {
+    "git_status": "git -C /home/esgcenter0/python/Academic/trip-weather-planner status -sb",
+    "lint": "/home/esgcenter0/venvs/python-env/bin/ruff check /home/esgcenter0/python/Academic/trip-weather-planner/backend",
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "After AC1-AC7 pass, the natural follow-up is Cloud Run deployment preparation for public demo readiness."
+}

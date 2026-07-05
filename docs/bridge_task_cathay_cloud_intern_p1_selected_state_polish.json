@@ -1,0 +1,66 @@
+{
+  "task_id": "cathay-cloud-intern-p1-selected-state-polish",
+  "title": "P1 micro：移除「已選擇」文字，改以更深框線/底色突顯選中日卡",
+  "priority": "P2",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "20-40m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-day-card-refinement (approved, HEAD 3622a0a)"
+  ],
+  "context": {
+    "background": "Final micro-polish from user review of the refined day cards. The selected cell currently appends the text 已選擇 after the weekday (e.g. 週日 · 已選擇), which wraps awkwardly inside the compact cell (rendered as 已選/擇 across two lines) and is redundant — selection should be communicated visually, not verbally."
+  },
+  "scope": {
+    "in_scope": [
+      "M1 remove the 已選擇 text from the selected day cell entirely (keep the weekday text clean, e.g. just 週日)",
+      "M2 strengthen the selected-state visual treatment instead: noticeably deeper/stronger border color and/or a tinted background distinct from unselected cells, so the selected day is immediately obvious at a glance; hover state must remain distinguishable from selected state",
+      "M3 accessibility: keep a non-visual selected indicator for assistive tech (e.g. aria-selected / aria-pressed on the cell) so removing the visible text does not regress screen-reader semantics",
+      "M4 update affected frontend tests (selected-state assertions move from text to attribute/class checks)"
+    ],
+    "out_of_scope": [
+      "Backend changes of any kind",
+      "Any other layout or content changes to the day cells",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: No regression: single-row no-scrollbar desktop layout, null-PoP hiding, click/keyboard switching, in-place advice/sunrise updates",
+    "R2: Mock mode intact; English-only code comments; no secrets"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: No 已選擇 (or any selection text) renders in the day cells; weekday text no longer wraps",
+    "AC3: Selected cell is visually distinct via deeper border/background; unselected and hover states clearly differ",
+    "AC4: Selected state exposed via aria attribute for assistive tech",
+    "AC5: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/index.css",
+    "frontend/src/components/ForecastView.test.tsx"
+  ],
+  "operational_notes": [
+    "Frontend-only micro card; do not touch backend files.",
+    "Ports 18082/5173 are free at dispatch time; clean up any verification servers afterward."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Remove the 已選擇 text from the selected day card and communicate selection purely visually with a deeper border/background (aria attribute for accessibility); fix the awkward text wrap; everything else unchanged.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
+}

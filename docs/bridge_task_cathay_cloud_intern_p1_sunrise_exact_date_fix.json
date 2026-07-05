@@ -1,0 +1,72 @@
+{
+  "task_id": "cathay-cloud-intern-p1-sunrise-exact-date-fix",
+  "title": "P0 fix：日出日落改帶 CountyName+Date 參數查精確日期列，逐日變化正確呈現",
+  "priority": "P0",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "30-60m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-chart-pin-hint-mock-fix (approved)"
+  ],
+  "context": {
+    "background": "User verified in live testing that sunrise/sunset shows the IDENTICAL time (05:07/18:48) with 參考 2025-06-29 天文資料 for every selected day — but sunrise genuinely shifts by ~1 minute across a week. Management root-caused it: fetch_sunrise_sunset() calls A-B0062-001 with NO query params (no CountyName, no Date) and a single shared cache key, so CWA returns a default slice starting around 2025-06-29; the exact-date match then always fails and the approximate-nearest-row fallback fires for every request. The earlier tz-fix card's 'exact-date lookup' promise was therefore never effective in live mode.",
+    "management_verified_fix": "Empirically confirmed 2026-07-05 with the live key: GET /api/v1/rest/datastore/A-B0062-001?Authorization=KEY&CountyName=新北市&Date=2026-07-09 returns exactly one row for that county+date with SunRiseTime 05:11 / SunSetTime 18:47 (differs from the stale approximate 05:07/18:48 — proving per-day variation). Response shape: records.locations.location[].{CountyName, time[].{Date, SunRiseTime, SunSetTime, ...}}."
+  },
+  "scope": {
+    "in_scope": [
+      "X1 fetch_sunrise_sunset passes params CountyName=<town.city> and Date=<target_date ISO> to A-B0062-001; cache key becomes per county+date (e.g. sunrise:{city}:{date}) with a long TTL (astronomical data is static)",
+      "X2 parse the returned exact row; is_approximate must be false and source_date equal to the target date on the happy path; keep the tolerant approximate fallback ONLY for genuine upstream gaps (row missing), preserving the honest UI labeling for that rare case",
+      "X3 verify per-day variation end-to-end in live mode: two different days in the same week for the same county must return different sunrise times (e.g. 新北市 7/5 vs 7/9)",
+      "X4 frontend copy: when is_approximate is false, do not show the 參考 <date> 天文資料 caveat line at all (exact data needs no disclaimer); keep the caveat only for the approximate fallback",
+      "X5 tests: adapter builds correct params and cache key; exact-row parsing; fallback path still works when the row is absent; frontend caveat-line visibility by is_approximate"
+    ],
+    "out_of_scope": [
+      "UV changes (its wording was already settled)",
+      "Any other backend or frontend behavior",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: Tolerant parsing (.get()/try-except, no hardcoded deep paths) — the 2026-07-06 CWA format change window applies",
+    "R2: Mock mode intact: mock_sunrise_sunset already varies by target_date deterministically — do not break it",
+    "R3: No regression of pinned 72h chart, day-click switching, or any prior card behavior",
+    "R4: English-only code comments; no secrets in tracked files"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: Live mode: for the same county, at least two different days in the current week return different SunRiseTime values, each with is_approximate=false and source_date == target date",
+    "AC3: Clicking through the 7 day cards shows per-day sunrise/sunset changes in the UI, with no 參考...天文資料 caveat on exact rows",
+    "AC4: Simulated missing-row upstream response still degrades to the approximate fallback with honest labeling (test-level verification)",
+    "AC5: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "backend/app/adapters/cwa.py",
+    "backend/app/schemas/weather.py",
+    "backend/tests/",
+    "frontend/src/components/ForecastView.tsx"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; clean up any verification servers afterward.",
+    "Exact verified request: A-B0062-001?Authorization=KEY&CountyName=新北市&Date=2026-07-09 → time[0] = {Date: 2026-07-09, SunRiseTime: 05:11, SunSetTime: 18:47}."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Fix sunrise/sunset to query A-B0062 with CountyName+Date so each selected day returns its own exact astronomical times (05:11/18:47 for 新北市 7/9, not the stale 2025-06-29 approximation), cache per county+date, hide the caveat line on exact rows, and keep the honest approximate fallback only for genuine upstream gaps.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
+}

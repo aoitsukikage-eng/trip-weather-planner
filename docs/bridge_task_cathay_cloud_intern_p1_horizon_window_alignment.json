@@ -1,0 +1,74 @@
+{
+  "task_id": "cathay-cloud-intern-p1-horizon-window-alignment",
+  "title": "P0 fix：後端日期窗口對齊實際預報 horizon，渲染出的日卡必可點；4xx 不得重置頁面",
+  "priority": "P0",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "30-60m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-sunrise-exact-date-fix (approved)"
+  ],
+  "context": {
+    "background": "User bug: clicking the 7/12 day card refreshed the whole page and reset the selection to 7/5. Management diagnosis (live-verified 2026-07-05 evening): after CWA's evening issuance the weekly dataset rolled to an 8-day horizon (7/5..7/12). The frontend strip faithfully renders every returned day, but the backend validation window is hardcoded today..today+6, so the last rendered day returns HTTP 400 — the backend rejects a date that exists in its own forecast data. The frontend error path then falls back to the default view (re-query today), which reads as a full refresh + jump to 7/5. Day-card buttons already have type=button; this is not a form-submit bug.",
+    "design_principle": "Every day card rendered from the response MUST be clickable without error. The validation window must be derived from / aligned with the actual forecast horizon, not a hardcoded 6-day offset. And a click error must never reset the current view."
+  },
+  "scope": {
+    "in_scope": [
+      "H1 backend: widen/align the date-window validation so any date present in the currently available forecast horizon is accepted (observed horizon can be 7 or 8 days and rolls with CWA issuance). Acceptable implementations: validate against today..today+8 (Asia/Taipei) as a loose bound while pick_target_day handles absent dates gracefully, OR validate after fetch against the actual days returned — choose the cleaner one and document the choice in the Task Report. Reject clearly out-of-range dates (past dates, >10 days ahead) with 400 as before",
+      "H2 frontend: the 本週預報（共 7 天）heading count becomes dynamic — 共 N 天 based on the actual days array length",
+      "H3 frontend resilience: if a day-click re-query fails (4xx/5xx), keep the current week view and selection intact and show an inline non-blocking error message; never fall back to the default today view on a click error (full-query failures keep existing behavior)",
+      "H4 tests: backend accepts a today+7 date when the horizon contains it; strip renders N cards for N days; day-click failure keeps view intact (no reset), inline error shown"
+    ],
+    "out_of_scope": [
+      "72h chart logic (stays pinned as-is)",
+      "Sunrise/UV behavior (just fixed, untouched)",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: Asia/Taipei anchoring stays; no hardcoded dates; tolerant parsing preserved",
+    "R2: Mock mode intact — mock horizon (7 days anchored today) remains valid under the new validation",
+    "R3: No regression of prior cards (pinned chart, exact sunrise, day strip, selected state, hint copy)",
+    "R4: English-only code comments; no secrets"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: Live mode: every rendered day card, including the last one when CWA returns 8 days, is clickable and returns 200 with correct advice/sunrise for that date",
+    "AC3: Heading shows 共 N 天 matching the rendered card count",
+    "AC4: Simulated click-failure keeps the week view and current selection with an inline error (test-level verification); no reset to today",
+    "AC5: Past dates and far-future dates still return 400",
+    "AC6: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "backend/app/routers/forecast.py",
+    "backend/app/services/weather.py",
+    "frontend/src/App.tsx",
+    "frontend/src/components/ForecastView.tsx",
+    "backend/tests/",
+    "frontend/src/components/ForecastView.test.tsx"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000110 / cwa-65000260); read from live /api/towns before manual testing.",
+    "Live-verified facts at dispatch time: /api/forecast days = [7/5..7/12] (8 entries); requesting date=7/12 returns HTTP 400 under current validation.",
+    "Ports 18082/5173 are free at dispatch time; clean up any verification servers afterward."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Align the backend date window with the real rolling CWA horizon so every rendered day card (including an 8th day after evening issuance) is clickable, make the 共 N 天 heading dynamic, and make day-click errors show inline without resetting the page back to today.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
+}

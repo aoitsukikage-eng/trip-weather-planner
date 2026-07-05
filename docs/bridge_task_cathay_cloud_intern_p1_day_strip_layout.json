@@ -1,0 +1,73 @@
+{
+  "task_id": "cathay-cloud-intern-p1-day-strip-layout",
+  "title": "P1 UX：七天日卡精簡為單排選擇列並上移，與行前建議/日出日落同視窗",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "60-90m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-ui-simplification (approved, HEAD ec4a13b)"
+  ],
+  "context": {
+    "background": "Final layout convergence from user review. The 7-day cards became the date selector in the previous card, but they sit below 行前建議/日出日落, so clicking a day and seeing the result requires scrolling up and down. Decision (user + management agreed): compact the 7 day cards into a single-row day strip and move it ABOVE the advice/sunrise section so the selector and the content it controls share one viewport.",
+    "design": "Each strip cell keeps only selection-relevant info: date M/D + weekday, weather icon, high/low temp, PoP percent. The per-card advice_hint text is dropped — it duplicates 行前建議 which now updates in place on click. This mirrors standard weather-app day-strip conventions (CWA site, Apple Weather)."
+  },
+  "scope": {
+    "in_scope": [
+      "D1 restructure result layout order to: query form -> 7-day strip -> 行前建議 + 日出日落 (+UV) -> 72h chart",
+      "D2 compact day cells: single row of 7 slim cards showing 日期(M/D)+星期, weather icon, 高/低溫, 降雨%; remove the per-cell advice hint text; selected cell clearly highlighted; hover/cursor affordance and keyboard accessibility preserved from the previous card",
+      "D3 responsive behavior: the strip stays one row; on narrow viewports it scrolls horizontally inside its own container (no wrapping to multiple rows, no page-level horizontal scroll)",
+      "D4 interaction unchanged: clicking a strip cell switches highlight + 行前建議 + 日出日落 via the existing cached re-query mechanism, no page reload, no scroll jump",
+      "D5 tests: update/extend frontend tests for the new layout order, strip rendering (7 cells, correct fields, no advice hint), and click-switch behavior"
+    ],
+    "out_of_scope": [
+      "Backend changes of any kind",
+      "72h chart changes (position moves with layout only)",
+      "Gemini/AQI/warnings/deployment",
+      "Any new data fields"
+    ]
+  },
+  "requirements": [
+    "R1: No regression of prior cards: region-only form, day-click switching, purged technical strings (示範資料 badge rule), sunrise date labeling, enlarged 72h place label, local-date correctness, stable week + chart",
+    "R2: Mock mode end-to-end intact; deterministic tests unaffected",
+    "R3: English-only code comments; no secrets in tracked files"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: Layout order is form -> day strip -> 行前建議/日出日落 -> 72h chart",
+    "AC3: The 7 day cells render in one row with date+weekday, icon, high/low, PoP% and no advice-hint text; selected cell visibly highlighted",
+    "AC4: Clicking any cell updates 行前建議 and 日出日落 in place with no page scroll jump; strip and advice are simultaneously visible in a typical laptop viewport",
+    "AC5: On a narrow viewport the strip scrolls horizontally within its container without wrapping or page-level horizontal scroll",
+    "AC6: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/components/TripForm.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/index.css"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; use them or any free ports for live verification and clean up afterward.",
+    "Frontend-only card; do not touch backend files."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Compact the 7-day cards into a single-row day strip (date+weekday, icon, high/low, PoP; no advice hint) and move it above 行前建議/日出日落 so selecting a day and reading its advice happens in one viewport; horizontal scroll on narrow screens; interaction mechanics unchanged.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "This should be the final P1 frontend card. Remaining: Gemini activation decision, MOENV AQI (deferred), actual cloud deploy (waiting on deploy auth)."
+}

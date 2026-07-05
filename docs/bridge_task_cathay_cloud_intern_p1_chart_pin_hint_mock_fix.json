@@ -1,0 +1,71 @@
+{
+  "task_id": "cathay-cloud-intern-p1-chart-pin-hint-mock-fix",
+  "title": "P1 fix：72h 圖釘住不隨選日變動、本週預報提示詞、mock 週錨定今天並限窗",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-05",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "45-90m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-selected-state-polish (approved, HEAD 0f45607)"
+  ],
+  "context": {
+    "background": "Two user-discovered defects plus one copy addition. (1) The 72h chart visibly changed when clicking different day cards. Management-verified root cause: the cache key is per town+date, so each day click triggers a fresh upstream fetch whose CWA issuance snapshot may differ from earlier cached responses, and the chart is bound to the latest clicked response — the same data at different snapshot times appears to 'shift'. Semantically the chart means '72 hours from NOW' and must not react to travel-date selection at all. (2) With the backend unreachable, the frontend inline mock walked the week forward without limit (user reached October by repeatedly clicking the rightmost card): frontend/src/lib/api.ts mockForecast(town, date) anchors the generated week at the REQUESTED date with no window clamp. The real backend validates today..today+6 (Asia/Taipei) so this is mock-path-only, but the mock must mirror backend semantics. (3) Users don't know day cards are clickable — add a short hint.",
+    "verified_facts": "Backend hourly series is not date-filtered (fetch_forecast_slices(town) is region-only); backend window validation anchors to datetime.now(ZoneInfo('Asia/Taipei')).date(); no hardcoded dates exist repo-wide."
+  },
+  "scope": {
+    "in_scope": [
+      "F1 pin the 72h chart to the region query: store the hourly series (and its chart header context) from the FIRST response of a region query in frontend state; day-card clicks must not re-render the chart from the re-query response — only 行前建議/日出日落/UV/highlight update on click; a new region query (different town or explicit re-submit) refreshes the chart",
+      "F2 hint copy: next to the 本週預報（共 7 天）heading add a muted short hint, exact text: 點選任一天，即可查看該日的行前建議與日出日落",
+      "F3 mock week anchoring: mockForecast generates its 7-day window anchored at TODAY (local calendar, consistent with the tz-safe date helpers), regardless of the requested date; if the requested date falls outside today..today+6, clamp the focused day into the window instead of shifting the window; mock hourly stays deterministic",
+      "F4 tests: chart-pinning behavior (day click does not change chart data; new region query does), hint text renders, mock anchored at today with out-of-window clamp"
+    ],
+    "out_of_scope": [
+      "Backend changes of any kind (the per-date cache design stays as-is for this card)",
+      "Any other visual changes",
+      "Gemini/AQI/warnings/deployment"
+    ]
+  },
+  "requirements": [
+    "R1: No regression: single-row day strip, deeper-border selected state with aria semantics, null-PoP hiding, in-place advice/sunrise switching, 示範資料 badge rule, local-date correctness",
+    "R2: English-only code comments; no secrets; frontend-only card"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + frontend tests + npm run build all pass",
+    "AC2: After a region query, clicking every day card leaves the 72h chart pixel-identical (same data); only advice/sunrise/UV/highlight change",
+    "AC3: Querying a different town refreshes the chart to that town's data",
+    "AC4: The hint text renders beside/under the 本週預報 heading in muted styling",
+    "AC5: With backend unreachable, repeated clicks on the rightmost mock day card never advance the window beyond today..today+6; the week stays anchored at today",
+    "AC6: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/App.tsx",
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/lib/api.ts",
+    "frontend/src/components/ForecastView.test.tsx",
+    "frontend/src/App.test.tsx"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; clean up any verification servers afterward.",
+    "Frontend-only card; do not touch backend files."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Pin the 72h chart to the region query so day clicks never change it, add the click-hint copy next to 本週預報, and fix the inline mock to anchor its week at today with a today..today+6 clamp so it can no longer walk into future months.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
+}

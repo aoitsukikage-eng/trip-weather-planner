@@ -1,0 +1,84 @@
+{
+  "task_id": "cathay-cloud-intern-p1-date-tz-and-horizon-fix",
+  "title": "P1 bugfix：前端日期時區 off-by-one、整週/72h 顯示穩定化、日出日落精準日、UV 誠實化",
+  "priority": "P0",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-04",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "60-120m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-72h-hourly-chart (approved)"
+  ],
+  "context": {
+    "background": "User hands-on testing at 01:17 local time (Asia/Taipei, UTC+8) exposed a timezone off-by-one: every clicked date chip was submitted as the previous day. Root cause confirmed by management: frontend serializes dates with toISOString().slice(0,10), which converts local time to UTC — before 08:00 local this shifts the date back one day. Confirmed occurrences: frontend/src/components/TripForm.tsx:20, frontend/src/App.tsx:9, frontend/src/lib/api.ts:134. Cascade observed: clicking 7/4 sent 7/3, backend's today..today+6 validation rejected it, and the frontend SILENTLY fell back to inline mock data (source shown: mock:frontend-fallback) — masking the failure as fake data.",
+    "second_issue": "Display inconsistency across selected days: near-term dataset (F-D0047-093 family) returns only ~4 daily cards + hourly slices, while the weekly dataset returns 7 daily cards but no hourly. So depending on which chip is clicked, the user gets 'full week, no chart' or 'partial week, chart' — feels random. User's product decision: the date chip's primary job is to focus the 行前建議 (and highlight); the week view and the 72h chart should be STABLE regardless of which chip is selected.",
+    "third_issue": "Sunrise/sunset currently returns an approximate row (source_date=2025-06-29, is_approximate=true). CWA A-B0062 publishes full-year per-day per-county times, so exact target-date rows exist — the adapter's row lookup must be fixed to resolve the exact date instead of falling back to approximation.",
+    "fourth_issue": "UV is currently an observation-only value shown for any travel date. CWA also publishes a short-range UV index forecast (roughly today/tomorrow max; verify the exact dataset id on the CWA Swagger at implementation time). There is no week-long UV forecast — display must be honest about applicability."
+  },
+  "scope": {
+    "in_scope": [
+      "B1 timezone-safe dates: replace every toISOString-based YYYY-MM-DD serialization of local dates with a local-timezone formatter (e.g. manual year/month/day from getFullYear/getMonth/getDate); audit the whole frontend for other UTC-shifted date usages; chips, submitted query, result header, and highlight must all agree with the user's local calendar",
+      "B2 stable week view: the daily-cards section always shows the full available week regardless of selected chip — backend merges the weekly dataset (7-day cards) with the near-term dataset (3-hourly slices) in one forecast response instead of choosing one or the other; keep caching per town",
+      "B3 stable 72h chart: the chart shows whenever hourly data for the next ~72h from now exists — its presence must not depend on which chip is selected; selected chip only drives 行前建議 focus + card highlight",
+      "B4 no silent mock fallback on validation errors: frontend falls back to inline mock ONLY when the backend is unreachable (network error); a 4xx/validation response must surface a visible error message instead of quietly rendering mock data labeled as such",
+      "B5 sunrise/sunset exact date: fix the A-B0062 adapter lookup so the row for the exact target_date is resolved (full-year data exists); is_approximate should become the rare exception, not the norm; keep the honest approximate labeling for genuine fallback cases",
+      "B6 UV honesty: check the CWA Swagger for the short-range UV forecast dataset; if available, show forecast UV when the travel date is within its coverage (today/tomorrow) and observation UV labeled 目前紫外線僅供參考 for further dates; if no usable forecast dataset exists, keep observation but add the 僅供參考 wording for non-today travel dates",
+      "B7 tests: regression tests for local-date serialization (mock a UTC+8 pre-08:00 clock), merged week+hourly response shape, exact-date sunrise lookup, and fallback-vs-error frontend logic where testable"
+    ],
+    "out_of_scope": [
+      "Gemini/AI activation, MOENV AQI, weather warnings",
+      "Cloud deployment work",
+      "Any visual redesign beyond what the fixes require"
+    ]
+  },
+  "requirements": [
+    "R1: Mock mode still works end-to-end zero-credential; deterministic tests unaffected by wall clock",
+    "R2: All parsing stays tolerant (2026-07-06 CWA format change)",
+    "R3: No secrets in tracked files; English-only code comments",
+    "R4: Do not regress: 368-town live catalog, two-stage form, year-free chips, target-date summary focus, 行前建議 labeling, sunrise/UV fields, 72h chart"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest pass on Ubuntu including new regression tests",
+    "AC2: npm run build passes",
+    "AC3: With system clock simulated or reasoned for UTC+8 pre-08:00, selecting any chip submits exactly that local date; result header shows the same date as the clicked chip",
+    "AC4: Live mode: selecting each of the 7 chips in turn always renders the full-week daily cards; 行前建議 always describes the selected date",
+    "AC5: Live mode: 72h chart presence is identical across all 7 chip selections (present when next-72h hourly data exists)",
+    "AC6: A validation/4xx backend response produces a visible error state, not mock data; killing the backend produces the mock fallback with its honest label",
+    "AC7: Live sunrise/sunset for a date within the next 7 days returns the exact-date row (is_approximate=false) for at least one verified county",
+    "AC8: UV display wording matches data applicability (forecast for covered dates if dataset exists; 僅供參考 labeling otherwise)",
+    "AC9: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/TripForm.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/lib/api.ts",
+    "frontend/src/components/ForecastView.tsx",
+    "backend/app/adapters/cwa.py",
+    "backend/app/services/weather.py",
+    "backend/app/routers/forecast.py",
+    "backend/app/schemas/weather.py"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read codes from live /api/towns before manual testing.",
+    "Ports 18082/5173 are free at dispatch time; use them or any free ports for live verification and clean up afterward.",
+    "Server timezone vs client timezone: the backend today..today+6 validation should tolerate the client's local calendar day (consider accepting today-1 for timezone skew, or validating against Asia/Taipei explicitly — document the chosen approach in the Task Report)."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "Fix the UTC date off-by-one (toISOString) so chips submit the user's local date, make the week view and 72h chart stable across all chip selections with the chip driving only the advice focus, stop silently masking validation errors with mock data, resolve exact-date sunrise/sunset rows, and make UV wording honest about forecast vs observation.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "After acceptance, re-deploy the Ubuntu demo for user re-testing, then proceed to deploy auth + actual cloud deployment."
+}

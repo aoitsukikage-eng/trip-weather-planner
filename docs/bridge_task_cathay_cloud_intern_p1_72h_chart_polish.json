@@ -1,0 +1,71 @@
+{
+  "task_id": "cathay-cloud-intern-p1-72h-chart-polish",
+  "title": "P1 polish：72h 圖 3 小時網格正規化＋區塊標題顯示鄉鎮名",
+  "priority": "P1",
+  "status": "completed",
+  "assigned_to": "Ubuntu coding agent",
+  "created_by": "Claude Code (Management)",
+  "created_at": "2026-07-04",
+  "project": "trip-weather-planner",
+  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "execution_mode": "interactive-coding",
+  "expected_runtime": "45-90m",
+  "detach_required": false,
+  "pattern_reference": [
+    "~/.agent-hub/knowledge/patterns/when-to-background.md"
+  ],
+  "depends_on": [
+    "cathay-cloud-intern-p1-date-tz-and-horizon-fix (must be accepted first; do not run concurrently on the same worktree)"
+  ],
+  "gate": "GATE SATISFIED 2026-07-04: date-tz-and-horizon-fix accepted (approved, HEAD 67c10ef). Cleared for execution by management.",
+  "context": {
+    "background": "User testing with live data exposed a chart-rendering defect the original 72h card did not anticipate: the CWA near-term feed returns MIXED granularity — roughly the first 48h at 1-hour steps, then 3-hour steps (observed 56 slices over 4 days). The chart assumes uniform 3-hourly spacing and draws a label + weather icon for every point, so the hourly segment renders as overlapping unreadable labels/icons. Separately, the user noted that after scrolling down to the chart the township context is lost — the section should carry the place name.",
+    "screenshot_evidence": "2026-07-04 01:23 screenshot: x-axis showed per-hour ticks 00:01:02... for 7/4-7/5 then 3-hourly for 7/6-7/7, with icons and percent labels colliding."
+  },
+  "scope": {
+    "in_scope": [
+      "P1 normalize the hourly series to a uniform 3-hour grid before rendering: aggregate or sample 1-hourly slices into 3-hour buckets (temperature: value at bucket start or mean; PoP: max within bucket; weather icon: bucket-representative code) — do this in the backend normalization or a frontend util, whichever keeps the schema honest, and document the choice in the Task Report",
+      "P2 the chart section header shows the queried place context, e.g. 縣市＋鄉鎮 (新北市 貢寮區), so the location remains visible after scrolling; keep it in sync with the current query result (not the form's in-progress selection)",
+      "P3 label/icon density guard: even on a uniform grid, if point count exceeds what fits, thin labels/icons to every Nth point while keeping curves full-resolution",
+      "P4 tests: mixed-granularity payload (1h + 3h) normalizes to the expected uniform grid; deterministic mock still renders unchanged"
+    ],
+    "out_of_scope": [
+      "Any new datasets or fields",
+      "Gemini/AQI/warnings/deployment",
+      "Redesign beyond the chart section"
+    ]
+  },
+  "requirements": [
+    "R1: No heavy chart library added; stay inline-SVG",
+    "R2: Tolerant parsing preserved; mock mode end-to-end intact",
+    "R3: Do not regress anything shipped by the previous cards (368 towns, two-stage form, chips, target-date advice, sunrise/UV, stable week + chart behavior from the tz-fix card)",
+    "R4: English-only code comments"
+  ],
+  "acceptance_criteria": [
+    "AC1: ruff + pytest + npm run build pass",
+    "AC2: Live near-term query (travel date today/tomorrow) renders a readable chart: uniform 3h ticks, no overlapping labels/icons",
+    "AC3: Chart section displays the queried 縣市＋鄉鎮 name and updates on a new query",
+    "AC4: Mock mode chart unchanged in structure and still deterministic",
+    "AC5: Changes committed per-AC and pushed to origin"
+  ],
+  "references": [
+    "frontend/src/components/ForecastView.tsx",
+    "frontend/src/lib/api.ts",
+    "backend/app/services/weather.py",
+    "backend/app/adapters/cwa.py"
+  ],
+  "operational_notes": [
+    "Live-mode town codes are CWA-sourced (e.g. cwa-65000260); read from live /api/towns before manual testing.",
+    "This card runs AFTER the date-tz-and-horizon-fix card; rebase expectations on that card's merged week+hourly response shape."
+  ],
+  "report_template": {
+    "format": "Task Report + Verification Report",
+    "location": "Ubuntu agent-bridge reports path or repo-local equivalent used by the current workflow"
+  },
+  "user_one_liner": "After the tz-fix card is accepted: normalize the mixed 1h/3h CWA slices to a uniform 3-hour grid so the 72h chart stays readable, add the queried county+township name to the chart section header, and thin labels when density demands.",
+  "monitor_commands": {
+    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
+    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+  },
+  "next_task_hint": "Remaining backlog after this: Gemini activation, MOENV AQI, actual cloud deploy (waiting on deploy auth)."
+}
