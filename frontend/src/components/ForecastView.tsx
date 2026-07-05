@@ -320,11 +320,13 @@ function buildDayAriaLabel(day: DailyForecast): string {
 
 export default function ForecastView({
   chartResult,
+  daySelectionError,
   result,
   loading = false,
   onSelectDate,
 }: {
   chartResult?: ForecastResult;
+  daySelectionError?: string | null;
   result: ForecastResult;
   loading?: boolean;
   onSelectDate?: (date: string) => void;
@@ -361,6 +363,11 @@ export default function ForecastView({
           </h3>
           <p className="section-hint">點選任一天，即可查看該日的行前建議與日出日落</p>
         </div>
+        {daySelectionError && (
+          <p aria-live="polite" className="section-hint" role="status">
+            日期切換失敗：{daySelectionError}
+          </p>
+        )}
         <div className="day-strip-scroll" data-testid="day-strip-scroll">
           <div
             className="day-strip"

@@ -174,6 +174,16 @@ const nextDayForecastBody = {
   meta: { request_id: "forecast-live-2", cached: true, source: "cwa-live" },
 };
 
+const validationErrorBody = {
+  success: false,
+  data: null,
+  error: {
+    error_code: "date_out_of_range",
+    message: "Date must be within the available forecast horizon.",
+  },
+  meta: { request_id: "forecast-live-err", cached: false, source: null },
+};
+
 const otherTownForecastBody = {
   ...liveForecastBody,
   data: {
@@ -316,6 +326,39 @@ describe("App", () => {
     expect(document.querySelector(".hourly-chart svg")?.innerHTML).toBe(chartBeforeClick);
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
     expect(window.scrollY).toBe(scrollYBeforeClick);
+  });
+
+  test("keeps the current week view and selection when a day click re-query fails", async () => {
+    const user = userEvent.setup();
+    let forecastCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) {
+        return Promise.resolve(jsonResponse(townsBody));
+      }
+      forecastCallCount += 1;
+      if (forecastCallCount === 1) {
+        return Promise.resolve(jsonResponse(liveForecastBody));
+      }
+      return Promise.resolve(jsonResponse(validationErrorBody, false, 400));
+    }));
+
+    render(<App />);
+
+    await screen.findByText("7/4 留意午後陣雨。");
+    const chartBeforeClick = document.querySelector(".hourly-chart svg")?.innerHTML;
+    const initiallySelected = screen.getByTestId("day-card-2026-07-04");
+
+    await user.click(screen.getByTestId("day-card-2026-07-05"));
+
+    expect(await screen.findByRole("status")).not.toBeNull();
+    expect(screen.getByText(/日期切換失敗：Date must be within the available forecast horizon\./)).not.toBeNull();
+    expect(screen.getByText("7/4 留意午後陣雨。")).not.toBeNull();
+    expect(screen.getByText("7/4（六） 日出 05:12 · 日落 18:48")).not.toBeNull();
+    expect(initiallySelected.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("day-card-2026-07-05").getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(document.querySelector(".hourly-chart svg")?.innerHTML).toBe(chartBeforeClick);
   });
 
   test("querying a different town refreshes the chart to that town", async () => {

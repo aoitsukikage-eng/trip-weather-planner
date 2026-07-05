@@ -14,6 +14,7 @@ export default function App() {
   const [chartResult, setChartResult] = useState<ForecastResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [daySelectionError, setDaySelectionError] = useState<string | null>(null);
   const [selectedTown, setSelectedTown] = useState<Town | null>(null);
   const activeRequestRef = useRef(0);
 
@@ -28,12 +29,17 @@ export default function App() {
     void runForecastQuery(towns[0], todayIsoDate());
   }, [towns, result]);
 
-  const runForecastQuery = async (town: Town, date: string, options?: { updateChart?: boolean }) => {
+  const runForecastQuery = async (
+    town: Town,
+    date: string,
+    options?: { preserveCurrentViewOnError?: boolean; updateChart?: boolean },
+  ) => {
     const requestId = activeRequestRef.current + 1;
     activeRequestRef.current = requestId;
     setSelectedTown(town);
     setLoading(true);
     setError(null);
+    setDaySelectionError(null);
     try {
       const nextResult = await getForecast(town, date);
       if (requestId !== activeRequestRef.current) {
@@ -47,11 +53,17 @@ export default function App() {
       if (requestId !== activeRequestRef.current) {
         return;
       }
-      setResult(null);
-      if (options?.updateChart ?? true) {
-        setChartResult(null);
+      const message =
+        caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。";
+      if (options?.preserveCurrentViewOnError) {
+        setDaySelectionError(message);
+      } else {
+        setResult(null);
+        if (options?.updateChart ?? true) {
+          setChartResult(null);
+        }
+        setError(message);
       }
-      setError(caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。");
     } finally {
       if (requestId === activeRequestRef.current) {
         setLoading(false);
@@ -68,7 +80,7 @@ export default function App() {
     if (!town) {
       return;
     }
-    await runForecastQuery(town, date, { updateChart: false });
+    await runForecastQuery(town, date, { preserveCurrentViewOnError: true, updateChart: false });
   };
 
   return (
@@ -94,6 +106,7 @@ export default function App() {
       {result && (
         <ForecastView
           chartResult={chartResult ?? result}
+          daySelectionError={daySelectionError}
           result={result}
           loading={loading}
           onSelectDate={handleSelectDate}
