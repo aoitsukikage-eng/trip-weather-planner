@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from app.core.config import get_settings
 from app.main import app
 from app.main import settings as app_settings
+from app.schemas.weather import TimeSlice
 
 client = TestClient(app)
 
@@ -157,7 +158,7 @@ def test_unknown_town_and_bad_date():
     assert client.get(f"/api/forecast?town=taipei-xinyi&date={_future(11)}").status_code == 400
 
 
-def test_forecast_accepts_today_plus_seven_when_horizon_contains_it(
+def test_forecast_discards_partial_eighth_day_from_live_horizon(
     monkeypatch: pytest.MonkeyPatch,
 ):
     from app.adapters.cwa import CWAAdapter, ForecastSlices
@@ -168,23 +169,43 @@ def test_forecast_accepts_today_plus_seven_when_horizon_contains_it(
     app_settings.cwa_api_key = "demo-key"
 
     async def fake_fetch_forecast_slices(self, town):  # noqa: ARG001
+        daily = []
+        anchor = _today_taipei()
+        for offset in range(8):
+            start_at = datetime.combine(anchor + timedelta(days=offset), datetime.min.time()).replace(
+                hour=6
+            )
+            daily.append(
+                TimeSlice(
+                    start=start_at.isoformat(),
+                    end=(start_at + timedelta(hours=12)).isoformat(),
+                    temp_c=28 + offset,
+                    apparent_temp_c=30 + offset,
+                    pop_percent=20 + offset,
+                    weather="多雲",
+                    weather_code="04",
+                )
+            )
         return ForecastSlices(
-            daily=mock_time_slices(
-                "F-D0047-091",
-                town,
-                horizon_start=_today_taipei() + timedelta(days=1),
-            ),
+            daily=daily,
             hourly=mock_time_slices("F-D0047-093", town, horizon_start=_today_taipei()),
             source_label="test-live",
         )
 
     monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", fake_fetch_forecast_slices)
 
-    target = _future(7)
+    target = _future(6)
     body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
     assert body["success"] is True
     assert body["data"]["forecast"]["target_date"] == target
-    assert any(day["date"] == target for day in body["data"]["forecast"]["days"])
+    assert [day["date"] for day in body["data"]["forecast"]["days"]] == [
+        _future(offset) for offset in range(7)
+    ]
+    assert body["data"]["forecast"]["days"][-1]["date"] == _future(6)
+
+    rejected = client.get(f"/api/forecast?town=taipei-xinyi&date={_future(7)}").json()
+    assert rejected["success"] is False
+    assert rejected["error"]["message"] == "Date must be within the available forecast horizon."
 
 
 def test_summary_text_follows_selected_non_first_day():

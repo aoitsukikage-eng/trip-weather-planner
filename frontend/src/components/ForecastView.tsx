@@ -332,6 +332,7 @@ export default function ForecastView({
   onSelectDate?: (date: string) => void;
 }) {
   const { forecast, ai_summary } = result;
+  const displayedDays = forecast.days.slice(0, 7);
   const chartForecast = chartResult?.forecast ?? forecast;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
@@ -357,10 +358,7 @@ export default function ForecastView({
 
       <section className="day-strip-section" aria-label="七天預報選擇列">
         <div className="day-strip-header">
-          <h3 className="section-title">
-            本週預報
-            {forecast.days.length > 1 ? `（共 ${forecast.days.length} 天）` : ""}
-          </h3>
+          <h3 className="section-title">本週預報（共 7 天）</h3>
           <p className="section-hint">點選任一天，即可查看該日的行前建議與日出日落</p>
         </div>
         {daySelectionError && (
@@ -373,9 +371,9 @@ export default function ForecastView({
             className="day-strip"
             data-layout="single-row"
             data-testid="day-strip"
-            style={{ ["--day-count" as string]: forecast.days.length }}
+            style={{ ["--day-count" as string]: displayedDays.length }}
           >
-            {forecast.days.map((day) => {
+            {displayedDays.map((day) => {
               const isSelected = day.date === forecast.target_date;
               return (
                 <button

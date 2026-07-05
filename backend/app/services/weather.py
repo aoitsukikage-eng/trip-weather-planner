@@ -60,6 +60,22 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
     return daily
 
 
+def trim_daily_to_window(
+    days: list[DailyForecast], anchor: date, window_days: int = 7
+) -> list[DailyForecast]:
+    """Keep only the calendar days inside the anchored display window."""
+    window_end = anchor + timedelta(days=window_days - 1)
+    trimmed: list[DailyForecast] = []
+    for day in days:
+        try:
+            current_day = date.fromisoformat(day.date)
+        except ValueError:
+            continue
+        if anchor <= current_day <= window_end:
+            trimmed.append(day)
+    return trimmed
+
+
 def normalize_to_hourly(slices: list[TimeSlice]) -> list[HourlyForecast]:
     """Project upstream near-term slices into a uniform 3-hour chart contract."""
     buckets: dict[str, list[tuple[datetime, TimeSlice]]] = defaultdict(list)

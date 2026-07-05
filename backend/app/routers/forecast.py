@@ -22,6 +22,7 @@ from app.services.ai_summary import AiSummaryService
 from app.services.weather import (
     normalize_to_daily,
     normalize_to_hourly,
+    trim_daily_to_window,
 )
 
 router = APIRouter(prefix="/api", tags=["forecast"])
@@ -107,7 +108,7 @@ async def forecast(
     adapter = CWAAdapter(settings, cache)
     slices = await adapter.fetch_forecast_slices(town_obj)
     # Return the full week plus the near-term 72h chart data in one response.
-    days = normalize_to_daily(slices.daily)
+    days = trim_daily_to_window(normalize_to_daily(slices.daily), _taipei_today())
     if not _horizon_contains_date(days, target_date):
         raise AppError(
             "Date must be within the available forecast horizon.",

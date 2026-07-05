@@ -195,12 +195,12 @@ describe("ForecastView", () => {
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
-  test("shows a dynamic day count heading and renders every returned day card", () => {
+  test("caps the rendered day cards at seven and keeps the heading fixed", () => {
     render(<ForecastView result={buildResultWithDayCount(8)} />);
 
-    expect(screen.getByText("本週預報（共 8 天）")).not.toBeNull();
-    expect(screen.getAllByRole("button")).toHaveLength(8);
-    expect(screen.getByTestId("day-card-2026-07-11")).not.toBeNull();
+    expect(screen.getByText("本週預報（共 7 天）")).not.toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(7);
+    expect(screen.queryByTestId("day-card-2026-07-11")).toBeNull();
   });
 
   test("hides the rain row entirely when PoP is null", () => {
