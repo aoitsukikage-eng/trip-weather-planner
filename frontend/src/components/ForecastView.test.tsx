@@ -187,9 +187,10 @@ describe("ForecastView", () => {
     expect(firstButton?.getAttribute("aria-pressed")).toBe("true");
     expect(firstButton?.getAttribute("aria-current")).toBe("date");
     expect(firstButton?.getAttribute("aria-label")).not.toContain("已選擇");
-    expect(firstButton?.className).toContain("day-strip-card-selected");
+    expect(firstButton?.className).toBe("day-strip-card day-strip-card-selected");
     expect(secondButton?.getAttribute("aria-pressed")).toBe("false");
     expect(secondButton?.getAttribute("aria-current")).toBeNull();
+    expect(secondButton?.className).toBe("day-strip-card");
     expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
