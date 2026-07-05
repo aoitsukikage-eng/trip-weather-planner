@@ -440,6 +440,13 @@ header h1 {
   color: #334155;
 }
 
+.section-hint {
+  margin: 0;
+  color: #6b7f92;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 @container (max-width: 1120px) {
   .day-strip {
     gap: 0.55rem;
@@ -503,6 +510,11 @@ footer {
   .day-strip-scroll {
     margin-inline: -0.15rem;
     padding-inline: 0.15rem;
+  }
+
+  .day-strip-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .hourly-chart-header {

@@ -15,6 +15,7 @@ const townsBody = {
   success: true,
   data: [
     { code: "taipei-xinyi", name: "信義區", city: "臺北市", lat: 25.03, lon: 121.57 },
+    { code: "hualien-hualien", name: "花蓮市", city: "花蓮縣", lat: 23.98, lon: 121.6 },
   ],
   error: null,
   meta: { request_id: "towns-1", cached: false, source: "mock" },
@@ -94,6 +95,14 @@ const liveForecastBody = {
           weather: "多雲",
           weather_code: "04",
         },
+        {
+          time: "2026-07-04T03:00:00+08:00",
+          temp_c: 27,
+          apparent_temp_c: 29,
+          pop_percent: 35,
+          weather: "晴時多雲",
+          weather_code: "01",
+        },
       ],
       sunrise_sunset: {
         county: "臺北市",
@@ -130,6 +139,24 @@ const nextDayForecastBody = {
     forecast: {
       ...liveForecastBody.data.forecast,
       target_date: "2026-07-05",
+      hourly: [
+        {
+          time: "2026-07-05T00:00:00+08:00",
+          temp_c: 35,
+          apparent_temp_c: 38,
+          pop_percent: 90,
+          weather: "短暫陣雨或雷雨",
+          weather_code: "13",
+        },
+        {
+          time: "2026-07-05T03:00:00+08:00",
+          temp_c: 34,
+          apparent_temp_c: 37,
+          pop_percent: 85,
+          weather: "陰短暫雨",
+          weather_code: "12",
+        },
+      ],
       sunrise_sunset: {
         county: "臺北市",
         target_date: "2026-07-05",
@@ -145,6 +172,57 @@ const nextDayForecastBody = {
     },
   },
   meta: { request_id: "forecast-live-2", cached: true, source: "cwa-live" },
+};
+
+const otherTownForecastBody = {
+  ...liveForecastBody,
+  data: {
+    ...liveForecastBody.data,
+    forecast: {
+      ...liveForecastBody.data.forecast,
+      town: townsBody.data[1],
+      hourly: [
+        {
+          time: "2026-07-04T00:00:00+08:00",
+          temp_c: 24,
+          apparent_temp_c: 26,
+          pop_percent: 75,
+          weather: "陰短暫雨",
+          weather_code: "12",
+        },
+        {
+          time: "2026-07-04T03:00:00+08:00",
+          temp_c: 23,
+          apparent_temp_c: 25,
+          pop_percent: 70,
+          weather: "陰短暫雨",
+          weather_code: "12",
+        },
+      ],
+      sunrise_sunset: {
+        county: "花蓮縣",
+        target_date: "2026-07-04",
+        source_date: "2026-07-04",
+        sunrise_time: "05:09",
+        sunset_time: "18:42",
+        is_approximate: false,
+      },
+      uv: {
+        value: 6,
+        level: "高量",
+        source_label: "目前紫外線",
+        source_type: "observation",
+        observed_at: "2026-07-04T12:00:00+08:00",
+        station_id: "466990",
+        station_name: "花蓮",
+      },
+    },
+    ai_summary: {
+      text: "花蓮市天氣偏濕，注意短時降雨。",
+      mode: "rule-based",
+    },
+  },
+  meta: { request_id: "forecast-live-3", cached: false, source: "cwa-live" },
 };
 
 describe("App", () => {
@@ -202,7 +280,7 @@ describe("App", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  test("clicking a day card re-queries that date and updates advice plus sunrise", async () => {
+  test("clicking a day card keeps the chart pinned while updating advice plus sunrise", async () => {
     const user = userEvent.setup();
     let forecastCallCount = 0;
     const scrollYBeforeClick = window.scrollY;
@@ -221,6 +299,7 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByText("7/4 留意午後陣雨。");
+    const chartBeforeClick = document.querySelector(".hourly-chart svg")?.innerHTML;
     await user.click(screen.getByRole("button", { name: /7\/5/ }));
 
     const selectedButton = await screen.findByRole("button", { name: /7\/5/ });
@@ -232,6 +311,37 @@ describe("App", () => {
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(document.activeElement).toBe(selectedButton);
     expect(screen.queryByText("帶傘。")).toBeNull();
+    expect(document.querySelector(".hourly-chart svg")?.innerHTML).toBe(chartBeforeClick);
+    expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
     expect(window.scrollY).toBe(scrollYBeforeClick);
+  });
+
+  test("querying a different town refreshes the chart to that town", async () => {
+    const user = userEvent.setup();
+    let forecastCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) {
+        return Promise.resolve(jsonResponse(townsBody));
+      }
+      forecastCallCount += 1;
+      if (forecastCallCount === 1) {
+        return Promise.resolve(jsonResponse(liveForecastBody));
+      }
+      return Promise.resolve(jsonResponse(otherTownForecastBody));
+    }));
+
+    render(<App />);
+
+    await screen.findByText("7/4 留意午後陣雨。");
+    const initialChart = document.querySelector(".hourly-chart svg")?.innerHTML;
+
+    await user.selectOptions(screen.getByLabelText("縣市"), "花蓮縣");
+    await user.selectOptions(screen.getByLabelText("鄉鎮市區"), "hualien-hualien");
+    await user.click(screen.getByRole("button", { name: "查詢天氣" }));
+
+    await screen.findByText("花蓮市天氣偏濕，注意短時降雨。");
+    expect(screen.getByTestId("chart-place").textContent).toBe("花蓮縣 花蓮市");
+    expect(document.querySelector(".hourly-chart svg")?.innerHTML).not.toBe(initialChart);
   });
 });

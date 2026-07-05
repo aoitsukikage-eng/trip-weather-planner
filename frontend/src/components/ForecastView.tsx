@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 
 function popColor(pop: number | null): string {
@@ -73,7 +73,7 @@ function shouldShowHourlyAnnotation(index: number, total: number, step: number):
   return index === 0 || index === total - 1 || index % step === 0;
 }
 
-function HourlyForecastChart({
+const HourlyForecastChart = memo(function HourlyForecastChart({
   hourly,
   placeLabel,
 }: {
@@ -291,7 +291,7 @@ function HourlyForecastChart({
       )}
     </section>
   );
-}
+});
 
 function formatSunriseSourceLabel(sourceDate: string): string {
   return `參考 ${sourceDate} 天文資料`;
@@ -319,18 +319,22 @@ function buildDayAriaLabel(day: DailyForecast): string {
 }
 
 export default function ForecastView({
+  chartResult,
   result,
   loading = false,
   onSelectDate,
 }: {
+  chartResult?: ForecastResult;
   result: ForecastResult;
   loading?: boolean;
   onSelectDate?: (date: string) => void;
 }) {
   const { forecast, ai_summary } = result;
+  const chartForecast = chartResult?.forecast ?? forecast;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
   const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
+  const chartPlaceLabel = `${chartForecast.town.city} ${chartForecast.town.name}`;
   const showMockBadge = isMockForecast(result);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const pendingFocusDateRef = useRef<string | null>(null);
@@ -355,6 +359,7 @@ export default function ForecastView({
             本週預報
             {forecast.days.length > 1 ? `（共 ${forecast.days.length} 天）` : ""}
           </h3>
+          <p className="section-hint">點選任一天，即可查看該日的行前建議與日出日落</p>
         </div>
         <div className="day-strip-scroll" data-testid="day-strip-scroll">
           <div
@@ -448,8 +453,8 @@ export default function ForecastView({
         )}
       </div>
 
-      {forecast.hourly && forecast.hourly.length > 0 && (
-        <HourlyForecastChart hourly={forecast.hourly} placeLabel={placeLabel} />
+      {chartForecast.hourly && chartForecast.hourly.length > 0 && (
+        <HourlyForecastChart hourly={chartForecast.hourly} placeLabel={chartPlaceLabel} />
       )}
     </section>
   );

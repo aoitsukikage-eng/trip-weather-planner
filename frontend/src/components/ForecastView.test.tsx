@@ -133,6 +133,7 @@ describe("ForecastView", () => {
     expect(screen.getByTestId("day-strip-scroll")).not.toBeNull();
     expect(dayStrip.getAttribute("data-layout")).toBe("single-row");
     expect(dayStrip.getAttribute("style")).toContain("--day-count: 7");
+    expect(screen.getByText("點選任一天，即可查看該日的行前建議與日出日落")).not.toBeNull();
     expect(buttons).toHaveLength(7);
     expect(firstButton).toBeDefined();
     expect(firstCardHeader?.firstElementChild?.className).toContain("day-strip-icon");
@@ -225,6 +226,61 @@ describe("ForecastView", () => {
     const labels = screen.getAllByTestId("hourly-time-label");
     expect(labels.length).toBeLessThan(24);
     expect(labels.length).toBe(13);
+  });
+
+  test("pins the chart to the provided chart result while day details switch", async () => {
+    function Harness() {
+      const [targetDate, setTargetDate] = useState("2026-07-04");
+      const detailResult = buildResult("臺北市", "信義區", [
+        {
+          time: "2026-07-04T00:00:00+08:00",
+          temp_c: 26,
+          apparent_temp_c: 28,
+          pop_percent: 15,
+          weather: "多雲",
+          weather_code: "04",
+        },
+      ]);
+      const chartResult = buildResult("新北市", "貢寮區", [
+        {
+          time: "2026-07-04T00:00:00+08:00",
+          temp_c: 31,
+          apparent_temp_c: 34,
+          pop_percent: 80,
+          weather: "陰短暫雨",
+          weather_code: "12",
+        },
+      ]);
+      return (
+        <ForecastView
+          chartResult={chartResult}
+          onSelectDate={setTargetDate}
+          result={{
+            ...detailResult,
+            forecast: {
+              ...detailResult.forecast,
+              target_date: targetDate,
+            },
+            ai_summary: {
+              ...detailResult.ai_summary,
+              text: `summary for ${targetDate}`,
+            },
+          }}
+        />
+      );
+    }
+
+    const user = userEvent.setup();
+    const { container } = render(<Harness />);
+    const beforeChart = container.querySelector(".hourly-chart svg")?.innerHTML;
+
+    expect(screen.getByTestId("chart-place").textContent).toBe("新北市 貢寮區");
+
+    await user.click(screen.getByTestId("day-card-2026-07-05"));
+
+    expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
+    expect(screen.getByTestId("chart-place").textContent).toBe("新北市 貢寮區");
+    expect(container.querySelector(".hourly-chart svg")?.innerHTML).toBe(beforeChart);
   });
 });
 

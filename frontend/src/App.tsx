@@ -11,6 +11,7 @@ function todayIsoDate(): string {
 export default function App() {
   const [towns, setTowns] = useState<Town[]>([]);
   const [result, setResult] = useState<ForecastResult | null>(null);
+  const [chartResult, setChartResult] = useState<ForecastResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTown, setSelectedTown] = useState<Town | null>(null);
@@ -27,7 +28,7 @@ export default function App() {
     void runForecastQuery(towns[0], todayIsoDate());
   }, [towns, result]);
 
-  const runForecastQuery = async (town: Town, date: string) => {
+  const runForecastQuery = async (town: Town, date: string, options?: { updateChart?: boolean }) => {
     const requestId = activeRequestRef.current + 1;
     activeRequestRef.current = requestId;
     setSelectedTown(town);
@@ -39,11 +40,17 @@ export default function App() {
         return;
       }
       setResult(nextResult);
+      if (options?.updateChart ?? true) {
+        setChartResult(nextResult);
+      }
     } catch (caughtError) {
       if (requestId !== activeRequestRef.current) {
         return;
       }
       setResult(null);
+      if (options?.updateChart ?? true) {
+        setChartResult(null);
+      }
       setError(caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。");
     } finally {
       if (requestId === activeRequestRef.current) {
@@ -53,7 +60,7 @@ export default function App() {
   };
 
   const handleSubmit = async (town: Town) => {
-    await runForecastQuery(town, todayIsoDate());
+    await runForecastQuery(town, todayIsoDate(), { updateChart: true });
   };
 
   const handleSelectDate = async (date: string) => {
@@ -61,7 +68,7 @@ export default function App() {
     if (!town) {
       return;
     }
-    await runForecastQuery(town, date);
+    await runForecastQuery(town, date, { updateChart: false });
   };
 
   return (
@@ -84,7 +91,14 @@ export default function App() {
         </section>
       )}
 
-      {result && <ForecastView result={result} loading={loading} onSelectDate={handleSelectDate} />}
+      {result && (
+        <ForecastView
+          chartResult={chartResult ?? result}
+          result={result}
+          loading={loading}
+          onSelectDate={handleSelectDate}
+        />
+      )}
 
       <footer>
         <small>出發前先看一眼天氣與日照資訊，行程安排更從容。</small>
