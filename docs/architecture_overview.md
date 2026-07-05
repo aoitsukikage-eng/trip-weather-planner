@@ -4,14 +4,14 @@
 
 題目表面是「設計雲端後端放 Python 程式碼 + 架構圖」,實際評分大概在看:能否把 Python 放進合理的雲端執行模型、是否理解前後端分離與資料流與安全邊界、是否知道如何把個人開發擴展成團隊流程、是否只堆雲服務名詞還是真懂 why。
 
-因此本案不只畫一張抽象雲端圖,也不只做單純 API,而是提交一個**能說服評審「這是能落地的小型雲端產品」**的完整閉環:天氣為核心的旅遊行前規劃系統。
+因此本案不只畫一張抽象雲端圖,也不只做單純 API,而是提交一個**能說服評審「這是能落地的小型雲端產品」**的完整閉環:以天氣為核心的旅遊行前規劃系統。
 
 ## 設計原則
 
-1. **模組化單體,不做微服務**:規模尚小,微服務徒增複雜度;評審更重視「知道何時不該 over-engineer」。後端內部拆 `weather / poi / route / ai_summary` service。
-2. **Adapter 邊界**:`external → adapter → normalized schema → service → API`。換第三方只改 adapter,不動 schema 與前端。P1 延伸資料(日出日落、UV、town catalog)也走同一條 adapter 邊界,不讓前端直接打第三方。
+1. **模組化單體,不做微服務**:規模尚小,微服務徒增複雜度;後端內部以 adapter、service、router、schema 分層,維持清楚邊界。
+2. **Adapter 邊界**:`external → adapter → normalized schema → service → API`。外部資料解析集中在 adapter,不讓前端直接打第三方。
 3. **後端代理第三方**:金鑰不進前端;統一格式、可加快取限流監控。
-4. **架構圖畫滿、部署精簡**:圖展示 production 系統理解,Phase 1 只部署脊椎(FastAPI + CWA adapter + 快取 + 靜態前端)。
+4. **架構圖與部署一致**:架構文件描述目前已交付的 Azure Storage 靜態網站、Azure Container Apps、Azure Container Registry、CWA adapter 與快取。
 5. **零憑證可跑**:未設 key 時 mock 模式,讓每個階段都可 demo。
 
 
@@ -22,25 +22,25 @@
 - **React + Vite + TS**:展示型前端開發快、前後端分離清楚。
 
 
-## 分階段
+## 已交付範圍
 
-- **Phase 1(基本盤,可交)**:縣市/鄉鎮選擇 + 7 天日期 chips → 天氣預報 + 行前建議 + 日出日落 + UV;後端 + 前端 + 部署 + CI/CD + IaC。
-
-開發中
-- **Phase 2**:TDX 景點,行前規劃頁。
-- **Phase 3**:TDX 交通建議(門到門需自組或搭 Google Directions)。
-- **Overlay**:聊天機器人入口——把服務當 tool,LLM 以 tool-calling 編排;與表單前端共用後端,是加法不是重做。
+- 縣市/鄉鎮兩階段選擇,live mode 由 CWA catalog 彙整約 368 筆鄉鎮市區。
+- today..today+6 的 7 天日期 chips,預設載入即顯示整週預報。
+- 7 天 daily summary:代表天氣、高低溫、最大降雨機率與規則式行前建議。
+- 72 小時逐時圖表:溫度、體感溫度、降雨機率與天氣圖示。
+- CWA 日出日落與紫外線資料,由後端整合後提供給前端。
+- Azure public demo:前端 Azure Storage 靜態網站,後端 Azure Container Apps,映像保存在 Azure Container Registry。
 
 ## 文件導覽
 
 - `cloud_architecture.md` — Azure 架構圖 + 資料流
-- `frontend_plan.md` — 前端頁面與邊界
+- `frontend_plan.md` — 前端架構與資料流
 - `cicd_flow.md` — CI/CD
 - `git_workflow.md` — Git 協作
 - `iac_overview.md` — Terraform azurerm 部署概述
-- `ai_driven.md` — AI 在產品與開發的角色 + 資料治理
+- `ai_driven.md` — 多 agent 開發流程
 
-## P1 已出貨行為
+## 已出貨 API 行為
 
 - `GET /api/towns`
   - mock mode:回傳靜態 22 筆鄉鎮名單,維持零憑證可 demo。
@@ -52,7 +52,7 @@
 - 前端
   - 表單拆成縣市 → 鄉鎮兩階段。
   - 日期 UI 只允許 today..today+6,並以 `M/D（週X）` 顯示。
-  - 行前建議面板移除 AI branding,rule-based 模式保持誠實標示。
+  - 行前建議面板顯示規則式建議,不暴露內部模式標示。
 - 雲端部署
   - 前端以 Azure Storage 靜態網站 `$web` container 承接 React build。
   - 後端以 Azure Container Apps 執行 FastAPI 容器,搭配 Azure Container Registry 發版。
