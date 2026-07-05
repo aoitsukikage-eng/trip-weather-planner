@@ -14,14 +14,14 @@
 | 串接第三方 REST API | CWA 天氣(P1)、TDX 景點/交通(P2/P3),後端代理 |
 | CI/CD 流程圖 | `docs/cicd_flow.md` + `.github/workflows/ci.yml` |
 | 多人協作 Git 流程圖 | `docs/git_workflow.md`(trunk-based) |
-| IaC 建置前端架構 | `infra/terraform/`(Terraform azurerm 敘事: RG + ACR + Container Apps + SWA) |
+| IaC 建置前端架構 | `infra/terraform/`(Terraform azurerm 敘事: RG + Storage 靜態網站 + ACR + Container Apps) |
 | AI Driven 系統 | AI 行前摘要(產品)+ AI 輔助開發流程,見 `docs/ai_driven.md` |
 
 ## 架構一覽
 
 ```
 前端 (React/Vite)  ──►  FastAPI 後端  ──►  第三方 API (CWA / TDX)
- Azure Static Web Apps    Azure Container Apps   後端代理,key 不進前端
+ Azure Storage 靜態網站   Azure Container Apps   後端代理,key 不進前端
                                │
                                ├─ Azure Container Registry (image)
                                ├─ Container Apps secrets (CWA_API_KEY)
@@ -60,8 +60,8 @@ cd frontend && npm run build
 
 ## 雲端部署(Azure)
 
-- **架構摘要**:前端部署到 Azure Static Web Apps Free,後端部署到 Azure Container Apps consumption plan,映像由 Azure Container Registry 保存,`CWA_API_KEY` 透過 Container Apps secrets 注入。
-- **Demo URL placeholder**:前端 `<FRONTEND_URL>`、後端 `<BACKEND_URL>`。
+- **架構摘要**:前端部署到 Azure Storage 靜態網站(`$web` container),後端部署到 Azure Container Apps consumption plan,映像由 Azure Container Registry 保存,`CWA_API_KEY` 透過 Container Apps secrets 注入。
+- **Demo URL**:前端 `https://twpfe5ce0.z23.web.core.windows.net/`、後端 `https://twp-backend.purplewave-91ee1594.southeastasia.azurecontainerapps.io`。
 - **延伸文件**:
   - 架構圖:`docs/cloud_architecture.md`
   - CI/CD:`docs/cicd_flow.md`
@@ -92,7 +92,7 @@ docs/       設計文件與流程圖
 - forecast payload 與 UI 會顯示 selected county 的日出日落,以及以最近 CWA 測站對應的目前紫外線等級。
 - ✅ Mock mode 仍可零憑證 demo,保留既有 22 筆靜態鄉鎮與 deterministic fallback。
 - ✅ Public-demo deployment readiness: Docker build、Terraform 範本、deploy workflow skeleton、runbook 已整理完成。
-- ⏳ 待外部 auth / 平台參數:Azure OIDC、SWA/Container Apps 正式公開 URL。
+- ✅ Azure public demo deployed:前端 Azure Storage 靜態網站,後端 Azure Container Apps。
 - ⏳ Deferred: Gemini 啟用、AQI、警特報、景點、交通、聊天機器人 overlay。
 
 ## Public Demo Readiness
@@ -101,5 +101,4 @@ docs/       設計文件與流程圖
 - Terraform example:`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton:`.github/workflows/deploy-demo.yml`
 
-目前 repo 狀態是 **deploy-ready, not actually deployed**。未提供 Azure /
-GitHub OIDC auth 之前,不聲稱已有公開 URL 或已建立雲端資源。
+目前 repo 狀態是 **public-demo deployed**。正式 demo URL 已回填於 README 與部署文件;GitHub OIDC 仍保留為後續 CI/CD 自動部署項目。
