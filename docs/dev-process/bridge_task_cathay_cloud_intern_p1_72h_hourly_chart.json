@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-03",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "60-120m",
   "detach_required": false,
@@ -72,8 +72,8 @@
   },
   "user_one_liner": "After the UX-refresh card is accepted and if time allows before the 7/6 deadline, add a CWA-website-style 72h chart: expose the already-fetched 3-hourly slices from the backend and render dual temperature curves with weather icons, honestly labeled as 3-hourly resolution.",
   "monitor_commands": {
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "If accepted with time remaining, revisit deferred items in order: Gemini activation with honest AI labeling, then MOENV AQI."
 }

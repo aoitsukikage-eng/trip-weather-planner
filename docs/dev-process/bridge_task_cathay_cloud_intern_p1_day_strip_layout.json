@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-05",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "60-90m",
   "detach_required": false,
@@ -66,8 +66,8 @@
   },
   "user_one_liner": "Compact the 7-day cards into a single-row day strip (date+weekday, icon, high/low, PoP; no advice hint) and move it above 行前建議/日出日落 so selecting a day and reading its advice happens in one viewport; horizontal scroll on narrow screens; interaction mechanics unchanged.",
   "monitor_commands": {
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "This should be the final P1 frontend card. Remaining: Gemini activation decision, MOENV AQI (deferred), actual cloud deploy (waiting on deploy auth)."
 }

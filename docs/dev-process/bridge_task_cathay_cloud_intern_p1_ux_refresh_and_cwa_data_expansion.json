@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-03",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "90-180m",
   "detach_required": false,
@@ -86,11 +86,11 @@
   },
   "user_one_liner": "Start Ubuntu-side coding on cathay-cloud-intern-p1-ux-refresh-and-cwa-data-expansion: full township coverage with a county->township two-stage form, year-free 7-day date chips defaulting to the whole week, fix the summary-describes-wrong-day bug, rename the panel to 行前建議, and add CWA sunrise/sunset plus UV display. AI and AQI stay deferred.",
   "monitor_commands": {
-    "git_status": "git -C /home/esgcenter0/python/Academic/trip-weather-planner status -sb",
-    "lint": "/home/esgcenter0/venvs/python-env/bin/ruff check /home/esgcenter0/python/Academic/trip-weather-planner/backend",
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build",
-    "towns_count_live": "curl -s http://127.0.0.1:18082/api/towns | /home/esgcenter0/venvs/python-env/bin/python -c \"import json,sys;print(len(json.load(sys.stdin)['data']))\""
+    "git_status": "git -C <WORKSPACE> status -sb",
+    "lint": "<WORKSPACE-VENV>/bin/ruff check <WORKSPACE>/backend",
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build",
+    "towns_count_live": "curl -s http://127.0.0.1:18082/api/towns | <WORKSPACE-VENV>/bin/python -c \"import json,sys;print(len(json.load(sys.stdin)['data']))\""
   },
   "next_task_hint": "After AC1-AC12 pass, the natural follow-ups are (a) Gemini activation with honest AI labeling, (b) MOENV AQI integration, then (c) actual cloud deploy once a deploy auth path is completed."
 }

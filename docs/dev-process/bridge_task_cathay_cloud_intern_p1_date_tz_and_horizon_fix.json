@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-04",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "60-120m",
   "detach_required": false,
@@ -77,8 +77,8 @@
   },
   "user_one_liner": "Fix the UTC date off-by-one (toISOString) so chips submit the user's local date, make the week view and 72h chart stable across all chip selections with the chip driving only the advice focus, stop silently masking validation errors with mock data, resolve exact-date sunrise/sunset rows, and make UV wording honest about forecast vs observation.",
   "monitor_commands": {
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "After acceptance, re-deploy the Ubuntu demo for user re-testing, then proceed to deploy auth + actual cloud deployment."
 }

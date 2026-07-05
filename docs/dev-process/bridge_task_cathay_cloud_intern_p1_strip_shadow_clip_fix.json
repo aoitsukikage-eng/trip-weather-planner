@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-05",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "15-30m",
   "detach_required": false,
@@ -57,8 +57,8 @@
   },
   "user_one_liner": "Remove the leftover overflow clipping on the day-strip wrapper so card shadows are no longer cut into a hard line below the row; give mobile's real scroll container shadow room; nothing else changes.",
   "monitor_commands": {
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "Remaining: deploy auth -> actual public-URL deploy, Gemini decision, submission polish. Deadline 2026-07-06 12:00."
 }

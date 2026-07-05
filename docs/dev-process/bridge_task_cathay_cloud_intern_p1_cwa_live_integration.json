@@ -7,7 +7,7 @@
   "created_by": "Codex (Management)",
   "created_at": "2026-07-02",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "30-90m",
   "detach_required": false,
@@ -67,10 +67,10 @@
   },
   "user_one_liner": "Start Ubuntu-side coding on cathay-cloud-intern-p1-cwa-live-integration using the repo-local handoff docs and keep Mac as mirror only.",
   "monitor_commands": {
-    "git_status": "git -C /home/esgcenter0/python/Academic/trip-weather-planner status -sb",
-    "lint": "/home/esgcenter0/venvs/python-env/bin/ruff check /home/esgcenter0/python/Academic/trip-weather-planner/backend",
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "git_status": "git -C <WORKSPACE> status -sb",
+    "lint": "<WORKSPACE-VENV>/bin/ruff check <WORKSPACE>/backend",
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "After AC1-AC7 pass, the natural follow-up is Cloud Run deployment preparation for public demo readiness."
 }

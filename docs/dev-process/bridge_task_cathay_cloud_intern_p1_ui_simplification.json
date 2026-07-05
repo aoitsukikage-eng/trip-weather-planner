@@ -7,7 +7,7 @@
   "created_by": "Claude Code (Management)",
   "created_at": "2026-07-05",
   "project": "trip-weather-planner",
-  "environment": "Executor: ubuntu-dev mainline worktree at /home/esgcenter0/python/Academic/trip-weather-planner using ~/venvs/python-env",
+  "environment": "Executor: <DEV-HOST> mainline worktree at <WORKSPACE> using ~/venvs/python-env",
   "execution_mode": "interactive-coding",
   "expected_runtime": "60-120m",
   "detach_required": false,
@@ -69,8 +69,8 @@
   },
   "user_one_liner": "Simplify the UI per user review: remove the date-chip row and make the 7-day cards the date selector (click switches advice + sunrise via cached re-query), purge all technical mode/source strings from the frontend (single 示範資料 badge for mock data), label sunrise/sunset with its travel date, and enlarge/center the place label on the 72h chart header.",
   "monitor_commands": {
-    "tests": "cd /home/esgcenter0/python/Academic/trip-weather-planner/backend && /home/esgcenter0/venvs/python-env/bin/pytest -q",
-    "frontend_build": "cd /home/esgcenter0/python/Academic/trip-weather-planner/frontend && npm run build"
+    "tests": "cd <WORKSPACE>/backend && <WORKSPACE-VENV>/bin/pytest -q",
+    "frontend_build": "cd <WORKSPACE>/frontend && npm run build"
   },
   "next_task_hint": "After acceptance: redeploy the Ubuntu demo for user re-test; remaining backlog is Gemini activation, MOENV AQI, and actual cloud deploy (waiting on deploy auth)."
 }
