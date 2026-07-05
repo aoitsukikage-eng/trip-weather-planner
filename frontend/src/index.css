@@ -328,11 +328,36 @@ header h1 {
 }
 
 .day-strip-card-selected {
-  border: 2px solid #0e74b7;
+  border: 2px solid #085b90;
   background:
-    linear-gradient(180deg, rgba(231, 245, 255, 0.98), rgba(245, 250, 255, 0.96)),
-    rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 30px rgba(14, 116, 183, 0.18);
+    linear-gradient(180deg, rgba(211, 233, 248, 0.98), rgba(233, 244, 252, 0.97)),
+    rgba(240, 248, 255, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 16px 34px rgba(8, 91, 144, 0.22);
+}
+
+.day-strip-card-selected:hover:not(:disabled) {
+  border-color: #074a75;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 18px 38px rgba(7, 74, 117, 0.24);
+}
+
+.day-strip-card-selected .day-strip-date-main,
+.day-strip-card-selected .day-strip-temp strong {
+  color: #113a5a;
+}
+
+.day-strip-card-selected .day-strip-weekday,
+.day-strip-card-selected .day-strip-weather,
+.day-strip-card-selected .day-strip-temp,
+.day-strip-card-selected .day-strip-pop {
+  color: #244c6b;
+}
+
+.day-strip-card-selected .day-strip-icon {
+  background: rgba(189, 224, 246, 0.96);
 }
 
 .day-strip-head {

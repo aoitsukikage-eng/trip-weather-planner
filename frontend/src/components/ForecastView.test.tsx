@@ -144,6 +144,7 @@ describe("ForecastView", () => {
     expect(firstButton?.textContent).toContain("降雨 20%");
     expect(firstButton?.textContent).not.toContain("帶傘");
     expect(firstButton?.getAttribute("aria-pressed")).toBe("true");
+    expect(firstButton?.className).toContain("day-strip-card-selected");
     expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
@@ -197,6 +198,7 @@ describe("ForecastView", () => {
     expect(secondCard.textContent).not.toContain("已選擇");
     expect(secondCard.getAttribute("aria-pressed")).toBe("true");
     expect(secondCard.getAttribute("aria-current")).toBe("date");
+    expect(secondCard.className).toContain("day-strip-card-selected");
     expect(secondCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
     expect(screen.getByText(/7\/5（日） 日出 05:12 · 日落 18:48/)).not.toBeNull();
@@ -206,6 +208,7 @@ describe("ForecastView", () => {
     expect(thirdCard.textContent).not.toContain("已選擇");
     expect(thirdCard.getAttribute("aria-pressed")).toBe("true");
     expect(thirdCard.getAttribute("aria-current")).toBe("date");
+    expect(thirdCard.className).toContain("day-strip-card-selected");
     expect(thirdCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-06")).not.toBeNull();
     expect(screen.getByText(/7\/6（一） 日出 05:12 · 日落 18:48/)).not.toBeNull();
