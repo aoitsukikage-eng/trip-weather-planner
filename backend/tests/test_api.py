@@ -172,9 +172,8 @@ def test_forecast_discards_partial_eighth_day_from_live_horizon(
         daily = []
         anchor = _today_taipei()
         for offset in range(8):
-            start_at = datetime.combine(anchor + timedelta(days=offset), datetime.min.time()).replace(
-                hour=6
-            )
+            start_day = anchor + timedelta(days=offset)
+            start_at = datetime.combine(start_day, datetime.min.time()).replace(hour=6)
             daily.append(
                 TimeSlice(
                     start=start_at.isoformat(),
