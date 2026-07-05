@@ -108,6 +108,24 @@ describe("ForecastView", () => {
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
   });
 
+  test("hides the sunrise caveat for exact rows", () => {
+    const result = buildResult("臺北市", "信義區");
+    const sunrise = result.forecast.sunrise_sunset;
+    if (!sunrise) {
+      throw new Error("expected sunrise data");
+    }
+    result.forecast.sunrise_sunset = {
+      ...sunrise,
+      source_date: "2026-07-04",
+      is_approximate: false,
+    };
+
+    render(<ForecastView result={result} />);
+
+    expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
+    expect(screen.getByText("臺北市")).not.toBeNull();
+  });
+
   test("renders the day strip before advice and chart with seven compact cells", () => {
     const { container } = render(<ForecastView result={buildResult("臺北市", "信義區")} />);
 

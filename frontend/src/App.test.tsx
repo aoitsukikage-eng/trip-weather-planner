@@ -299,6 +299,7 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByText("7/4 留意午後陣雨。");
+    expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
     const chartBeforeClick = document.querySelector(".hourly-chart svg")?.innerHTML;
     await user.click(screen.getByRole("button", { name: /7\/5/ }));
 
@@ -308,6 +309,7 @@ describe("App", () => {
       "polite",
     );
     expect(screen.getByText("7/5（日） 日出 05:13 · 日落 18:48")).not.toBeNull();
+    expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(document.activeElement).toBe(selectedButton);
     expect(screen.queryByText("帶傘。")).toBeNull();
