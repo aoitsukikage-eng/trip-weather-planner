@@ -84,6 +84,27 @@ function buildResult(
   };
 }
 
+function buildResultWithDayCount(dayCount: number): ForecastResult {
+  const base = buildResult("臺北市", "信義區");
+  return {
+    ...base,
+    forecast: {
+      ...base.forecast,
+      days: Array.from({ length: dayCount }, (_, index) => {
+        const isoDate = `2026-07-${String(4 + index).padStart(2, "0")}`;
+        return {
+          date: isoDate,
+          temp_high_c: 32 - (index % 3),
+          temp_low_c: 25 - (index % 2),
+          max_pop_percent: 20 + index * 10,
+          weather: index % 2 === 0 ? "多雲" : "晴時多雲",
+          advice_hint: index % 2 === 0 ? "帶傘。" : "適合輕鬆出遊。",
+        };
+      }),
+    },
+  };
+}
+
 describe("ForecastView", () => {
   afterEach(() => {
     cleanup();
@@ -172,6 +193,14 @@ describe("ForecastView", () => {
     expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
+  test("shows a dynamic day count heading and renders every returned day card", () => {
+    render(<ForecastView result={buildResultWithDayCount(8)} />);
+
+    expect(screen.getByText("本週預報（共 8 天）")).not.toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(8);
+    expect(screen.getByTestId("day-card-2026-07-11")).not.toBeNull();
   });
 
   test("hides the rain row entirely when PoP is null", () => {
