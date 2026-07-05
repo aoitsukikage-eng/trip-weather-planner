@@ -174,6 +174,30 @@ const nextDayForecastBody = {
   meta: { request_id: "forecast-live-2", cached: true, source: "cwa-live" },
 };
 
+const lastDayForecastBody = {
+  ...liveForecastBody,
+  data: {
+    ...liveForecastBody.data,
+    forecast: {
+      ...liveForecastBody.data.forecast,
+      target_date: "2026-07-10",
+      sunrise_sunset: {
+        county: "臺北市",
+        target_date: "2026-07-10",
+        source_date: "2026-07-10",
+        sunrise_time: "05:16",
+        sunset_time: "18:49",
+        is_approximate: false,
+      },
+    },
+    ai_summary: {
+      text: "7/10 天氣穩定，適合安排長時間戶外行程。",
+      mode: "rule-based",
+    },
+  },
+  meta: { request_id: "forecast-live-7", cached: true, source: "cwa-live" },
+};
+
 const validationErrorBody = {
   success: false,
   data: null,
@@ -326,6 +350,34 @@ describe("App", () => {
     expect(document.querySelector(".hourly-chart svg")?.innerHTML).toBe(chartBeforeClick);
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
     expect(window.scrollY).toBe(scrollYBeforeClick);
+  });
+
+  test("clicking the last visible day card updates the selected advice and sunrise", async () => {
+    const user = userEvent.setup();
+    let forecastCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) {
+        return Promise.resolve(jsonResponse(townsBody));
+      }
+      forecastCallCount += 1;
+      if (forecastCallCount > 1) {
+        return Promise.resolve(jsonResponse(lastDayForecastBody));
+      }
+      return Promise.resolve(jsonResponse(liveForecastBody));
+    }));
+
+    render(<App />);
+
+    await screen.findByText("7/4 留意午後陣雨。");
+    await user.click(screen.getByTestId("day-card-2026-07-10"));
+
+    const selectedButton = await screen.findByTestId("day-card-2026-07-10");
+    expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
+    expect(selectedButton.getAttribute("aria-current")).toBe("date");
+    expect(screen.getByText("7/10 天氣穩定，適合安排長時間戶外行程。")).not.toBeNull();
+    expect(screen.getByText("7/10（五） 日出 05:16 · 日落 18:49")).not.toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   test("keeps the current week view and selection when a day click re-query fails", async () => {
