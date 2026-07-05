@@ -791,3 +791,113 @@ with CI green — consistent with the project's trunk-based workflow
 (docs/git_workflow.md). No speculative polish before the deadline; the only
 remaining pre-submission work is deploy auth -> actual deploy -> public URL,
 the Gemini activation decision, and README/docs finalization.
+
+## 2026-07-05: Azure delivery platform locked
+
+### Summary
+
+Delivery Phase 2 moved from "deploy-ready" to a concrete Azure-for-Students
+deployment plan. Management cross-reviewed the viable Azure surfaces before
+the user made the final platform call.
+
+### Decision
+
+- Backend deployment would use Azure Container Apps, not App Service.
+- Infrastructure would keep a pure Azure story; clouds that were not actually
+  used would not appear in the final deliverables.
+- Terraform would be rewritten around the AzureRM provider instead of carrying
+  the earlier non-Azure deployment shape forward.
+- Bicep remained a reasonable Azure-native alternative, but Terraform was kept
+  because the repo already had Terraform conventions and CI entry points.
+- Static Web Apps proxying was rejected after Free-tier constraints made it a
+  poor fit for the required backend integration path.
+
+### Trade-off
+
+Container Apps was the more explicit operations choice: it required container
+registry and revision thinking, but it also matched the backend's packaged
+runtime and left a cleaner path for secrets, scaling, and public smoke checks.
+
+## 2026-07-05: Azure deployment sprint completed with constrained fallbacks
+
+### Summary
+
+The backend reached a public Azure runtime through ACR Basic and Azure
+Container Apps. The sprint also exposed two student-subscription constraints
+that forced pragmatic fallback decisions.
+
+### What changed
+
+- The target subscription policy allowed `southeastasia`; an attempted
+  `eastasia` path was rejected, so the deployment moved to the allowed region.
+- `az acr build` was not usable under the student-subscription limits, so the
+  image path switched to local build plus registry push.
+- Container Apps was configured with scale-to-zero behavior and a small
+  resource profile (`0.5 vCPU`, `1 GiB`) suitable for a demo workload.
+- Static Web Apps was tested across all available regions for this account
+  shape and was treated as structurally unavailable after policy rejections.
+- The frontend fell back to Azure Storage static website hosting, which gave a
+  working public static endpoint.
+- CORS was tightened in a second pass after both frontend and backend URLs were
+  known.
+
+### Lesson
+
+The fallback was not a downgrade in delivery quality. It narrowed the demo to
+services the student subscription could actually provision, which is better
+than presenting an elegant architecture that cannot be reproduced.
+
+## 2026-07-06: Late-night incident proved the GitHub recovery path
+
+### Summary
+
+During the final delivery window, campus network access failed and the primary
+development machine became unreachable. GitHub became the single source of
+truth, and the work transferred cleanly to a backup workstation through a
+fresh clone.
+
+### Recovery
+
+- No code or documentation state was lost because the active delivery state had
+  already been pushed.
+- The infrastructure card was re-dispatched and completed from the backup
+  workstation.
+- Terraform was rewritten into a pure AzureRM shape.
+- A GitHub Actions OIDC deployment skeleton was added to preserve the intended
+  future automation path without claiming a fully wired production workflow.
+- Acceptance caught two workflow self-consistency issues, then the fixes landed
+  immediately: storage commands needed login auth mode, and Container Apps
+  secrets needed the correct update command path.
+
+### Lesson
+
+The incident validated the remote-first workflow but also exposed a process
+rule: acceptance snapshots and active coding cards must not overlap on the
+same moving target. The snapshot should wait until the coding card has landed
+or explicitly state that it is reviewing an in-progress state.
+
+## 2026-07-06: Public submission closed with sanitized delivery evidence
+
+### Summary
+
+Delivery closed with the repository made public, the live demo submitted, and
+the internal development narrative retained in sanitized form under
+`dev-process/`.
+
+### Accepted state
+
+- The frontend and backend demo URLs were both live for submission.
+- The repository was converted to public visibility.
+- `gitleaks` full-history scanning returned zero findings.
+- Development records were kept because they explain the decision trail, but
+  operationally sensitive details were removed or generalized.
+- The final documentation tells the Azure deployment story that actually
+  happened: Container Apps for the backend and Storage static website hosting
+  for the frontend.
+
+### Trade-off
+
+The final submission favors reproducible truth over architectural symmetry.
+Static Web Apps would have been a cleaner single-brand frontend story, but the
+working Azure Storage fallback better represents the platform constraints and
+keeps the demo honest.
