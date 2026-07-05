@@ -35,6 +35,8 @@ jobs:
           # Pinned to Node 22 LTS on purpose (avoid odd/non-LTS surprises in CI).
           node-version: "22"
       - run: npm ci
+      - name: Test
+        run: npm test
       - name: Build
         run: npm run build
 

@@ -31,8 +31,9 @@ flowchart LR
 
 ## CD 階段(部署骨架已補)
 
-- `deploy-demo.yml` 採 `workflow_dispatch` + `dry_run`，先做 build / validate，
-  有 OIDC 與專案 secrets 時才進入真正 cloud 步驟。
+- `deploy-demo.yml` 採 `workflow_dispatch` 手動觸發，並由 `environment` input 指定
+  GitHub Environment；觸發時需提供 Azure resource group、ACR、Container App、
+  frontend storage account 與 frontend origin 等部署目標。
 - 真部署仍需人工觸發與環境核准，不會在這個 repo 內假裝「一 push 就已上雲」。
 - GitHub Actions 透過 **OIDC federated credential** 登入 Azure，不保存長期雲端金鑰。
 - 後端用 `az acr build` 建置並推送 image 到 Azure Container Registry，之後部署 Azure Container Apps。
@@ -43,4 +44,4 @@ flowchart LR
 - 雲端認證用 **OIDC** 而非長期 access key。
 - `main` 分支保護,CI 未過不能 merge。
 - Terraform **plan 與 apply 分離**(plan 在 PR、apply 在核准後)。
-- `dry_run=true` 可演練 deploy path 而不建立任何真實雲端資源。
+- `verify` job 先跑 build / validate；通過後才依環境核准進入 Azure OIDC 登入與部署。
