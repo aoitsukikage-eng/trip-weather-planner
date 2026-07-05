@@ -1,22 +1,21 @@
 # 多人協作 Git 流程
 
-> 雖為個人筆試專案,仍採用**可直接擴展到多人協作**的 Git flow,並在本 repo 真實執行(feature branch + PR + review 的提交歷史坐實流程圖),而非只畫一張圖。
+> 雖為個人筆試專案,仍採用**可直接擴展到多人協作**的 trunk-based 流程。本 repo 的提交歷史包含真實的 feature branch 合併實例(`Merge feature/multiday-and-townships`);code review 由獨立的驗收層 agent 執行,審查紀錄保存在 `docs/dev-process/`,取代傳統的人工 PR review。
 
 ```mermaid
 flowchart LR
-  F["feature/*"] --> PR["Pull Request"]
-  H["hotfix/*"] --> PR
-  PR --> CI["自動檢查 (CI)"]
-  CI --> RV["Code Review"]
+  F["feature/*"] --> CI["自動檢查 (CI)"]
+  H["hotfix/*"] --> CI
+  CI --> RV["Acceptance-layer Review"]
   RV --> M["main (protected)"]
   M --> TAG["Version Tag / Release"]
 ```
 
 ## 分支策略:trunk-based
 
-- 所有人從 `feature/*`(或 `hotfix/*`)開短命分支。
-- 經 PR → CI 通過 → review → 合併回 `main`。
-- `main` 永遠維持可部署狀態;release 以 tag 管理。
+- 變更從 `feature/*`(或 `hotfix/*`)開短命分支;歷史實例:`Merge feature/multiday-and-townships`。
+- CI 通過 → 驗收層 review → 合併回 `main`。
+- `main` 永遠維持可部署狀態;release 以 tag 管理(如 `v1.0.0`)。
 
 ## 為何不用傳統 Git Flow
 
@@ -26,9 +25,9 @@ flowchart LR
 ## 規範
 
 - Commit message 採 Conventional Commits(`feat:`, `fix:`, `docs:`, `chore:`, `test:`)。
-- `main` 開啟分支保護:需 PR、需 CI 綠燈、需至少一位 reviewer approve。
-- PR 模板包含:變更摘要、測試方式、關聯需求。
+- `main` 啟用 required status checks:CI 三個 job(backend / frontend / infra)全綠才可合入。
+- PR 模板包含:變更摘要、測試方式、關聯需求(`.github/pull_request_template.md`,供多人協作時使用)。
 
 ## 對應 AI Driven 開發
 
-本專案實際以多 AI 角色協作(規劃 / 實作 / 審查 / PR review),即為「多人協作」的真實體現;詳見 `docs/ai_driven.md`。
+本專案實際以多 AI 角色協作(規劃 / 實作 / 驗收審查),即為「多人協作」的真實體現;code review 由獨立驗收層 agent 完成並記錄於 `docs/dev-process/`。詳見 `docs/ai_driven.md`。

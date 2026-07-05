@@ -74,7 +74,7 @@ cd frontend && npm run build
 
 - 金鑰管理:CWA 授權碼放在 Container Apps secret,由後端代理第三方 API,不進前端 bundle 或 repo。
 - CORS:後端以已知前端網域作白名單,避免開放任意 origin。
-- CI/CD 認證:`deploy-demo.yml` 採 GitHub OIDC 登入 Azure,不保存長期雲端金鑰。
+- CI/CD 認證:`deploy-demo.yml`(部署骨架)設計採 GitHub OIDC 登入 Azure,不保存長期雲端金鑰。
 - 傳輸安全:前後端公開入口皆使用 HTTPS,Storage account 設定最低 TLS 1.2。
 - 憑證掃描:repo 內含 `.gitleaks.toml`,並已執行 gitleaks 全史掃描確認無 findings。
 
@@ -101,7 +101,7 @@ docs/       設計文件與流程圖
   - forecast payload 與 UI 會顯示 selected county 的日出日落,以及以最近 CWA 測站對應的目前紫外線等級。
 - ✅ Mock mode 仍可零憑證 demo,保留既有 22 筆靜態鄉鎮與 deterministic fallback。
 - ✅ Public-demo deployment readiness: Docker build、Terraform 範本、deploy workflow skeleton、runbook 已整理完成。
-- ✅ Azure public demo deployed:前端 Azure Storage 靜態網站,後端 Azure Container Apps。
+- ✅ Azure public demo deployed:前端 Azure Storage 靜態網站,後端 Azure Container Apps(依 `docs/public_demo_runbook.md` 手動部署)。
 
 ## Public Demo Readiness
 
@@ -109,4 +109,4 @@ docs/       設計文件與流程圖
 - Terraform example:`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton:`.github/workflows/deploy-demo.yml`
 
-目前 repo 狀態是 **public-demo deployed**。正式 demo URL 已回填於 README 與部署文件;GitHub OIDC 部署骨架已保留為手動觸發流程。
+目前 repo 狀態是 **public-demo deployed**。正式 demo URL 已回填於 README 與部署文件;公開 demo 由 `docs/public_demo_runbook.md` 的手動流程部署,`deploy-demo.yml` 為自動化路徑骨架(`workflow_dispatch` 手動觸發),尚未實際執行過。
