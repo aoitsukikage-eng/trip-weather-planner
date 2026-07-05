@@ -23,7 +23,7 @@ React + Vite + TypeScript,**表單式查詢先行**;聊天機器人列為後續 
 ## 串接方式
 
 - Dev:Vite 代理 `/api` → `localhost:8080`,免 CORS 煩惱。
-- Prod:`VITE_API_BASE` 指向 Cloud Run URL;後端 CORS 白名單放前端網域。
+- Prod:`VITE_API_BASE` 指向 Azure Container Apps 後端 URL;後端 CORS 白名單放前端網域。
 
 ## 後續(景點粒度)
 

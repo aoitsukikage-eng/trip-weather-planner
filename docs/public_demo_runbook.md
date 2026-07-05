@@ -1,135 +1,185 @@
 # Public Demo Deployment Runbook
 
-This document describes how to take the repo from "deployment-ready" to an
-actual public demo once platform access exists. It does **not** claim that the
-deployment has already happened.
+This runbook records the Azure public demo deployment path for the project. The
+target region is `southeastasia`, matching the demo resource group and Container
+Apps deployment.
 
 ## Target State
 
-- Backend: FastAPI container on Cloud Run.
-- Frontend: static Vite build hosted from GCS website bucket or a CDN/custom
-  domain in front of that bucket.
-- Secrets: injected from GCP Secret Manager into Cloud Run, never committed into
-  the repo.
-- CI/CD: GitHub Actions `ci.yml` for validation plus `deploy-demo.yml` as a
-  gated manual deployment skeleton.
+- Backend: FastAPI container on Azure Container Apps, external ingress on port
+  `8080`.
+- Image registry: Azure Container Registry `twpacr4316`.
+- Frontend: Vite static build uploaded to the Azure Storage static website
+  `$web` container.
+- Secrets: `CWA_API_KEY` stored as a Container Apps secret named `cwa-api-key`,
+  then referenced by the backend runtime.
+- Scale profile: `0.5` vCPU, `1Gi` memory, `min_replicas=0`, `max_replicas=1`.
 
-## External Prerequisites
+## Prerequisites
 
-- Docker available on the operator machine or in CI.
-- Terraform 1.6+ available locally, or use the documented containerized
-  Terraform commands.
-- `gcloud` access or GitHub OIDC configured for the target GCP project.
-- A GCP project with these APIs enabled:
-  - `run.googleapis.com`
-  - `artifactregistry.googleapis.com`
-  - `secretmanager.googleapis.com`
-  - `cloudbuild.googleapis.com`
-  - `iamcredentials.googleapis.com`
-  - `storage.googleapis.com`
+- Azure CLI logged into the target subscription.
+- Docker available locally if the subscription cannot use remote ACR builds.
+- Node.js 22+ for the frontend build.
+- Resource group `rg-twp-demo` in `southeastasia`.
+- Azure resources available or provisioned from Terraform:
+  - Storage account `twpfe5ce0` with static website enabled.
+  - Azure Container Registry `twpacr4316`.
+  - Container Apps environment `twp-ca-env`.
+  - Container App `twp-backend`.
 
 ## Required Inputs
 
-| Input | Example | Why it is needed |
+| Input | Demo value | Why it is needed |
 |---|---|---|
-| `project_id` | `my-demo-project` | Terraform + gcloud target |
-| `region` | `asia-east1` | Cloud Run + Artifact Registry region |
-| `backend_service_name` | `twp-api-demo` | Public API service name |
-| `backend_image` | `asia-east1-docker.pkg.dev/.../backend:demo` | Cloud Run container image |
-| `frontend_bucket_name` | `trip-weather-planner-demo-frontend` | Static hosting bucket |
-| `frontend_origin` | `https://demo.example.com` | Backend CORS allowlist |
-| `cache_ttl_seconds` | `1800` | Runtime tuning |
-| `upstream_timeout_seconds` | `10` | Runtime tuning |
-
-Copy `infra/terraform/environments/dev/terraform.tfvars.example` to
-`terraform.tfvars` and replace placeholders before `terraform plan/apply`.
+| `RESOURCE_GROUP_NAME` | `rg-twp-demo` | Azure resource group target |
+| `REGION` | `southeastasia` | Demo resource location |
+| `ACR_NAME` | `twpacr4316` | Backend image registry |
+| `CONTAINER_APP_NAME` | `twp-backend` | Backend runtime |
+| `BACKEND_IMAGE_NAME` | `twp-backend` | Repository name in ACR |
+| `FRONTEND_STORAGE_ACCOUNT` | `twpfe5ce0` | Static website host |
+| `FRONTEND_ORIGIN` | `https://twpfe5ce0.z23.web.core.windows.net` | Backend CORS allowlist |
+| `BACKEND_URL` | Container Apps HTTPS URL | Frontend production API base |
 
 ## Secret Inventory
 
-These values must come from Secret Manager or CI secrets, never tracked files:
+These values must come from operator input or CI secrets, never tracked files:
 
-| Env var | Required for public demo? | Notes |
+| Env var | Required for public demo? | Azure handling |
 |---|---|---|
-| `CWA_API_KEY` | Yes for live weather | Without it the backend stays in mock mode |
-| `GEMINI_API_KEY` | Optional | If absent the backend degrades to deterministic summary |
-| `TDX_CLIENT_ID` | No for this card | Phase 2/3 only |
-| `TDX_CLIENT_SECRET` | No for this card | Phase 2/3 only |
+| `CWA_API_KEY` | Yes for live weather | Stored as Container Apps secret `cwa-api-key` |
+| `GEMINI_API_KEY` | Optional | Not required for the current public demo |
+| `TDX_CLIENT_ID` | No for this phase | Reserved for later itinerary features |
+| `TDX_CLIENT_SECRET` | No for this phase | Reserved for later itinerary features |
 
-The Terraform variable `backend_secret_env` maps Cloud Run env names to Secret
-Manager secret names and versions.
-
-## Validation Before Any Real Deploy
+## Validation Before Deploy
 
 ```bash
-source ~/venvs/python-env/bin/activate
-docker build -t trip-weather-planner-backend:readiness ./backend
-cd backend && ruff check . && pytest -q
-cd ../frontend && npm run build
+cd backend
+ruff check .
+pytest -q
+
+cd ../frontend
+npm ci
+npm run build
+
 cd ..
-docker run --rm -v "$PWD/infra/terraform:/work" -w /work hashicorp/terraform:1.11.4 \
-  -chdir=environments/dev init -backend=false
-docker run --rm -v "$PWD/infra/terraform:/work" -w /work hashicorp/terraform:1.11.4 \
-  -chdir=environments/dev validate
-docker run --rm -v "$PWD/infra/terraform:/work" -w /work hashicorp/terraform:1.11.4 \
-  fmt -check -recursive
+docker build -t local/trip-weather-planner-backend:readiness ./backend
 ```
 
-## Deployment Sequence
+## Backend Image Build
 
-1. Build and push the backend image to Artifact Registry.
-2. Prepare `infra/terraform/environments/dev/terraform.tfvars` from the example.
-3. Create required Secret Manager secrets if they do not already exist.
-4. Run `terraform plan`, review output, then `terraform apply`.
-5. Capture the Cloud Run URL from Terraform output `backend_url`.
-6. Build the frontend with `VITE_API_BASE=<backend_url>`.
-7. Upload `frontend/dist/` to the target bucket, or front the bucket with your
-   preferred CDN/custom domain and point `frontend_origin` at that URL.
-8. Smoke-test the deployed API and frontend before calling it public.
-
-## Manual Command Reference
-
-### Backend image
+Preferred path when ACR remote build is available:
 
 ```bash
-gcloud auth configure-docker asia-east1-docker.pkg.dev --quiet
-docker build -t asia-east1-docker.pkg.dev/PROJECT/REPO/backend:demo ./backend
-docker push asia-east1-docker.pkg.dev/PROJECT/REPO/backend:demo
+az acr build \
+  --registry twpacr4316 \
+  --image twp-backend:latest \
+  ./backend
 ```
 
-### Terraform
+Fallback path used when subscription limits block remote ACR build:
 
 ```bash
-cd infra/terraform/environments/dev
-cp terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
+az acr login --name twpacr4316
+docker build --platform linux/amd64 -t twpacr4316.azurecr.io/twp-backend:latest ./backend
+docker push twpacr4316.azurecr.io/twp-backend:latest
 ```
 
-### Frontend build and upload
+## Backend Deploy
+
+For an existing Container App, update the secret and image:
+
+```bash
+az containerapp secret set \
+  --name twp-backend \
+  --resource-group rg-twp-demo \
+  --secrets cwa-api-key="$CWA_API_KEY"
+
+az containerapp update \
+  --name twp-backend \
+  --resource-group rg-twp-demo \
+  --image twpacr4316.azurecr.io/twp-backend:latest \
+  --set-env-vars \
+    CACHE_TTL_SECONDS=1800 \
+    CORS_ORIGINS="https://twpfe5ce0.z23.web.core.windows.net" \
+    UPSTREAM_TIMEOUT_SECONDS=10 \
+    CWA_API_KEY=secretref:cwa-api-key
+```
+
+If the app does not exist yet, create it with the same runtime contract:
+
+```bash
+az containerapp create \
+  --name twp-backend \
+  --resource-group rg-twp-demo \
+  --environment twp-ca-env \
+  --image twpacr4316.azurecr.io/twp-backend:latest \
+  --target-port 8080 \
+  --ingress external \
+  --cpu 0.5 \
+  --memory 1Gi \
+  --min-replicas 0 \
+  --max-replicas 1 \
+  --secrets cwa-api-key="$CWA_API_KEY" \
+  --env-vars \
+    CACHE_TTL_SECONDS=1800 \
+    CORS_ORIGINS="https://twpfe5ce0.z23.web.core.windows.net" \
+    UPSTREAM_TIMEOUT_SECONDS=10 \
+    CWA_API_KEY=secretref:cwa-api-key
+```
+
+Capture the backend URL:
+
+```bash
+BACKEND_FQDN="$(az containerapp show \
+  --name twp-backend \
+  --resource-group rg-twp-demo \
+  --query properties.configuration.ingress.fqdn \
+  --output tsv)"
+BACKEND_URL="https://$BACKEND_FQDN"
+```
+
+## Frontend Build And Upload
+
+Build the production bundle against the deployed backend, then upload to the
+Storage static website container:
 
 ```bash
 cd frontend
-VITE_API_BASE="https://your-cloud-run-url.run.app" npm run build
-gcloud storage rsync dist "gs://your-frontend-bucket-name" \
-  --recursive \
-  --delete-unmatched-destination-objects
+VITE_API_BASE="$BACKEND_URL" npm run build
+
+az storage blob upload-batch \
+  --account-name twpfe5ce0 \
+  --destination '$web' \
+  --source dist \
+  --overwrite true \
+  --auth-mode login
 ```
 
 ## Smoke Test Checklist
 
-- `curl https://<cloud-run-url>/` returns JSON with `name`, `version`, and
-  `docs`.
-- `curl https://<cloud-run-url>/api/towns` returns `success: true`.
-- `curl "https://<cloud-run-url>/api/forecast?town=taipei-xinyi&date=YYYY-MM-DD"`
-  returns normalized forecast payload.
-- Open the frontend URL and confirm:
-  - Town list loads.
-  - Submitting a date returns a forecast card.
-  - Browser network tab shows requests going to the deployed backend URL.
+Run these checks before calling the demo public:
+
+```bash
+curl "$BACKEND_URL/"
+curl "$BACKEND_URL/api/towns"
+curl "$BACKEND_URL/api/forecast?town=taipei-xinyi&date=YYYY-MM-DD"
+curl -i \
+  -H "Origin: https://twpfe5ce0.z23.web.core.windows.net" \
+  "$BACKEND_URL/api/towns"
+```
+
+- `/` returns service metadata with `name`, `version`, and `docs`.
+- `/api/towns` returns `success: true`.
+- `/api/forecast` returns a normalized forecast payload for the selected town and
+  date.
+- The CORS response allows the Azure Storage frontend origin.
+- Opening `https://twpfe5ce0.z23.web.core.windows.net/` loads the town selector,
+  submits a date, and sends browser network requests to the Container Apps URL.
 
 ## GitHub Actions Deployment Skeleton
 
-Use `.github/workflows/deploy-demo.yml` when GitHub OIDC and repo secrets are
-ready. It intentionally supports `dry_run=true` so the workflow can validate the
-path without pretending to perform a real cloud deployment.
+`.github/workflows/deploy-demo.yml` mirrors this flow for a future manual
+deployment path: validate, authenticate to Azure with OIDC, build the backend
+image in ACR, update Container Apps, build the frontend with `VITE_API_BASE`, and
+upload the static bundle to `$web`.

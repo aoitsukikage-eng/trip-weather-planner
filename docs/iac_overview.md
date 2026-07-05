@@ -14,7 +14,7 @@
 
 ## Terraform provider 與模組敘事
 
-- 採 **Terraform `azurerm` provider** 管理 Azure 資源,不保留多雲或 `google` provider 分支敘事。
+- 採 **Terraform `azurerm` provider** 管理全部 Azure 資源,維持單一雲部署敘事。
 - `infra/terraform/environments/dev` 建立 resource group,再串接 `backend_service` 與 `frontend_hosting` 兩個模組。
 - 預設 region 為 `southeastasia`,對照 demo deployment 的 `rg-twp-demo` 資源群組。
 

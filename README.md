@@ -68,6 +68,14 @@ cd frontend && npm run build
   - IaC:`docs/iac_overview.md`
   - 架構原則:`docs/architecture_overview.md`
 
+## 安全設計
+
+- 金鑰管理:CWA 授權碼放在 Container Apps secret,由後端代理第三方 API,不進前端 bundle 或 repo。
+- CORS:後端以已知前端網域作白名單,避免開放任意 origin。
+- CI/CD 認證:`deploy-demo.yml` 採 GitHub OIDC 登入 Azure,不保存長期雲端金鑰。
+- 傳輸安全:前後端公開入口皆使用 HTTPS,Storage account 設定最低 TLS 1.2。
+- 憑證掃描:repo 內含 `.gitleaks.toml`,並已執行 gitleaks 全史掃描確認無 findings。
+
 ## 憑證(免費,實作到真資料時才需要)
 
 - **CWA 授權碼**:https://opendata.cwa.gov.tw → 註冊氣象會員 → 取得授權碼 → 填入 `backend/.env` 的 `CWA_API_KEY`。
