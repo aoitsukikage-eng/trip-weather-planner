@@ -113,6 +113,13 @@ jobs:
             --image "$BACKEND_IMAGE_NAME:latest" \
             ./backend
 
+      - name: Set backend Container App secret
+        run: |
+          az containerapp secret set \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --secrets cwa-api-key=${{ secrets.CWA_API_KEY }}
+
       - name: Update backend Container App
         run: |
           login_server="$(az acr show \
@@ -166,6 +173,7 @@ jobs:
           npm ci
           npm run build
 
+      # Requires Storage Blob Data Contributor RBAC on the storage account.
       - name: Upload frontend assets
         working-directory: frontend
         run: |
@@ -173,4 +181,5 @@ jobs:
             --account-name "$FRONTEND_STORAGE_ACCOUNT_NAME" \
             --destination '$web' \
             --source dist \
-            --overwrite true
+            --overwrite true \
+            --auth-mode login

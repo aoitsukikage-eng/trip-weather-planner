@@ -39,7 +39,8 @@ CI 的 `infra` job 跑 `terraform fmt -check` + `terraform validate`(見
 使用 `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID`
 作為 GitHub secrets 佔位符,backend job 透過 `az acr build` 與
 `az containerapp update` 更新後端,frontend job 以 `VITE_API_BASE` build 後
-上傳到 Storage account 的 `$web` container。
+上傳到 Storage account 的 `$web` container。`CWA_API_KEY` 以 GitHub Actions
+secret 提供,workflow 於部署前寫入 Container Apps secret。
 
 ## 備註
 
