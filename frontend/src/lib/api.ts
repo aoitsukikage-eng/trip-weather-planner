@@ -1,7 +1,7 @@
 // API client for the Trip Weather Planner backend.
 // Falls back to inline mock data when the backend is unreachable, so the
 // frontend is demoable standalone (mirrors the backend's own mock mode).
-import { formatLocalDate } from "./localDate";
+import { addLocalDays, buildDateOptions, formatLocalDate, startOfLocalDay } from "./localDate";
 
 export interface Town {
   code: string;
@@ -141,10 +141,12 @@ function mockHourlyForecast(town: Town, date: string): HourlyForecast[] {
 }
 
 function mockForecast(town: Town, date: string): ForecastResult {
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const current = new Date(`${date}T00:00:00`);
-    current.setDate(current.getDate() + index);
-    const isoDate = formatLocalDate(current);
+  const today = startOfLocalDay();
+  const windowDates = buildDateOptions(7, today).map((entry) => entry.iso);
+  const lastWindowDate = formatLocalDate(addLocalDays(today, windowDates.length - 1));
+  const clampedDate =
+    date < windowDates[0] ? windowDates[0] : date > lastWindowDate ? lastWindowDate : date;
+  const days = windowDates.map((isoDate, index) => {
     return {
       date: isoDate,
       temp_high_c: 29 + (index % 3),
@@ -157,14 +159,14 @@ function mockForecast(town: Town, date: string): ForecastResult {
   return {
     forecast: {
       town,
-      target_date: date,
+      target_date: clampedDate,
       source_dataset: "mock:frontend-fallback",
       days,
-      hourly: mockHourlyForecast(town, date),
+      hourly: mockHourlyForecast(town, clampedDate),
       sunrise_sunset: {
         county: town.city,
-        target_date: date,
-        source_date: date,
+        target_date: clampedDate,
+        source_date: clampedDate,
         sunrise_time: "05:12",
         sunset_time: "18:46",
         is_approximate: false,
@@ -174,14 +176,14 @@ function mockForecast(town: Town, date: string): ForecastResult {
         level: "過量",
         source_label: "目前紫外線",
         source_type: "observation",
-        observed_at: `${date}T12:00:00+08:00`,
+        observed_at: `${clampedDate}T12:00:00+08:00`,
         station_id: "mock-station",
         station_name: `${town.name} mock station`,
       },
       generated_at: new Date().toISOString(),
     },
     ai_summary: {
-      text: `${town.city}${town.name}在 ${displayDate(date)} 預報為「多雲時陰」,氣溫約 23–29°C。建議攜帶輕便雨具並留意防曬。`,
+      text: `${town.city}${town.name}在 ${displayDate(clampedDate)} 預報為「多雲時陰」,氣溫約 23–29°C。建議攜帶輕便雨具並留意防曬。`,
       mode: "rule-based (frontend mock)",
     },
   };

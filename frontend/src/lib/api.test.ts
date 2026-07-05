@@ -19,16 +19,19 @@ function jsonResponse(body: unknown, ok = true, status = ok ? 200 : 400): Respon
 
 describe("getForecast", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
   test("falls back to frontend mock only on network failure", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-05T10:00:00+08:00"));
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
     const result = await getForecast(TOWN, "2026-07-04");
 
     expect(result.forecast.source_dataset).toBe("mock:frontend-fallback");
-    expect(result.forecast.target_date).toBe("2026-07-04");
+    expect(result.forecast.target_date).toBe("2026-07-05");
   });
 
   test("surfaces backend validation errors instead of masking them with mock data", async () => {
@@ -56,5 +59,26 @@ describe("getForecast", () => {
       errorCode: "date_out_of_range",
       status: 400,
     });
+  });
+
+  test("anchors frontend mock days at today and clamps out-of-window requests", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-05T10:00:00+08:00"));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+
+    const result = await getForecast(TOWN, "2026-07-20");
+
+    expect(result.forecast.days.map((day) => day.date)).toEqual([
+      "2026-07-05",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-11",
+    ]);
+    expect(result.forecast.target_date).toBe("2026-07-11");
+    expect(result.forecast.sunrise_sunset?.target_date).toBe("2026-07-11");
+    expect(result.forecast.hourly?.[0]?.time.startsWith("2026-07-11T00:00:00")).toBe(true);
   });
 });
