@@ -118,6 +118,7 @@ describe("ForecastView", () => {
     const hourlyChart = container.querySelector(".hourly-chart");
     const buttons = screen.getAllByRole("button");
     const firstButton = buttons[0];
+    const secondButton = buttons[1];
     const firstCardHeader = container.querySelector(".day-strip-head");
     const dayStrip = screen.getByTestId("day-strip");
 
@@ -144,7 +145,11 @@ describe("ForecastView", () => {
     expect(firstButton?.textContent).toContain("降雨 20%");
     expect(firstButton?.textContent).not.toContain("帶傘");
     expect(firstButton?.getAttribute("aria-pressed")).toBe("true");
+    expect(firstButton?.getAttribute("aria-current")).toBe("date");
+    expect(firstButton?.getAttribute("aria-label")).not.toContain("已選擇");
     expect(firstButton?.className).toContain("day-strip-card-selected");
+    expect(secondButton?.getAttribute("aria-pressed")).toBe("false");
+    expect(secondButton?.getAttribute("aria-current")).toBeNull();
     expect(dayStripSection.compareDocumentPosition(summaryPanel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(summaryPanel.compareDocumentPosition(factGrid) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(factGrid.compareDocumentPosition(hourlyChart) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
