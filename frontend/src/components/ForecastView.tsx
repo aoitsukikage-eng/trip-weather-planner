@@ -305,7 +305,7 @@ function hasDailyPop(pop: number | null): pop is number {
   return pop !== null;
 }
 
-function buildDayAriaLabel(day: DailyForecast, isSelected: boolean): string {
+function buildDayAriaLabel(day: DailyForecast): string {
   const parts = [
     formatDateLabel(day.date),
     day.weather ?? "天氣資料不足",
@@ -314,9 +314,6 @@ function buildDayAriaLabel(day: DailyForecast, isSelected: boolean): string {
   ];
   if (hasDailyPop(day.max_pop_percent)) {
     parts.push(`降雨 ${day.max_pop_percent}%`);
-  }
-  if (isSelected) {
-    parts.push("已選擇");
   }
   return parts.join(" ");
 }
@@ -372,7 +369,7 @@ export default function ForecastView({
                 <button
                   aria-current={isSelected ? "date" : undefined}
                   aria-pressed={isSelected}
-                  aria-label={buildDayAriaLabel(day, isSelected)}
+                  aria-label={buildDayAriaLabel(day)}
                   className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
                   data-testid={`day-card-${day.date}`}
                   disabled={loading}
@@ -392,10 +389,7 @@ export default function ForecastView({
                     </span>
                     <span className="day-strip-date">
                       <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
-                      <span className="day-strip-weekday">
-                        {formatWeekdayLabel(day.date)}
-                        {isSelected ? " · 已選擇" : ""}
-                      </span>
+                      <span className="day-strip-weekday">{formatWeekdayLabel(day.date)}</span>
                     </span>
                   </span>
                   <span className="day-strip-weather">{day.weather ?? "天氣資料不足"}</span>

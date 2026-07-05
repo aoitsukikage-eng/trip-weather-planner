@@ -137,6 +137,7 @@ describe("ForecastView", () => {
     expect(firstCardHeader?.firstElementChild?.className).toContain("day-strip-icon");
     expect(firstButton?.textContent).toContain("7/4");
     expect(firstButton?.textContent).toContain("週六");
+    expect(firstButton?.textContent).not.toContain("已選擇");
     expect(firstButton?.textContent).toContain("多雲");
     expect(firstButton?.textContent).toContain("高 32°");
     expect(firstButton?.textContent).toContain("低 25°");
@@ -158,6 +159,7 @@ describe("ForecastView", () => {
     const fourthCard = screen.getByTestId("day-card-2026-07-07");
 
     expect(fourthCard.textContent).toContain("7/7");
+    expect(fourthCard.textContent).not.toContain("已選擇");
     expect(fourthCard.textContent).not.toContain("降雨");
     expect(fourthCard.querySelector(".day-strip-pop")).toBeNull();
     expect(fourthCard.getAttribute("aria-label")).not.toContain("降雨");
@@ -192,6 +194,7 @@ describe("ForecastView", () => {
     const thirdCard = screen.getByTestId("day-card-2026-07-06");
 
     await user.click(secondCard);
+    expect(secondCard.textContent).not.toContain("已選擇");
     expect(secondCard.getAttribute("aria-pressed")).toBe("true");
     expect(secondCard.getAttribute("aria-current")).toBe("date");
     expect(secondCard).toBe(document.activeElement);
@@ -200,6 +203,7 @@ describe("ForecastView", () => {
 
     thirdCard.focus();
     await user.keyboard("{Enter}");
+    expect(thirdCard.textContent).not.toContain("已選擇");
     expect(thirdCard.getAttribute("aria-pressed")).toBe("true");
     expect(thirdCard.getAttribute("aria-current")).toBe("date");
     expect(thirdCard).toBe(document.activeElement);
