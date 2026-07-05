@@ -1,74 +1,101 @@
-variable "project_id" {
+variable "resource_group_name" {
   type        = string
-  description = "GCP project id for the demo deployment."
-  default     = "trip-weather-planner-dev"
+  description = "Azure resource group for the demo deployment."
+  default     = "rg-twp-demo"
 }
 
-variable "region" {
+variable "location" {
   type        = string
-  description = "GCP region for Cloud Run."
-  default     = "asia-east1"
+  description = "Azure region for all demo resources."
+  default     = "southeastasia"
+}
+
+variable "container_registry_name" {
+  type        = string
+  description = "Azure Container Registry name for backend images."
+  default     = "twpacr4316"
+}
+
+variable "log_analytics_workspace_name" {
+  type        = string
+  description = "Log Analytics workspace name for Container Apps."
+  default     = "twp-log-analytics"
+}
+
+variable "container_app_environment_name" {
+  type        = string
+  description = "Azure Container Apps environment name."
+  default     = "twp-ca-env"
+}
+
+variable "container_app_name" {
+  type        = string
+  description = "Backend Container App name."
+  default     = "twp-backend"
 }
 
 variable "backend_image" {
   type        = string
-  description = "Container image for the FastAPI backend (Artifact Registry URL)."
-  default     = "asia-east1-docker.pkg.dev/trip-weather-planner-dev/twp/backend:latest"
+  description = "Container image for the backend."
+  default     = "twpacr4316.azurecr.io/twp-backend:latest"
 }
 
-variable "frontend_bucket_name" {
+variable "frontend_storage_account_name" {
   type        = string
-  description = "Globally-unique bucket name for the static frontend."
-  default     = "trip-weather-planner-frontend-dev"
-}
-
-variable "backend_service_name" {
-  type        = string
-  description = "Cloud Run service name for the backend API."
-  default     = "twp-api"
+  description = "Storage account name for the static frontend."
+  default     = "twpfe5ce0"
 }
 
 variable "frontend_origin" {
   type        = string
-  description = "Public frontend origin allowed by backend CORS, e.g. https://demo.example.com."
-  default     = "https://demo.example.com"
+  description = "Public frontend origin allowed by backend CORS."
+  default     = "https://twpfe5ce0.z23.web.core.windows.net"
+}
+
+variable "cwa_api_key" {
+  type        = string
+  description = "CWA API key injected into the backend Container App."
+  sensitive   = true
 }
 
 variable "cache_ttl_seconds" {
   type        = number
-  description = "Backend cache TTL passed to Cloud Run."
+  description = "Backend cache TTL in seconds."
   default     = 1800
 }
 
 variable "upstream_timeout_seconds" {
   type        = number
-  description = "Timeout for upstream API calls passed to Cloud Run."
+  description = "Timeout for upstream API calls in seconds."
   default     = 10
 }
 
-variable "request_timeout_seconds" {
+variable "min_replicas" {
   type        = number
-  description = "Cloud Run request timeout in seconds."
-  default     = 30
-}
-
-variable "min_instance_count" {
-  type        = number
-  description = "Minimum Cloud Run instances."
+  description = "Minimum Container App replicas."
   default     = 0
 }
 
-variable "max_instance_count" {
+variable "max_replicas" {
   type        = number
-  description = "Maximum Cloud Run instances."
-  default     = 2
+  description = "Maximum Container App replicas."
+  default     = 1
 }
 
-variable "backend_secret_env" {
-  description = "Secret Manager bindings for backend env vars such as CWA_API_KEY."
-  type = map(object({
-    secret  = string
-    version = string
-  }))
-  default = {}
+variable "cpu" {
+  type        = number
+  description = "Container CPU allocation."
+  default     = 0.5
+}
+
+variable "memory" {
+  type        = string
+  description = "Container memory allocation."
+  default     = "1Gi"
+}
+
+variable "target_port" {
+  type        = number
+  description = "Backend ingress target port."
+  default     = 8080
 }

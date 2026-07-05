@@ -1,36 +1,47 @@
-variable "bucket_name" {
-  type = string
+variable "storage_account_name" {
+  type        = string
+  description = "Globally unique Storage account name for the static frontend."
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "Resource group that contains the frontend Storage account."
 }
 
 variable "location" {
-  type = string
+  type        = string
+  description = "Azure region for the frontend Storage account."
 }
 
-# Static frontend hosting via IaC (satisfies "IaC 建置前端架構").
-# A GCS website bucket; in production a CDN + TLS sits in front. On Cloudflare
-# Pages this module would be swapped for the cloudflare_pages_project resource.
-resource "google_storage_bucket" "frontend" {
-  name                        = var.bucket_name
-  location                    = var.location
-  force_destroy               = true
-  uniform_bucket_level_access = true
+variable "tags" {
+  type        = map(string)
+  description = "Tags applied to frontend hosting resources."
+  default     = {}
+}
 
-  website {
-    main_page_suffix = "index.html"
-    not_found_page   = "index.html" # SPA fallback
+resource "azurerm_storage_account" "frontend" {
+  name                     = var.storage_account_name
+  resource_group_name      = var.resource_group_name
+  location                 = var.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+  min_tls_version          = "TLS1_2"
+
+  static_website {
+    index_document     = "index.html"
+    error_404_document = "index.html"
   }
+
+  tags = var.tags
 }
 
-resource "google_storage_bucket_iam_member" "public_read" {
-  bucket = google_storage_bucket.frontend.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+output "storage_account_name" {
+  description = "Frontend Storage account name."
+  value       = azurerm_storage_account.frontend.name
 }
 
-output "bucket_name" {
-  value = google_storage_bucket.frontend.name
-}
-
-output "website_url" {
-  value = "http://${google_storage_bucket.frontend.name}.storage.googleapis.com"
+output "primary_web_endpoint" {
+  description = "Static website endpoint for the frontend."
+  value       = azurerm_storage_account.frontend.primary_web_endpoint
 }

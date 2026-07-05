@@ -1,28 +1,21 @@
-project_id           = "your-gcp-project-id"
-region               = "asia-east1"
-backend_service_name = "twp-api-demo"
-backend_image        = "asia-east1-docker.pkg.dev/your-gcp-project-id/trip-weather-planner/backend:demo"
-
-# Use either the raw GCS website endpoint later in the flow, or preferably the
-# CDN/custom domain that fronts it.
-frontend_bucket_name = "your-unique-frontend-bucket-name"
-frontend_origin      = "https://demo.example.com"
+resource_group_name            = "rg-twp-demo"
+location                       = "southeastasia"
+container_registry_name        = "twpacr4316"
+log_analytics_workspace_name   = "twp-log-analytics"
+container_app_environment_name = "twp-ca-env"
+container_app_name             = "twp-backend"
+backend_image                  = "twpacr4316.azurecr.io/twp-backend:latest"
+frontend_storage_account_name  = "twpfe5ce0"
+frontend_origin                = "https://twpfe5ce0.z23.web.core.windows.net"
 
 cache_ttl_seconds        = 1800
 upstream_timeout_seconds = 10
-request_timeout_seconds  = 30
-min_instance_count       = 0
-max_instance_count       = 2
+min_replicas             = 0
+max_replicas             = 1
+cpu                      = 0.5
+memory                   = "1Gi"
+target_port              = 8080
 
-# Secret Manager bindings. Omit optional secrets if you want the backend to
-# stay in its built-in degraded mode.
-backend_secret_env = {
-  CWA_API_KEY = {
-    secret  = "cwa-api-key"
-    version = "latest"
-  }
-  GEMINI_API_KEY = {
-    secret  = "gemini-api-key"
-    version = "latest"
-  }
-}
+# Provide this value through TF_VAR_cwa_api_key or an uncommitted local tfvars
+# file. Do not commit real API keys.
+# cwa_api_key = "<CWA_API_KEY>"
