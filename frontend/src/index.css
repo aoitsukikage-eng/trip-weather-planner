@@ -276,8 +276,7 @@ header h1 {
 
 .day-strip-scroll {
   max-width: 100%;
-  overflow-x: clip;
-  overflow-y: hidden;
+  overflow: visible;
   padding-bottom: 0;
 }
 
