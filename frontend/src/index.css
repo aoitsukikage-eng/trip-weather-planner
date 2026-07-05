@@ -493,8 +493,9 @@ footer {
 
   .day-strip-scroll {
     overflow-x: auto;
+    overflow-y: clip;
     overscroll-behavior-x: contain;
-    padding-bottom: 0.35rem;
+    padding-bottom: 1rem;
     scrollbar-gutter: stable both-edges;
     -webkit-overflow-scrolling: touch;
   }
@@ -508,6 +509,7 @@ footer {
 
   .day-strip-scroll {
     margin-inline: -0.15rem;
+    margin-bottom: -0.65rem;
     padding-inline: 0.15rem;
   }
 
