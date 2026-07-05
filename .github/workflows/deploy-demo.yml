@@ -8,45 +8,35 @@ on:
         required: true
         default: "demo"
         type: string
-      dry_run:
-        description: "Validate and build only; skip cloud changes"
+      resource_group_name:
+        description: "Azure resource group name"
         required: true
-        default: true
-        type: boolean
-      region:
-        description: "GCP region for Cloud Run and Artifact Registry"
-        required: true
-        default: "asia-east1"
+        default: "rg-twp-demo"
         type: string
-      backend_image:
-        description: "Full Artifact Registry image URL to build and deploy"
+      container_registry_name:
+        description: "Azure Container Registry name"
         required: true
-        default: "asia-east1-docker.pkg.dev/your-gcp-project-id/trip-weather-planner/backend:demo"
+        default: "twpacr4316"
         type: string
-      backend_service_name:
-        description: "Cloud Run service name"
+      container_app_name:
+        description: "Backend Container App name"
         required: true
-        default: "twp-api-demo"
+        default: "twp-backend"
         type: string
-      frontend_bucket_name:
-        description: "Target GCS bucket for frontend static files"
+      backend_image_name:
+        description: "Backend image repository name"
         required: true
-        default: "your-unique-frontend-bucket-name"
+        default: "twp-backend"
+        type: string
+      frontend_storage_account_name:
+        description: "Frontend Storage account name"
+        required: true
+        default: "twpfe5ce0"
         type: string
       frontend_origin:
-        description: "Public frontend origin allowed by backend CORS"
+        description: "Public frontend origin used for backend CORS"
         required: true
-        default: "https://demo.example.com"
-        type: string
-      cwa_secret_name:
-        description: "Secret Manager secret name containing CWA_API_KEY"
-        required: true
-        default: "cwa-api-key"
-        type: string
-      gemini_secret_name:
-        description: "Optional Secret Manager secret name containing GEMINI_API_KEY"
-        required: false
-        default: ""
+        default: "https://twpfe5ce0.z23.web.core.windows.net"
         type: string
 
 permissions:
@@ -54,27 +44,8 @@ permissions:
   id-token: write
 
 jobs:
-  preflight:
-    runs-on: ubuntu-latest
-    outputs:
-      can_auth: ${{ steps.check.outputs.can_auth }}
-    steps:
-      - id: check
-        env:
-          WIF_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        run: |
-          if [ -n "$WIF_PROVIDER" ] && [ -n "$SERVICE_ACCOUNT" ] && [ -n "$PROJECT_ID" ]; then
-            echo "can_auth=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "can_auth=false" >> "$GITHUB_OUTPUT"
-            echo "Missing OIDC deploy secrets. Workflow will stop after dry-run validation."
-          fi
-
   verify:
     runs-on: ubuntu-latest
-    needs: preflight
     steps:
       - uses: actions/checkout@v4
 
@@ -106,25 +77,76 @@ jobs:
 
       - name: Terraform format and validate
         working-directory: infra/terraform/environments/dev
+        env:
+          TF_VAR_cwa_api_key: validation-placeholder
         run: |
           terraform fmt -check -recursive ../..
           terraform init -backend=false
           terraform validate
 
-  deploy:
+  backend:
     runs-on: ubuntu-latest
-    needs: [preflight, verify]
-    if: ${{ !inputs.dry_run && needs.preflight.outputs.can_auth == 'true' }}
+    needs: verify
     environment: ${{ inputs.environment }}
     env:
-      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      REGION: ${{ inputs.region }}
-      BACKEND_IMAGE: ${{ inputs.backend_image }}
-      BACKEND_SERVICE_NAME: ${{ inputs.backend_service_name }}
-      FRONTEND_BUCKET_NAME: ${{ inputs.frontend_bucket_name }}
+      RESOURCE_GROUP_NAME: ${{ inputs.resource_group_name }}
+      CONTAINER_REGISTRY_NAME: ${{ inputs.container_registry_name }}
+      CONTAINER_APP_NAME: ${{ inputs.container_app_name }}
+      BACKEND_IMAGE_NAME: ${{ inputs.backend_image_name }}
       FRONTEND_ORIGIN: ${{ inputs.frontend_origin }}
-      CWA_SECRET_NAME: ${{ inputs.cwa_secret_name }}
-      GEMINI_SECRET_NAME: ${{ inputs.gemini_secret_name }}
+    outputs:
+      backend_url: ${{ steps.backend-url.outputs.backend_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build backend image in ACR
+        run: |
+          az acr build \
+            --registry "$CONTAINER_REGISTRY_NAME" \
+            --image "$BACKEND_IMAGE_NAME:${{ github.sha }}" \
+            --image "$BACKEND_IMAGE_NAME:latest" \
+            ./backend
+
+      - name: Update backend Container App
+        run: |
+          login_server="$(az acr show \
+            --name "$CONTAINER_REGISTRY_NAME" \
+            --query loginServer \
+            --output tsv)"
+
+          az containerapp update \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --image "$login_server/$BACKEND_IMAGE_NAME:${{ github.sha }}" \
+            --set-env-vars \
+              CACHE_TTL_SECONDS=1800 \
+              CORS_ORIGINS="$FRONTEND_ORIGIN" \
+              UPSTREAM_TIMEOUT_SECONDS=10 \
+              CWA_API_KEY=secretref:cwa-api-key
+
+      - name: Capture backend URL
+        id: backend-url
+        run: |
+          fqdn="$(az containerapp show \
+            --name "$CONTAINER_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP_NAME" \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)"
+          echo "backend_url=https://$fqdn" >> "$GITHUB_OUTPUT"
+
+  frontend:
+    runs-on: ubuntu-latest
+    needs: backend
+    environment: ${{ inputs.environment }}
+    env:
+      FRONTEND_STORAGE_ACCOUNT_NAME: ${{ inputs.frontend_storage_account_name }}
+      VITE_API_BASE: ${{ needs.backend.outputs.backend_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -132,83 +154,23 @@ jobs:
         with:
           node-version: "22"
 
-      - uses: hashicorp/setup-terraform@v3
-
-      - uses: google-github-actions/auth@v2
+      - uses: azure/login@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Build and push backend image
-        run: |
-          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-          docker build -t "${BACKEND_IMAGE}" ./backend
-          docker push "${BACKEND_IMAGE}"
-
-      - name: Prepare Terraform variables
-        working-directory: infra/terraform/environments/dev
-        run: |
-          cat > terraform.tfvars <<EOF
-          project_id           = "${PROJECT_ID}"
-          region               = "${REGION}"
-          backend_service_name = "${BACKEND_SERVICE_NAME}"
-          backend_image        = "${BACKEND_IMAGE}"
-          frontend_bucket_name = "${FRONTEND_BUCKET_NAME}"
-          frontend_origin      = "${FRONTEND_ORIGIN}"
-          backend_secret_env = {
-            CWA_API_KEY = {
-              secret  = "${CWA_SECRET_NAME}"
-              version = "latest"
-            }
-          EOF
-
-          if [ -n "${GEMINI_SECRET_NAME}" ]; then
-            cat >> terraform.tfvars <<EOF
-            GEMINI_API_KEY = {
-              secret  = "${GEMINI_SECRET_NAME}"
-              version = "latest"
-            }
-            EOF
-          fi
-
-          echo "}" >> terraform.tfvars
-
-      - name: Terraform apply
-        working-directory: infra/terraform/environments/dev
-        run: |
-          terraform init
-          terraform apply -auto-approve
-
-      - name: Capture backend URL
-        id: outputs
-        working-directory: infra/terraform/environments/dev
-        run: echo "backend_url=$(terraform output -raw backend_url)" >> "$GITHUB_OUTPUT"
-
-      - name: Frontend build against deployed backend
+      - name: Build frontend against deployed backend
         working-directory: frontend
         run: |
           npm ci
-          VITE_API_BASE="${{ steps.outputs.backend_url }}" npm run build
+          npm run build
 
-      - name: Upload frontend assets to GCS
+      - name: Upload frontend assets
         working-directory: frontend
         run: |
-          gcloud storage rsync dist "gs://${FRONTEND_BUCKET_NAME}" \
-            --recursive \
-            --delete-unmatched-destination-objects
-
-  skipped-deploy-note:
-    runs-on: ubuntu-latest
-    needs: [preflight, verify]
-    if: ${{ inputs.dry_run || needs.preflight.outputs.can_auth != 'true' }}
-    steps:
-      - run: |
-          echo "Dry run complete. No cloud resources were created or modified."
-          if [ "${{ needs.preflight.outputs.can_auth }}" != "true" ]; then
-            echo "To enable real deployment, configure GCP_WORKLOAD_IDENTITY_PROVIDER,"
-            echo "GCP_SERVICE_ACCOUNT, and GCP_PROJECT_ID in GitHub secrets."
-          fi
+          az storage blob upload-batch \
+            --account-name "$FRONTEND_STORAGE_ACCOUNT_NAME" \
+            --destination '$web' \
+            --source dist \
+            --overwrite true
