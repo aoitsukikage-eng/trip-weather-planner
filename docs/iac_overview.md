@@ -6,34 +6,29 @@
 
 | 用途 | 採用 |
 |---|---|
-| 正式架構設計呈現 | 平台中立主圖 + AWS 映射附錄(`cloud_architecture.md`) |
-| 實際 demo 部署 | 後端 Cloud Run + 前端 Cloudflare Pages / GCS bucket |
-| IaC(Terraform) | codify demo 實際用到的資源:前端託管 + 後端服務 |
+| 正式架構設計呈現 | Azure Static Web Apps + Azure Container Apps + Azure Container Registry |
+| 實際 demo 部署 | 與設計圖一致,採 Azure 單雲部署 |
+| IaC(Terraform) | codify demo 實際用到的 Azure 資源:RG、ACR、Container Apps、SWA |
 
 避免「圖一套、跑一套、IaC 又一套」。
 
-## 模組切分
+## Terraform provider 與模組敘事
 
-```
-infra/terraform/
-├── environments/dev/          # 組裝模組、輸出 URL
-│   ├── versions.tf            # provider + 版本
-│   ├── variables.tf
-│   └── main.tf
-└── modules/
-    ├── frontend_hosting/      # 靜態前端託管(GCS website bucket + 公開讀取)
-    └── backend_service/       # Cloud Run 服務(scale-to-zero + 公開 invoker)
-```
-
-`environments/dev/terraform.tfvars.example` 提供 deploy-ready 範本，包含
-image、bucket、frontend origin 與 Secret Manager 綁定欄位。
+- 採 **Terraform `azurerm` provider** 管理 Azure 資源,不保留多雲或 `google` provider 分支敘事。
+- 目前 `infra/terraform/` 可視為 Azure deployment blueprint,之後若補足模組細節,仍以同一組 provider 與資源模型延伸。
 
 ## 涵蓋資源
 
-- **前端**(題目明確要求「IaC 建置前端架構」):靜態託管 bucket + SPA fallback + 公開讀取。生產再前掛 CDN + TLS;若改 Cloudflare Pages,替換為 `cloudflare_pages_project` 即可。
-- **後端**:Cloud Run 服務(容器映像、埠 8080、min/max instance、timeout、
-  公開 invoker)。非敏感 env 直接由 Terraform 傳入;敏感值由 Secret
-  Manager 注入,不寫進映像。
+- **Resource Group**:作為 demo 資源邊界,集中管理 region、tag 與權限範圍。
+- **Azure Container Registry**:保存後端 FastAPI image,提供 Container Apps 拉 image 的來源。
+- **Azure Container Apps environment + app**:承接 consumption plan 執行環境、revision、ingress、`minReplicas=0` / `maxReplicas=1`、secret 綁定與 runtime env。
+- **Azure Static Web Apps**:承接 React 前端 build 輸出,對外提供 HTTPS 與靜態資產發布。
+
+## 驗證策略
+
+- CI 的 `infra` job 持續執行 `terraform fmt -check` 與 `terraform validate`,先擋掉語法與 provider schema 問題。
+- PR 階段以 validate 為最小門檻;真正 apply 留在手動核准後,避免 demo 訂閱在每次 push 都產生雲端成本。
+- 變數檔只保留非敏感設定樣板;`CWA_API_KEY` 這類秘密值交由 Azure 端 secret 機制或 deploy 流程注入。
 
 ## CI 驗證與部署前置
 
@@ -43,4 +38,4 @@ CI 的 `infra` job 跑 `terraform fmt -check` + `terraform validate`(見
 
 ## 備註
 
-AWS 版 IaC(VPC / ECS / RDS / ElastiCache …)為設計附錄示意;demo 不落地 AWS(ALB/Fargate/RDS 對長期免費不友善)。實際落地順序與 smoke test 見 `public_demo_runbook.md`。
+本案 IaC 定位是把 Azure demo deployment 的關鍵資源模型講清楚,確保架構圖、CI/CD 與部署腳本都圍繞同一組 Azure 元件。實際落地順序與 smoke test 見 `public_demo_runbook.md`。

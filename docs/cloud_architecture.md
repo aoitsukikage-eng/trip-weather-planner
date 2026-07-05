@@ -2,70 +2,54 @@
 
 ## 設計原則
 
-- **平台中立為主圖**,AWS 為映射附錄:筆試看的是架構能力,不是雲服務名詞背誦;但仍落到具體服務以免流於空泛。
+- **交付物與實際部署一致**:本專案最終交付採純 Azure 敘事,避免文件說一套、部署又是另一套。
 - **架構圖畫滿(展示 production 思維),Phase 1 部署精簡(必須真的能跑)**。標 `[P1]` 為第一版實際部署,`[設計]` 為圖上展示、後續才落地。
 - **前端不直連第三方 API**:所有外部呼叫由後端代理,金鑰不進前端 bundle,並可統一加快取、限流、錯誤處理、監控;換資料源前端不動。
 
-## 主架構圖(平台中立)
+## 主架構圖(Azure)
 
 ```mermaid
 flowchart TB
-  U["使用者瀏覽器"] --> CDN["CDN + WAF [設計]"]
-  CDN --> FE["靜態前端 React [P1]"]
-  CDN --> GW["API Gateway / LB [P1簡化]"]
-  GW --> API["FastAPI 應用容器 [P1]"]
-  API --> CACHE["快取層 Redis [P1:記憶體]"]
-  API --> DB["關聯式資料庫 查詢紀錄/偏好 [設計]"]
-  API --> SEC["密鑰管理 [P1:env → 雲端Secrets]"]
-  API --> WX["CWA 天氣 API [P1]"]
-  API --> POI["景點/POI API TDX [P2]"]
-  API --> ROUTE["交通 API TDX [P3]"]
-  API --> AI["AI 摘要 Gemini SDK [P1,可降級]"]
-  SCHED["排程 Worker 熱門地區預抓 [設計]"] --> WX
-  API --> LOG["Logs / Metrics [P1:基本]"]
+  U["使用者瀏覽器"] --> SWA["Azure Static Web Apps Free"]
+  SWA --> API["Azure Container Apps FastAPI"]
+  API --> CWA["CWA 天氣 API"]
+  API --> ACR["Azure Container Registry Basic"]
+  API --> SEC["Container Apps secrets CWA_API_KEY"]
+  API --> MON["Azure Monitor"]
+  MON --> LA["Log Analytics"]
+  API --> POI["景點 API TDX P2"]
+  API --> ROUTE["交通 API TDX P3"]
+  API --> AI["AI 摘要 Gemini SDK P1 可降級"]
 ```
 
-## AWS 服務映射(附錄)
+## 成本與資源規格
 
-| 中立元件 | AWS 對應 | 說明 |
-|---|---|---|
-| 靜態前端 | S3 + CloudFront | CDN + HTTPS |
-| WAF | AWS WAF | 前緣防護 |
-| API 容器 | ECS Fargate | 免管理主機 |
-| LB | ALB | 對外暴露 API |
-| 快取 | ElastiCache Redis | 熱門查詢 |
-| 資料庫 | RDS PostgreSQL | 查詢紀錄/偏好 |
-| 密鑰 | Secrets Manager | API key / 連線資訊 |
-| 排程 | EventBridge Scheduler | 觸發 worker |
-| 監控 | CloudWatch | logs / metrics / alarms |
-
-> **實際 demo 部署**(single source of truth,見 `docs/iac_overview.md`)採 **Google Cloud Run(後端)+ Cloudflare/GCS(前端)**——真正免費、可長期提供公開 URL。AWS 映射為設計呈現用,不為 demo 付費。
+- **前端**:Azure Static Web Apps Free,承接 React 靜態站點與 HTTPS。
+- **後端**:Azure Container Apps consumption plan,`minReplicas=0`,`maxReplicas=1`,單一 revision 跑 FastAPI 容器。
+- **容器規格**:0.5 vCPU / 1 Gi 記憶體,符合學生作品 demo 與 scale-to-zero 的成本目標。
+- **映像儲存**:Azure Container Registry Basic,由 GitHub Actions 透過 `az acr build` 建置與保存 image。
+- **憑證管理**:先以 Container Apps secrets 保存 `CWA_API_KEY`,避免把 secret 寫入 repo 或 image。
+- **訂閱假設**:以 Azure for Students 或學生可取得的低成本訂閱為基準,控制常駐成本接近零。
 
 ## 資料流:使用者查詢
 
 ```mermaid
 sequenceDiagram
   participant User
-  participant FE as 前端
-  participant API as FastAPI
-  participant Cache as 快取
+  participant SWA as Static Web Apps
+  participant API as Container Apps FastAPI
   participant WX as CWA API
   participant AI as Gemini SDK
 
-  User->>FE: 選鄉鎮 + 日期 → 查詢
-  FE->>API: GET /api/forecast?town=...&date=...
-  API->>Cache: 查快取
-  alt 命中
-    Cache-->>API: 快取結果
-  else 未命中
-    API->>WX: 呼叫 CWA(依日期選 093/091,設 timeout)
-    WX-->>API: 原始預報
-    API->>API: 正規化為 daily summary
-    API->>Cache: 寫入(TTL)
-  end
+  User->>SWA: 開啟查詢頁
+  SWA->>API: GET /api/forecast?town=...&date=...
+  API->>WX: 呼叫 CWA API 並設 timeout
+  WX-->>API: 原始預報
+  API->>API: 正規化為 daily summary
   API->>AI: 結構化天氣 → 摘要(可降級為規則式)
   AI-->>API: 自然語言行前建議
-  API-->>FE: 標準化資料 + AI 摘要
+  API-->>SWA: 標準化資料 + AI 摘要
+  SWA-->>User: 呈現結果
 ```
 
 ## 資料集粒度正規化規則(API 契約)

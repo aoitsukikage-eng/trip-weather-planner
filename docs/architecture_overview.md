@@ -31,11 +31,11 @@
 
 ## 文件導覽
 
-- `cloud_architecture.md` — 架構圖 + AWS 映射 + 資料流
+- `cloud_architecture.md` — Azure 架構圖 + 資料流
 - `frontend_plan.md` — 前端頁面與邊界
 - `cicd_flow.md` — CI/CD
 - `git_workflow.md` — Git 協作
-- `iac_overview.md` — Terraform
+- `iac_overview.md` — Terraform azurerm 部署概述
 - `ai_driven.md` — AI 在產品與開發的角色 + 資料治理
 
 ## P1 已出貨行為
@@ -51,3 +51,7 @@
   - 表單拆成縣市 → 鄉鎮兩階段。
   - 日期 UI 只允許 today..today+6,並以 `M/D（週X）` 顯示。
   - 行前建議面板移除 AI branding,rule-based 模式保持誠實標示。
+- 雲端部署
+  - 前端以 Azure Static Web Apps 承接 React build。
+  - 後端以 Azure Container Apps 執行 FastAPI 容器,搭配 Azure Container Registry 發版。
+  - secret 先放在 Container Apps secrets,監控訊號進 Azure Monitor / Log Analytics。

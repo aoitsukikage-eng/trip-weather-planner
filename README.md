@@ -8,23 +8,24 @@
 
 | 題目要求 / 加分項 | 本專案落點 |
 |---|---|
-| 雲端後端放 Python 程式碼 | FastAPI 容器化,部署 Cloud Run |
-| 雲端架構圖 | `docs/cloud_architecture.md`(平台中立主圖 + AWS 映射) |
+| 雲端後端放 Python 程式碼 | FastAPI 容器化,部署 Azure Container Apps |
+| 雲端架構圖 | `docs/cloud_architecture.md`(Azure 架構圖 + 資料流) |
 | 前端程式 | React + Vite + TypeScript 表單式查詢頁 |
 | 串接第三方 REST API | CWA 天氣(P1)、TDX 景點/交通(P2/P3),後端代理 |
 | CI/CD 流程圖 | `docs/cicd_flow.md` + `.github/workflows/ci.yml` |
 | 多人協作 Git 流程圖 | `docs/git_workflow.md`(trunk-based) |
-| IaC 建置前端架構 | `infra/terraform/`(前端託管 + 後端服務) |
+| IaC 建置前端架構 | `infra/terraform/`(Terraform azurerm 敘事: RG + ACR + Container Apps + SWA) |
 | AI Driven 系統 | AI 行前摘要(產品)+ AI 輔助開發流程,見 `docs/ai_driven.md` |
 
 ## 架構一覽
 
 ```
 前端 (React/Vite)  ──►  FastAPI 後端  ──►  第三方 API (CWA / TDX)
-   靜態託管              Cloud Run          後端代理,key 不進前端
-                          │
-                          ├─ 快取 (熱門查詢 / town catalog / CWA 輔助資料)
-                          └─ 行前建議 (Gemini SDK 可保留,未啟用時誠實降級為規則式)
+ Azure Static Web Apps    Azure Container Apps   後端代理,key 不進前端
+                               │
+                               ├─ Azure Container Registry (image)
+                               ├─ Container Apps secrets (CWA_API_KEY)
+                               └─ Azure Monitor / Log Analytics
 ```
 
 ## 本機開發
@@ -81,7 +82,7 @@ docs/       設計文件與流程圖
 - forecast payload 與 UI 會顯示 selected county 的日出日落,以及以最近 CWA 測站對應的目前紫外線等級。
 - ✅ Mock mode 仍可零憑證 demo,保留既有 22 筆靜態鄉鎮與 deterministic fallback。
 - ✅ Public-demo deployment readiness: Docker build、Terraform 範本、deploy workflow skeleton、runbook 已整理完成。
-- ⏳ 待外部 auth / 平台參數:Cloud Run / 正式公開 URL。
+- ⏳ 待外部 auth / 平台參數:Azure OIDC、SWA/Container Apps 正式公開 URL。
 - ⏳ Deferred: Gemini 啟用、AQI、警特報、景點、交通、聊天機器人 overlay。
 
 ## Public Demo Readiness
@@ -90,5 +91,5 @@ docs/       設計文件與流程圖
 - Terraform example:`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton:`.github/workflows/deploy-demo.yml`
 
-目前 repo 狀態是 **deploy-ready, not actually deployed**。未提供 GCP /
+目前 repo 狀態是 **deploy-ready, not actually deployed**。未提供 Azure /
 GitHub OIDC auth 之前,不聲稱已有公開 URL 或已建立雲端資源。
