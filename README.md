@@ -58,6 +58,16 @@ cd backend && pytest -q && ruff check .
 cd frontend && npm run build
 ```
 
+## 雲端部署(Azure)
+
+- **架構摘要**:前端部署到 Azure Static Web Apps Free,後端部署到 Azure Container Apps consumption plan,映像由 Azure Container Registry 保存,`CWA_API_KEY` 透過 Container Apps secrets 注入。
+- **Demo URL placeholder**:前端 `<FRONTEND_URL>`、後端 `<BACKEND_URL>`。
+- **延伸文件**:
+  - 架構圖:`docs/cloud_architecture.md`
+  - CI/CD:`docs/cicd_flow.md`
+  - IaC:`docs/iac_overview.md`
+  - 架構原則:`docs/architecture_overview.md`
+
 ## 憑證(免費,實作到真資料時才需要)
 
 - **CWA 授權碼**:https://opendata.cwa.gov.tw → 註冊氣象會員 → 取得授權碼 → 填入 `backend/.env` 的 `CWA_API_KEY`。
