@@ -54,8 +54,8 @@
   ],
   "references": [
     "docs/architecture_overview.md",
-    "docs/phase1_real_data_execution_brief.md",
-    "docs/ubuntu_phase1_real_data_handoff.md",
+    "phase1_real_data_execution_brief.md (not present in this repository snapshot)",
+    "ubuntu_phase1_real_data_handoff.md (not present in this repository snapshot)",
     "backend/.env.example",
     "backend/app/adapters/cwa.py",
     "backend/app/core/config.py",

@@ -52,7 +52,7 @@ step is to move from mock-backed weather responses to real CWA-backed results.
 
 ### Reference artifact
 
-- Execution brief: `docs/phase1_real_data_execution_brief.md`
+- Execution brief: `phase1_real_data_execution_brief.md` (not present in this repository snapshot)
 
 ## 2026-07-02: P1 live CWA integration approved
 
@@ -360,7 +360,7 @@ dispatched `cathay-cloud-intern-p1-ux-refresh-and-cwa-data-expansion`.
 
 ### Reference artifact
 
-- Task card: `docs/bridge_task_cathay_cloud_intern_p1_ux_refresh_and_cwa_data_expansion.json`
+- Task card: `bridge_task_cathay_cloud_intern_p1_ux_refresh_and_cwa_data_expansion.json`
   (also placed in the Mac bridge tasks folder for Ubuntu pickup)
 
 ## 2026-07-04: UX refresh and CWA data expansion approved
