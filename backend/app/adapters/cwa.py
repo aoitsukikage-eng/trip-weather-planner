@@ -27,6 +27,7 @@ SUNRISE_CACHE_KEY = "cwa:sunrise"
 UV_CACHE_KEY = "cwa:uv"
 STATION_CACHE_KEY = "cwa:stations"
 TOWNS_CACHE_TTL = 86400
+SUNRISE_CACHE_TTL = 31536000
 AUXILIARY_CACHE_TTL = 3600
 
 _NEAR_DATASETS_BY_CITY: dict[str, str] = {
@@ -211,15 +212,27 @@ class CWAAdapter:
         if self._settings.use_mock:
             return mock_sunrise_sunset(town, target_date)
 
+        target_iso = target_date.isoformat()
         payload = await self._request_json(
             DATASET_SUNRISE,
-            cache_key=SUNRISE_CACHE_KEY,
-            ttl=AUXILIARY_CACHE_TTL,
+            params={"CountyName": town.city, "Date": target_iso},
+            cache_key=self._build_sunrise_cache_key(town.city, target_iso),
+            ttl=SUNRISE_CACHE_TTL,
         )
         result = self._parse_sunrise_payload(payload, town.city, target_date)
+        if result is not None and not result.is_approximate and result.source_date == target_iso:
+            return result
+
+        fallback_payload = await self._request_json(
+            DATASET_SUNRISE,
+            params={"CountyName": town.city},
+            cache_key=self._build_sunrise_cache_key(town.city, "fallback"),
+            ttl=SUNRISE_CACHE_TTL,
+        )
+        result = self._parse_sunrise_payload(fallback_payload, town.city, target_date)
         if result is None:
             raise UpstreamError(
-                f"No sunrise/sunset data for {town.city} on {target_date.isoformat()}.",
+                f"No sunrise/sunset data for {town.city} on {target_iso}.",
                 error_code="sunrise_not_found",
             )
         return result
@@ -461,6 +474,10 @@ class CWAAdapter:
             return f"cwa:{dataset}"
         suffix = ",".join(f"{key}={params[key]}" for key in sorted(params))
         return f"cwa:{dataset}:{suffix}"
+
+    @staticmethod
+    def _build_sunrise_cache_key(county: str, date_token: str) -> str:
+        return f"{SUNRISE_CACHE_KEY}:{county}:{date_token}"
 
 
 def _extract_element_values(element_value: object) -> dict[str, str]:

@@ -10,7 +10,9 @@ import pytest
 
 from app.adapters.cwa import (
     DATASET_NEAR,
+    DATASET_SUNRISE,
     DATASET_WEEK,
+    SUNRISE_CACHE_TTL,
     CWAAdapter,
     resolve_live_dataset,
     select_dataset,
@@ -547,6 +549,100 @@ def test_parse_sunrise_payload_falls_back_to_last_available_row():
     assert result is not None
     assert result.source_date == "2025-07-05"
     assert result.is_approximate is True
+
+
+def test_fetch_sunrise_sunset_requests_exact_county_and_date(monkeypatch: pytest.MonkeyPatch):
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+    calls: list[dict[str, object]] = []
+
+    async def fake_request_json(
+        dataset: str,
+        *,
+        params: dict[str, str] | None = None,
+        cache_key: str | None = None,
+        ttl: int | None = None,
+    ) -> dict:
+        calls.append(
+            {
+                "dataset": dataset,
+                "params": params,
+                "cache_key": cache_key,
+                "ttl": ttl,
+            }
+        )
+        return _sunrise_payload()
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    result = asyncio.run(adapter.fetch_sunrise_sunset(town, date(2026, 7, 4)))
+
+    assert result.source_date == "2026-07-04"
+    assert result.is_approximate is False
+    assert calls == [
+        {
+            "dataset": DATASET_SUNRISE,
+            "params": {"CountyName": "臺北市", "Date": "2026-07-04"},
+            "cache_key": "cwa:sunrise:臺北市:2026-07-04",
+            "ttl": SUNRISE_CACHE_TTL,
+        }
+    ]
+
+
+def test_fetch_sunrise_sunset_falls_back_when_exact_row_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+    calls: list[dict[str, object]] = []
+    responses = iter(
+        [
+            {
+                "records": {
+                    "locations": {
+                        "location": [{"CountyName": "臺北市", "time": []}],
+                    }
+                }
+            },
+            _sunrise_payload(),
+        ]
+    )
+
+    async def fake_request_json(
+        dataset: str,
+        *,
+        params: dict[str, str] | None = None,
+        cache_key: str | None = None,
+        ttl: int | None = None,
+    ) -> dict:
+        calls.append(
+            {
+                "dataset": dataset,
+                "params": params,
+                "cache_key": cache_key,
+                "ttl": ttl,
+            }
+        )
+        return next(responses)
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    result = asyncio.run(adapter.fetch_sunrise_sunset(town, date(2026, 12, 31)))
+
+    assert result.source_date == "2025-07-05"
+    assert result.is_approximate is True
+    assert calls == [
+        {
+            "dataset": DATASET_SUNRISE,
+            "params": {"CountyName": "臺北市", "Date": "2026-12-31"},
+            "cache_key": "cwa:sunrise:臺北市:2026-12-31",
+            "ttl": SUNRISE_CACHE_TTL,
+        },
+        {
+            "dataset": DATASET_SUNRISE,
+            "params": {"CountyName": "臺北市"},
+            "cache_key": "cwa:sunrise:臺北市:fallback",
+            "ttl": SUNRISE_CACHE_TTL,
+        },
+    ]
 
 
 def test_parse_uv_payload_selects_nearest_station_deterministically():
