@@ -10,8 +10,8 @@
 
 ```mermaid
 flowchart TB
-  U["使用者瀏覽器"] --> SWA["Azure Static Web Apps Free"]
-  SWA --> API["Azure Container Apps FastAPI"]
+  U["使用者瀏覽器"] --> FE["Azure Storage 靜態網站 Blob $web"]
+  FE --> API["Azure Container Apps FastAPI"]
   API --> CWA["CWA 天氣 API"]
   API --> ACR["Azure Container Registry Basic"]
   API --> SEC["Container Apps secrets CWA_API_KEY"]
@@ -24,7 +24,7 @@ flowchart TB
 
 ## 成本與資源規格
 
-- **前端**:Azure Static Web Apps Free,承接 React 靜態站點與 HTTPS。
+- **前端**:Azure Storage 靜態網站,由 `$web` container 承接 React build 輸出、HTTPS 與靜態資產發布。
 - **後端**:Azure Container Apps consumption plan,`minReplicas=0`,`maxReplicas=1`,單一 revision 跑 FastAPI 容器。
 - **容器規格**:0.5 vCPU / 1 Gi 記憶體,符合學生作品 demo 與 scale-to-zero 的成本目標。
 - **映像儲存**:Azure Container Registry Basic,由 GitHub Actions 透過 `az acr build` 建置與保存 image。
@@ -36,20 +36,20 @@ flowchart TB
 ```mermaid
 sequenceDiagram
   participant User
-  participant SWA as Static Web Apps
+  participant FE as Storage Static Website
   participant API as Container Apps FastAPI
   participant WX as CWA API
   participant AI as Gemini SDK
 
-  User->>SWA: 開啟查詢頁
-  SWA->>API: GET /api/forecast?town=...&date=...
+  User->>FE: 開啟查詢頁
+  FE->>API: GET /api/forecast?town=...&date=...
   API->>WX: 呼叫 CWA API 並設 timeout
   WX-->>API: 原始預報
   API->>API: 正規化為 daily summary
   API->>AI: 結構化天氣 → 摘要(可降級為規則式)
   AI-->>API: 自然語言行前建議
-  API-->>SWA: 標準化資料 + AI 摘要
-  SWA-->>User: 呈現結果
+  API-->>FE: 標準化資料 + AI 摘要
+  FE-->>User: 呈現結果
 ```
 
 ## 資料集粒度正規化規則(API 契約)

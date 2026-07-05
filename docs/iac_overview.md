@@ -6,9 +6,9 @@
 
 | 用途 | 採用 |
 |---|---|
-| 正式架構設計呈現 | Azure Static Web Apps + Azure Container Apps + Azure Container Registry |
+| 正式架構設計呈現 | Azure Storage 靜態網站 + Azure Container Apps + Azure Container Registry |
 | 實際 demo 部署 | 與設計圖一致,採 Azure 單雲部署 |
-| IaC(Terraform) | codify demo 實際用到的 Azure 資源:RG、ACR、Container Apps、SWA |
+| IaC(Terraform) | codify demo 實際用到的 Azure 資源:RG、Storage account static website、ACR、Container Apps |
 
 避免「圖一套、跑一套、IaC 又一套」。
 
@@ -20,9 +20,9 @@
 ## 涵蓋資源
 
 - **Resource Group**:作為 demo 資源邊界,集中管理 region、tag 與權限範圍。
+- **Azure Storage account static website**:以 `$web` container 承接 React build 輸出,對外提供 HTTPS 與靜態資產發布。
 - **Azure Container Registry**:保存後端 FastAPI image,提供 Container Apps 拉 image 的來源。
 - **Azure Container Apps environment + app**:承接 consumption plan 執行環境、revision、ingress、`minReplicas=0` / `maxReplicas=1`、secret 綁定與 runtime env。
-- **Azure Static Web Apps**:承接 React 前端 build 輸出,對外提供 HTTPS 與靜態資產發布。
 
 ## 驗證策略
 

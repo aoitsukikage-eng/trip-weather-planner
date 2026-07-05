@@ -52,6 +52,6 @@
   - 日期 UI 只允許 today..today+6,並以 `M/D（週X）` 顯示。
   - 行前建議面板移除 AI branding,rule-based 模式保持誠實標示。
 - 雲端部署
-  - 前端以 Azure Static Web Apps 承接 React build。
+  - 前端以 Azure Storage 靜態網站 `$web` container 承接 React build。
   - 後端以 Azure Container Apps 執行 FastAPI 容器,搭配 Azure Container Registry 發版。
   - secret 先放在 Container Apps secrets,監控訊號進 Azure Monitor / Log Analytics。

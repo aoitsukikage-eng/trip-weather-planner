@@ -14,11 +14,11 @@ flowchart LR
   I --> GATE
   GATE --> AZLOGIN["OIDC federated credential 登入 Azure"]
   AZLOGIN --> ACRBUILD["az acr build 建置後端 image"]
-  AZLOGIN --> SWABUILD["Build 前端產物"]
+  AZLOGIN --> FEBUILD["Build 前端產物"]
   ACRBUILD --> APPROVE["Production 手動核准"]
-  SWABUILD --> APPROVE
+  FEBUILD --> APPROVE
   APPROVE --> DEPLOYAPI["deploy Azure Container Apps"]
-  APPROVE --> DEPLOYFE["deploy Azure Static Web Apps"]
+  APPROVE --> DEPLOYFE["az storage blob upload-batch 到 $web"]
   DEPLOYAPI --> OBS["Azure Monitor / Log Analytics"]
   DEPLOYFE --> OBS
 ```
@@ -36,7 +36,7 @@ flowchart LR
 - 真部署仍需人工觸發與環境核准，不會在這個 repo 內假裝「一 push 就已上雲」。
 - GitHub Actions 透過 **OIDC federated credential** 登入 Azure，不保存長期雲端金鑰。
 - 後端用 `az acr build` 建置並推送 image 到 Azure Container Registry，之後部署 Azure Container Apps。
-- 前端走獨立路線 build 後部署 Azure Static Web Apps，與後端 release 可分開驗證。
+- 前端走獨立路線 build 後以 `az storage blob upload-batch -d '$web' -s frontend/dist` 發布到 Azure Storage 靜態網站，與後端 release 可分開驗證。
 
 ## 加分細節
 
