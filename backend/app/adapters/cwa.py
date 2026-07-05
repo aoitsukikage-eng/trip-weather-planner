@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from math import cos, radians, sqrt
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -82,10 +83,15 @@ _AGGREGATE_DATASETS = {
     DATASET_NEAR: "F-D0047-089",
     DATASET_WEEK: "F-D0047-091",
 }
+TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+
+
+def _taipei_today() -> date:
+    return datetime.now(TAIPEI_TZ).date()
 
 
 def select_dataset(target_date: date, today: date | None = None) -> str:
-    today = today or date.today()
+    today = today or _taipei_today()
     delta_days = (target_date - today).days
     return DATASET_NEAR if delta_days <= 2 else DATASET_WEEK
 
@@ -135,9 +141,10 @@ class CWAAdapter:
 
     async def fetch_forecast_slices(self, town: Town) -> ForecastSlices:
         if self._settings.use_mock:
+            today = _taipei_today()
             return ForecastSlices(
-                daily=mock_time_slices(DATASET_WEEK, town, horizon_start=date.today()),
-                hourly=mock_time_slices(DATASET_NEAR, town, horizon_start=date.today()),
+                daily=mock_time_slices(DATASET_WEEK, town, horizon_start=today),
+                hourly=mock_time_slices(DATASET_NEAR, town, horizon_start=today),
                 source_label=f"mock:{DATASET_WEEK}+{DATASET_NEAR}",
             )
 
@@ -669,7 +676,7 @@ def _uv_level(value: float) -> str:
 
 
 def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
-    label = "目前紫外線" if target_date == date.today() else "目前紫外線僅供參考"
+    label = "目前紫外線" if target_date == _taipei_today() else "目前紫外線僅供參考"
     return UVInfo(
         value=info.value,
         level=info.level,

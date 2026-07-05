@@ -25,6 +25,7 @@ from app.services.weather import (
 )
 
 router = APIRouter(prefix="/api", tags=["forecast"])
+TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 
 def _meta(request: Request, *, cached: bool = False, source: str | None = None) -> Meta:
@@ -90,9 +91,9 @@ async def forecast(
         raise AppError(
             "Invalid date; expected YYYY-MM-DD.", error_code="invalid_date"
         ) from exc
-    if not _is_date_in_window(parsed_date):
+    if not _is_date_in_supported_range(parsed_date):
         raise AppError(
-            "Date must be within today..today+6.",
+            "Date must be between today and today+10.",
             error_code="date_out_of_range",
         )
 
@@ -107,6 +108,11 @@ async def forecast(
     slices = await adapter.fetch_forecast_slices(town_obj)
     # Return the full week plus the near-term 72h chart data in one response.
     days = normalize_to_daily(slices.daily)
+    if not _horizon_contains_date(days, target_date):
+        raise AppError(
+            "Date must be within the available forecast horizon.",
+            error_code="date_out_of_range",
+        )
     hourly_slots = normalize_to_hourly(slices.hourly)
     hourly = hourly_slots or None
     sunrise_sunset = None
@@ -144,7 +150,15 @@ async def forecast(
     )
 
 
-def _is_date_in_window(target: date, today: date | None = None) -> bool:
-    anchor = today or datetime.now(ZoneInfo("Asia/Taipei")).date()
+def _taipei_today() -> date:
+    return datetime.now(TAIPEI_TZ).date()
+
+
+def _is_date_in_supported_range(target: date, today: date | None = None) -> bool:
+    anchor = today or _taipei_today()
     delta = (target - anchor).days
-    return 0 <= delta <= 6
+    return 0 <= delta <= 10
+
+
+def _horizon_contains_date(days: list, target_date: str) -> bool:
+    return any(day.date == target_date for day in days)

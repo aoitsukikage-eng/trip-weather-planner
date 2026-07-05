@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,8 +16,16 @@ from app.main import settings as app_settings
 client = TestClient(app)
 
 
+def _today_taipei() -> date:
+    return datetime.now(ZoneInfo("Asia/Taipei")).date()
+
+
 def _future(days: int) -> str:
-    return (date.today() + timedelta(days=days)).isoformat()
+    return (_today_taipei() + timedelta(days=days)).isoformat()
+
+
+def _past(days: int) -> str:
+    return (_today_taipei() - timedelta(days=days)).isoformat()
 
 
 @pytest.fixture(autouse=True)
@@ -113,7 +122,7 @@ def test_forecast_includes_hourly_for_next_72_hours():
     assert forecast["hourly"] is not None
     assert len(forecast["hourly"]) == 24
     first_slot = forecast["hourly"][0]
-    assert first_slot["time"].startswith(date.today().isoformat())
+    assert first_slot["time"].startswith(_today_taipei().isoformat())
     assert "apparent_temp_c" in first_slot
     assert "weather_code" in first_slot
 
@@ -144,7 +153,38 @@ def test_forecast_cache_hit_on_second_call():
 def test_unknown_town_and_bad_date():
     assert client.get(f"/api/forecast?town=nope&date={_future(2)}").status_code == 404
     assert client.get("/api/forecast?town=taipei-xinyi&date=2026-13-40").status_code == 400
-    assert client.get(f"/api/forecast?town=taipei-xinyi&date={_future(7)}").status_code == 400
+    assert client.get(f"/api/forecast?town=taipei-xinyi&date={_past(1)}").status_code == 400
+    assert client.get(f"/api/forecast?town=taipei-xinyi&date={_future(11)}").status_code == 400
+
+
+def test_forecast_accepts_today_plus_seven_when_horizon_contains_it(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter, ForecastSlices
+    from app.adapters.mock_data import mock_time_slices
+
+    os.environ["CWA_API_KEY"] = "demo-key"
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = "demo-key"
+
+    async def fake_fetch_forecast_slices(self, town):  # noqa: ARG001
+        return ForecastSlices(
+            daily=mock_time_slices(
+                "F-D0047-091",
+                town,
+                horizon_start=_today_taipei() + timedelta(days=1),
+            ),
+            hourly=mock_time_slices("F-D0047-093", town, horizon_start=_today_taipei()),
+            source_label="test-live",
+        )
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", fake_fetch_forecast_slices)
+
+    target = _future(7)
+    body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
+    assert body["success"] is True
+    assert body["data"]["forecast"]["target_date"] == target
+    assert any(day["date"] == target for day in body["data"]["forecast"]["days"])
 
 
 def test_summary_text_follows_selected_non_first_day():
