@@ -901,3 +901,55 @@ The final submission favors reproducible truth over architectural symmetry.
 Static Web Apps would have been a cleaner single-brand frontend story, but the
 working Azure Storage fallback better represents the platform constraints and
 keeps the demo honest.
+
+## 2026-07-09: Phase 2 kickoff — destination suitability completion
+
+### Summary
+
+Phase 1 was submitted on 2026-07-06 and passed the Cathay review. The `main`
+branch (`2f3ce32`) and the Azure public demo are now a frozen, stable baseline
+kept intact for the interview period. Phase 2 development starts today on a
+new branch `phase2-dev`, created from that baseline.
+
+### Operating decisions
+
+- All Phase 2 work happens on `phase2-dev`; `main` receives no direct commits.
+- The branch is intentionally not pushed to origin and the Azure demo is not
+  redeployed. Development and verification run on the Ubuntu workstation only,
+  so the public Phase 1 demo stays exactly as reviewed.
+- The management/coding/acceptance bridge workflow validated in Phase 1
+  continues unchanged.
+
+### Scope
+
+Phase 2 resumes the original three-source plan
+(`docs/dev-process/台灣公開API接入清單_旅行目的地評估.md`) by completing the
+"is this destination worth going" storyline before moving to "what to do
+there":
+
+1. MOENV air quality: real-time AQI via nearest-station mapping (same pattern
+   as the existing UV card) plus the official 3-day air-quality-zone forecast
+   (`aqx_p_408`, issued 10:30/16:30/22:00 daily).
+2. CWA weather warnings and typhoon advisories (`W-C0033` family), carried
+   over from the Phase 1 backlog; zero new credentials required.
+3. Astronomy extension: moonrise/moonset with moon phase, joining the existing
+   sunrise/sunset fact card family.
+4. TDX tourism (scenic spots / restaurants / activities) as a later card;
+   OAuth2 client credentials are already provisioned in the Ubuntu `.env`.
+
+### UI decisions agreed with the user
+
+- Warnings render as a conditional full-width alert banner between the header
+  and the 7-day strip: zero footprint on calm days, severity-colored, stacks
+  naturally on mobile. Side columns were rejected because they do not survive
+  the mobile single-column collapse.
+- Current AQI and the moon card extend the existing auto-fit fact-card grid.
+- The 3-day AQI forecast integrates into existing components: a small
+  color-coded dot on the first three day-strip cards and AQI-aware wording in
+  the selected-day advice panel. No new layout region is introduced.
+
+### Pending
+
+- MOENV open-data platform registration (instant email key) is the only
+  missing credential; `GEMINI_API_KEY` stays empty until the AI-summary card
+  is scheduled.
