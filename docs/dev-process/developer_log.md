@@ -953,3 +953,50 @@ there":
 - MOENV open-data platform registration (instant email key) is the only
   missing credential; `GEMINI_API_KEY` stays empty until the AI-summary card
   is scheduled.
+
+## 2026-07-15: P2-1 first pass rejected — changes_required
+
+### Summary
+
+The background unit for `task-20260715-twp-p2-suitability` completed and
+delivered the MOENV/warnings/moon adapters plus the agreed UI integration in a
+single commit (`ed64802`). Lint, both test suites, and the frontend build were
+green and mock mode stayed intact. Acceptance (Codex VS) nevertheless returned
+**changes_required** with four blockers, and management triage confirmed all
+four — with one responsibility correction.
+
+### Findings and triage
+
+- MOENV live parsing is broken (card-introduced). The adapter only accepts a
+  dict payload and reads `records`, but MOENV v2 returns a top-level JSON
+  list for both `aqx_p_432` and `aqf_p_01`, so live AQI resolves to empty.
+  The task card's dataset notes had documented the list shape; the agent
+  tested only against its own dict-shaped mocks.
+- `date_out_of_range` for "today" near 23:00 is NOT a card regression:
+  the horizon logic (`trim_daily_to_window` + `_horizon_contains_date`)
+  exists in the frozen Phase 1 baseline (`e7ae6a0`). Late at night the CWA
+  live horizon starts tomorrow, so the frontend's default today query 400s.
+  Pre-existing live E2E gap, surfaced by late-night verification; scheduled
+  into the fix card because it breaks the default flow for real users.
+- Required mock-based tests (S7) were not written at all; the green suites
+  are pre-existing coverage only.
+- AC10 (one commit per acceptance criterion) was violated: one squashed
+  commit for the whole card.
+
+### Decisions
+
+- Keep `ed64802` as-is: rewriting history to fake per-AC commits after the
+  fact records a process that did not happen. The deviation is logged here;
+  per-AC commits are enforced as a hard acceptance item on the fix card.
+- Dispatched `task-20260715-twp-p2-suitability-fix1` (background-systemd,
+  gpt-5.6-terra/medium): F1 tolerant list/dict MOENV parsing with live-shape
+  list fixtures in tests, F2 graceful handling when today is outside the live
+  horizon (default query must never 400; focus the earliest available day
+  with honest wording), F3 full S1-S6 mock-based test coverage including the
+  two-state warning banner component test, F4 per-AC commit discipline.
+
+### Lesson
+
+Adapter tests must pin fixtures to the observed live payload shape, not to
+the shape the implementer assumed. The card had the live shape documented;
+the miss was in test discipline, which is exactly what F3 restores.
