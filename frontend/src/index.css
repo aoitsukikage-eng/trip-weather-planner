@@ -114,6 +114,12 @@ header h1 {
   box-shadow: 0 12px 28px rgba(77, 110, 143, 0.1);
 }
 
+.warning-banner { margin: 0 0 1rem; padding: .8rem 1rem; border-radius: 12px; border-left: 5px solid #d97706; background: #fff7e6; color: #78350f; }
+.warning-banner[data-severity="danger"] { border-left-color: #dc2626; background: #fff0f0; color: #7f1d1d; }
+.warning-banner p { margin: .2rem 0; }
+.aqi-dot { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; background: #22c55e; }
+.aqi-普通 { background: #eab308; }.aqi-對敏感族群不健康, .aqi-對所有族群不健康 { background: #f97316; }.aqi-非常不健康, .aqi-危害 { background: #dc2626; }
+
 .summary-badges {
   display: flex;
   gap: 0.55rem;

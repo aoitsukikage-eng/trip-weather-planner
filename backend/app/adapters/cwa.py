@@ -15,13 +15,15 @@ from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_u
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
-from app.schemas.weather import SunriseSunset, TimeSlice, Town, UVInfo
+from app.schemas.weather import MoonInfo, SunriseSunset, TimeSlice, Town, UVInfo, WeatherWarning
 
 DATASET_NEAR = "F-D0047-093"
 DATASET_WEEK = "F-D0047-091"
 DATASET_SUNRISE = "A-B0062-001"
 DATASET_UV = "O-A0005-001"
 DATASET_STATIONS = "O-A0001-001"
+DATASET_WARNINGS = "W-C0033-001"
+DATASET_MOON = "A-B0063-001"
 
 TOWNS_CACHE_KEY = "cwa:towns"
 SUNRISE_CACHE_KEY = "cwa:sunrise"
@@ -266,6 +268,42 @@ class CWAAdapter:
             )
         return _label_uv_info(result, target_date)
 
+    async def fetch_warnings(self, town: Town) -> list[WeatherWarning]:
+        if self._settings.use_mock:
+            return []
+        payload = await self._request_json(
+            DATASET_WARNINGS, params={"CountyName": town.city}, ttl=AUXILIARY_CACHE_TTL
+        )
+        return self._parse_warning_payload(payload, town.city)
+
+    async def fetch_moon(self, town: Town, target_date: date) -> MoonInfo:
+        """Fetch CWA A-B0063-001 moonrise/moonset; phase is computed locally."""
+        phase, icon = _moon_phase(target_date)
+        if self._settings.use_mock:
+            return MoonInfo(
+                target_date=target_date.isoformat(),
+                moonrise_time="18:42",
+                moonset_time="05:11",
+                phase=phase,
+                icon=icon,
+            )
+        try:
+            payload = await self._request_json(
+                DATASET_MOON,
+                params={"CountyName": town.city, "Date": target_date.isoformat()},
+                ttl=SUNRISE_CACHE_TTL,
+            )
+            rise, set_ = self._parse_moon_payload(payload, town.city, target_date)
+            return MoonInfo(
+                target_date=target_date.isoformat(),
+                moonrise_time=rise,
+                moonset_time=set_,
+                phase=phase,
+                icon=icon,
+            )
+        except UpstreamError:
+            return MoonInfo(target_date=target_date.isoformat(), phase=phase, icon=icon)
+
     async def _request_json(
         self,
         dataset: str,
@@ -464,6 +502,55 @@ class CWAAdapter:
             station_id=station_id,
             station_name=station.station_name,
         )
+
+    @staticmethod
+    def _parse_warning_payload(payload: dict[str, Any], county: str) -> list[WeatherWarning]:
+        text = str(payload.get("records") or "")
+        if not text or county not in text:
+            return []
+        warnings: list[WeatherWarning] = []
+        for title, severity in (
+            ("豪雨特報", "danger"),
+            ("大雨特報", "warning"),
+            ("陸上強風特報", "advisory"),
+        ):
+            if title in text:
+                warnings.append(
+                    WeatherWarning(
+                        title=title,
+                        severity=severity,
+                        description=f"{county}{title}，請留意最新天氣資訊。",
+                    )
+                )
+        return warnings
+
+    @staticmethod
+    def _parse_moon_payload(
+        payload: dict[str, Any], county: str, target_date: date
+    ) -> tuple[str | None, str | None]:
+        text = str(payload)
+        if county not in text:
+            return None, None
+
+        def find(keys: tuple[str, ...]) -> str | None:
+            def walk(value: object) -> str | None:
+                if isinstance(value, dict):
+                    for key, item in value.items():
+                        if key in keys and str(item).strip():
+                            return str(item).strip()
+                        result = walk(item)
+                        if result:
+                            return result
+                if isinstance(value, list):
+                    for item in value:
+                        result = walk(item)
+                        if result:
+                            return result
+                return None
+
+            return walk(payload)
+
+        return find(("MoonRiseTime", "MoonRise")), find(("MoonSetTime", "MoonSet"))
 
     def _cache_get(self, key: str) -> Any | None:
         if self._cache is None:
@@ -686,3 +773,23 @@ def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
         station_id=info.station_id,
         station_name=info.station_name,
     )
+
+
+def _moon_phase(target_date: date) -> tuple[str, str]:
+    known_new = date(2000, 1, 6)
+    age = (target_date - known_new).days % 29.53059
+    if age < 1.85 or age >= 27.68:
+        return "新月", "🌑"
+    if age < 7.38:
+        return "眉月", "🌒"
+    if age < 11.07:
+        return "上弦月", "🌓"
+    if age < 14.77:
+        return "盈凸月", "🌔"
+    if age < 18.46:
+        return "滿月", "🌕"
+    if age < 22.15:
+        return "虧凸月", "🌖"
+    if age < 25.84:
+        return "下弦月", "🌗"
+    return "殘月", "🌘"

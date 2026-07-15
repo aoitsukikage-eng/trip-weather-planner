@@ -315,6 +315,7 @@ function buildDayAriaLabel(day: DailyForecast): string {
   if (hasDailyPop(day.max_pop_percent)) {
     parts.push(`降雨 ${day.max_pop_percent}%`);
   }
+  if (day.aqi_forecast?.value != null) parts.push(`空氣品質 ${day.aqi_forecast.value}`);
   return parts.join(" ");
 }
 
@@ -336,6 +337,9 @@ export default function ForecastView({
   const chartForecast = chartResult?.forecast ?? forecast;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
+  const aqi = forecast.aqi;
+  const moon = forecast.moon;
+  const warnings = forecast.warnings ?? [];
   const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
   const chartPlaceLabel = `${chartForecast.town.city} ${chartForecast.town.name}`;
   const showMockBadge = isMockForecast(result);
@@ -355,6 +359,13 @@ export default function ForecastView({
       <h2>
         {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
+
+      {warnings.length > 0 && (
+        <section className="warning-banner" data-testid="warning-banner" data-severity={warnings[0].severity} aria-label="天氣特報">
+          {warnings.slice(0, 2).map((warning) => <p key={warning.title}><strong>{warning.title}</strong>{warning.description ? `：${warning.description}` : ""}</p>)}
+          {warnings.length > 2 && <details><summary>另有 {warnings.length - 2} 則特報</summary>{warnings.slice(2).map((warning) => <p key={warning.title}>{warning.title}</p>)}</details>}
+        </section>
+      )}
 
       <section className="day-strip-section" aria-label="七天預報選擇列">
         <div className="day-strip-header">
@@ -403,6 +414,7 @@ export default function ForecastView({
                     </span>
                   </span>
                   <span className="day-strip-weather">{day.weather ?? "天氣資料不足"}</span>
+                  {day.aqi_forecast?.value != null && <span className={`aqi-dot aqi-${day.aqi_forecast.level}`} title={`空氣品質 ${day.aqi_forecast.value} ${day.aqi_forecast.level ?? ""}`} aria-label={`空氣品質 ${day.aqi_forecast.value}`} />}
                   <span className="day-strip-temp">
                     <strong>高 {day.temp_high_c ?? "—"}°</strong>
                     <span>低 {day.temp_low_c ?? "—"}°</span>
@@ -455,6 +467,12 @@ export default function ForecastView({
               {!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}
             </small>
           </article>
+        )}
+        {aqi && (
+          <article className="fact-card aqi-card"><h3>{aqi.source_label}</h3><p> AQI {aqi.value ?? "—"} · {aqi.level ?? "資料不足"}</p><small>{!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}</small></article>
+        )}
+        {moon && (
+          <article className="fact-card"><h3>{moon.icon} 月出月沒</h3><p>{moon.phase} · 月出 {moon.moonrise_time ?? "—"} · 月沒 {moon.moonset_time ?? "—"}</p><small>{formatDateLabel(moon.target_date)}</small></article>
         )}
       </div>
 

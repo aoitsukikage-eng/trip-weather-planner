@@ -14,12 +14,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # External credentials (all optional; empty => degraded/mock behaviour).
     cwa_api_key: str = ""
+    moenv_api_key: str = ""
     tdx_client_id: str = ""
     tdx_client_secret: str = ""
     gemini_api_key: str = ""
@@ -30,12 +29,18 @@ class Settings(BaseSettings):
 
     # Upstream host (canonical is cwa.gov.tw; the legacy cwb.gov.tw is retired).
     cwa_base_url: str = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
+    moenv_base_url: str = "https://data.moenv.gov.tw/api/v2"
     upstream_timeout_seconds: float = 10.0
 
     @property
     def use_mock(self) -> bool:
         """Serve fixture data whenever the CWA key is not configured."""
         return not self.cwa_api_key.strip()
+
+    @property
+    def use_moenv_mock(self) -> bool:
+        """MOENV additions degrade independently when its credential is absent."""
+        return not self.moenv_api_key.strip()
 
     @property
     def cors_origin_list(self) -> list[str]:

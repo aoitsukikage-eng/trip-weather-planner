@@ -54,6 +54,7 @@ class DailyForecast(BaseModel):
     max_pop_percent: int | None = None
     weather: str | None = None  # representative phenomenon for the day
     advice_hint: str | None = None  # short rule-based hint (rain/heat/cold)
+    aqi_forecast: AQIForecast | None = None
 
 
 class ForecastData(BaseModel):
@@ -66,6 +67,9 @@ class ForecastData(BaseModel):
     hourly: list[HourlyForecast] | None = None
     sunrise_sunset: SunriseSunset | None = None
     uv: UVInfo | None = None
+    aqi: AQIInfo | None = None
+    warnings: list[WeatherWarning] = Field(default_factory=list)
+    moon: MoonInfo | None = None
     generated_at: str
 
 
@@ -86,6 +90,34 @@ class UVInfo(BaseModel):
     observed_at: str | None = None
     station_id: str | None = None
     station_name: str | None = None
+
+
+class AQIForecast(BaseModel):
+    date: str
+    value: int | None = None
+    level: str | None = None
+
+
+class AQIInfo(BaseModel):
+    value: int | None = None
+    level: str | None = None
+    station_name: str | None = None
+    observed_at: str | None = None
+    source_label: str = "目前空氣品質"
+
+
+class WeatherWarning(BaseModel):
+    title: str
+    severity: str = "advisory"
+    description: str | None = None
+
+
+class MoonInfo(BaseModel):
+    target_date: str
+    moonrise_time: str | None = None
+    moonset_time: str | None = None
+    phase: str
+    icon: str
 
 
 class AiSummary(BaseModel):

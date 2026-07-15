@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Query, Request
 
 from app.adapters.cwa import CWAAdapter
+from app.adapters.moenv import MOENVAdapter
 from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError, UpstreamError
 from app.data.towns import all_towns, get_town
@@ -68,9 +69,7 @@ async def towns(request: Request) -> ApiResponse[list[Town]]:
 async def forecast(
     request: Request,
     town: str = Query(..., description="Town code, e.g. 'taipei-xinyi'"),
-    target_date: str = Query(
-        ..., alias="date", description="Target date, YYYY-MM-DD"
-    ),
+    target_date: str = Query(..., alias="date", description="Target date, YYYY-MM-DD"),
 ) -> ApiResponse[ForecastResult]:
     settings = get_settings()
     cache = request.app.state.cache
@@ -89,9 +88,7 @@ async def forecast(
     try:
         parsed_date = date.fromisoformat(target_date)
     except ValueError as exc:
-        raise AppError(
-            "Invalid date; expected YYYY-MM-DD.", error_code="invalid_date"
-        ) from exc
+        raise AppError("Invalid date; expected YYYY-MM-DD.", error_code="invalid_date") from exc
     if not _is_date_in_supported_range(parsed_date):
         raise AppError(
             "Date must be between today and today+10.",
@@ -118,6 +115,10 @@ async def forecast(
     hourly = hourly_slots or None
     sunrise_sunset = None
     uv_info = None
+    moon = None
+    warnings = []
+    aqi = None
+    aqi_forecasts = {}
     try:
         sunrise_sunset = await adapter.fetch_sunrise_sunset(town_obj, parsed_date)
     except UpstreamError:
@@ -126,6 +127,24 @@ async def forecast(
         uv_info = await adapter.fetch_uv_info(town_obj, parsed_date)
     except UpstreamError:
         uv_info = None
+    try:
+        moon = await adapter.fetch_moon(town_obj, parsed_date)
+        warnings = await adapter.fetch_warnings(town_obj)
+    except UpstreamError:
+        pass
+    moenv = MOENVAdapter(settings, cache)
+    try:
+        aqi = await moenv.fetch_current(town_obj)
+        aqi_forecasts = await moenv.fetch_forecast(town_obj.city)
+    except UpstreamError:
+        pass
+    for day in days:
+        if day.date in aqi_forecasts:
+            day.aqi_forecast = aqi_forecasts[day.date]
+            if day.aqi_forecast.level:
+                day.advice_hint = (
+                    f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"
+                )
 
     forecast_data = ForecastData(
         town=town_obj,
@@ -135,6 +154,9 @@ async def forecast(
         hourly=hourly,
         sunrise_sunset=sunrise_sunset,
         uv=uv_info,
+        aqi=aqi,
+        warnings=warnings,
+        moon=moon,
         generated_at=datetime.now(UTC).isoformat(),
     )
 
