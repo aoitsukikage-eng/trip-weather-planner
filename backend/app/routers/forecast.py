@@ -106,7 +106,17 @@ async def forecast(
     slices = await adapter.fetch_forecast_slices(town_obj)
     # Return the full week plus the near-term 72h chart data in one response.
     days = trim_daily_to_window(normalize_to_daily(slices.daily), _taipei_today())
-    if not _horizon_contains_date(days, target_date):
+    focused_date = target_date
+    date_adjusted = False
+    is_missing_today = (
+        target_date == _taipei_today().isoformat()
+        and days
+        and not _horizon_contains_date(days, target_date)
+    )
+    if is_missing_today:
+        focused_date = days[0].date
+        date_adjusted = True
+    elif not _horizon_contains_date(days, target_date):
         raise AppError(
             "Date must be within the available forecast horizon.",
             error_code="date_out_of_range",
@@ -120,15 +130,16 @@ async def forecast(
     aqi = None
     aqi_forecasts = {}
     try:
-        sunrise_sunset = await adapter.fetch_sunrise_sunset(town_obj, parsed_date)
+        focused_day = date.fromisoformat(focused_date)
+        sunrise_sunset = await adapter.fetch_sunrise_sunset(town_obj, focused_day)
     except UpstreamError:
         sunrise_sunset = None
     try:
-        uv_info = await adapter.fetch_uv_info(town_obj, parsed_date)
+        uv_info = await adapter.fetch_uv_info(town_obj, focused_day)
     except UpstreamError:
         uv_info = None
     try:
-        moon = await adapter.fetch_moon(town_obj, parsed_date)
+        moon = await adapter.fetch_moon(town_obj, focused_day)
         warnings = await adapter.fetch_warnings(town_obj)
     except UpstreamError:
         pass
@@ -148,7 +159,9 @@ async def forecast(
 
     forecast_data = ForecastData(
         town=town_obj,
-        target_date=target_date,
+        target_date=focused_date,
+        requested_date=target_date if date_adjusted else None,
+        date_adjusted=date_adjusted,
         source_dataset=slices.source_label,
         days=days,
         hourly=hourly,
@@ -161,7 +174,7 @@ async def forecast(
     )
 
     ai = AiSummaryService(settings)
-    summary_text, mode = ai.summarize(town_obj, days, target_date)
+    summary_text, mode = ai.summarize(town_obj, days, focused_date)
     result = ForecastResult(
         forecast=forecast_data,
         ai_summary=AiSummary(text=summary_text, mode=mode),

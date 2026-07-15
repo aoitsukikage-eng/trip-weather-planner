@@ -57,6 +57,8 @@ export interface ForecastResult {
   forecast: {
     town: Town;
     target_date: string;
+    requested_date?: string | null;
+    date_adjusted?: boolean;
     source_dataset: string;
     days: DailyForecast[];
     hourly: HourlyForecast[] | null;

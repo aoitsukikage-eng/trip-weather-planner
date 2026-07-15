@@ -62,6 +62,8 @@ class ForecastData(BaseModel):
 
     town: Town
     target_date: str
+    requested_date: str | None = None
+    date_adjusted: bool = False
     source_dataset: str  # which CWA dataset produced this (F-D0047-091 / -093 / mock)
     days: list[DailyForecast]
     hourly: list[HourlyForecast] | None = None

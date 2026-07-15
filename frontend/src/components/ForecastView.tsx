@@ -360,6 +360,12 @@ export default function ForecastView({
         {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
 
+      {forecast.date_adjusted && forecast.requested_date && (
+        <p className="section-hint" data-testid="adjusted-focus-notice" role="status">
+          {formatDateLabel(forecast.requested_date)} 的預報已結束，已顯示最早可用的 {formatDateLabel(forecast.target_date)} 預報。
+        </p>
+      )}
+
       {warnings.length > 0 && (
         <section className="warning-banner" data-testid="warning-banner" data-severity={warnings[0].severity} aria-label="天氣特報">
           {warnings.slice(0, 2).map((warning) => <p key={warning.title}><strong>{warning.title}</strong>{warning.description ? `：${warning.description}` : ""}</p>)}

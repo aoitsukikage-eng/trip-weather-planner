@@ -125,11 +125,23 @@ class MOENVAdapter:
                 payload = response.json()
         except (httpx.HTTPError, ValueError) as exc:
             raise UpstreamError("MOENV request failed.", error_code="moenv_upstream_error") from exc
-        rows = payload.get("records", []) if isinstance(payload, dict) else []
-        rows = rows if isinstance(rows, list) else []
+        rows = _rows_from_payload(payload)
         if self._cache:
             self._cache.set(key, rows, ttl=1800)
         return rows
+
+
+def _rows_from_payload(payload: object) -> list[dict[str, Any]]:
+    """Accept MOENV's documented list response and its records wrapper variant."""
+    if isinstance(payload, list):
+        candidates = payload
+    elif isinstance(payload, dict):
+        candidates = payload.get("records", [])
+    else:
+        candidates = []
+    if not isinstance(candidates, list):
+        return []
+    return [row for row in candidates if isinstance(row, dict)]
 
 
 def _float(value: object) -> float | None:
