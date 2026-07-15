@@ -207,6 +207,52 @@ def test_forecast_discards_partial_eighth_day_from_live_horizon(
     assert rejected["error"]["message"] == "Date must be within the available forecast horizon."
 
 
+def test_today_outside_live_horizon_focuses_earliest_available_day(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter, ForecastSlices
+    from app.core.errors import UpstreamError
+
+    os.environ["CWA_API_KEY"] = "demo-key"
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = "demo-key"
+    first_day = _today_taipei() + timedelta(days=1)
+
+    def build_slice(offset: int) -> TimeSlice:
+        start_at = datetime.combine(
+            first_day + timedelta(days=offset), datetime.min.time()
+        ).isoformat()
+        return TimeSlice(
+            start=start_at,
+            end=start_at,
+            temp_c=28,
+            pop_percent=20,
+            weather="多雲",
+        )
+
+    async def fake_fetch_forecast_slices(self, town):  # noqa: ARG001
+        daily = [build_slice(offset) for offset in range(7)]
+        return ForecastSlices(daily=daily, hourly=[], source_label="test-live")
+
+    async def unavailable(*args, **kwargs):  # noqa: ARG001
+        raise UpstreamError("test upstream unavailable", error_code="test_upstream")
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", fake_fetch_forecast_slices)
+    monkeypatch.setattr(CWAAdapter, "fetch_sunrise_sunset", unavailable)
+    monkeypatch.setattr(CWAAdapter, "fetch_uv_info", unavailable)
+    monkeypatch.setattr(CWAAdapter, "fetch_moon", unavailable)
+
+    today = _future(0)
+    body = client.get(f"/api/forecast?town=taipei-xinyi&date={today}").json()
+
+    assert body["success"] is True
+    forecast = body["data"]["forecast"]
+    assert forecast["requested_date"] == today
+    assert forecast["date_adjusted"] is True
+    assert forecast["target_date"] == _future(1)
+    assert any(day["date"] == forecast["target_date"] for day in forecast["days"])
+
+
 def test_summary_text_follows_selected_non_first_day():
     target = _future(4)
     body = client.get(f"/api/forecast?town=taipei-xinyi&date={target}").json()
