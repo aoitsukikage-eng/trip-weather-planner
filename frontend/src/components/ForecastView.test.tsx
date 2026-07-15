@@ -147,6 +147,38 @@ describe("ForecastView", () => {
     expect(screen.getByText("臺北市")).not.toBeNull();
   });
 
+  test("renders a warning banner only while warnings are active", () => {
+    const activeWarning = buildResult("臺北市", "信義區");
+    activeWarning.forecast.warnings = [
+      { title: "大雨特報", severity: "warning", description: "臺北市大雨特報，請留意最新天氣資訊。" },
+    ];
+    const { container, rerender } = render(<ForecastView result={activeWarning} />);
+
+    expect(screen.getByTestId("warning-banner").textContent).toContain("大雨特報");
+    expect(container.querySelector(".warning-banner")).not.toBeNull();
+
+    rerender(<ForecastView result={buildResult("臺北市", "信義區")} />);
+
+    expect(screen.queryByTestId("warning-banner")).toBeNull();
+    expect(container.querySelector(".warning-banner")).toBeNull();
+  });
+
+  test("renders the moon card when moon data is available", () => {
+    const result = buildResult("臺北市", "信義區");
+    result.forecast.moon = {
+      target_date: "2026-07-04",
+      moonrise_time: "18:42",
+      moonset_time: "05:11",
+      phase: "眉月",
+      icon: "🌒",
+    };
+
+    render(<ForecastView result={result} />);
+
+    expect(screen.getByText("🌒 月出月沒")).not.toBeNull();
+    expect(screen.getByText(/眉月 · 月出 18:42 · 月沒 05:11/)).not.toBeNull();
+  });
+
   test("renders the day strip before advice and chart with seven compact cells", () => {
     const { container } = render(<ForecastView result={buildResult("臺北市", "信義區")} />);
 
