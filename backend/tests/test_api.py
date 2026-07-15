@@ -31,18 +31,26 @@ def _past(days: int) -> str:
 
 @pytest.fixture(autouse=True)
 def force_mock_mode():
-    original = os.environ.get("CWA_API_KEY")
+    original_cwa = os.environ.get("CWA_API_KEY")
+    original_moenv = os.environ.get("MOENV_API_KEY")
     os.environ["CWA_API_KEY"] = ""
+    os.environ["MOENV_API_KEY"] = ""
     get_settings.cache_clear()
     app_settings.cwa_api_key = ""
+    app_settings.moenv_api_key = ""
     app.state.cache.clear()
     yield
-    if original is None:
+    if original_cwa is None:
         os.environ.pop("CWA_API_KEY", None)
     else:
-        os.environ["CWA_API_KEY"] = original
+        os.environ["CWA_API_KEY"] = original_cwa
+    if original_moenv is None:
+        os.environ.pop("MOENV_API_KEY", None)
+    else:
+        os.environ["MOENV_API_KEY"] = original_moenv
     get_settings.cache_clear()
-    app_settings.cwa_api_key = original or ""
+    app_settings.cwa_api_key = original_cwa or ""
+    app_settings.moenv_api_key = original_moenv or ""
     app.state.cache.clear()
 
 
