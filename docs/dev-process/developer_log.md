@@ -1000,3 +1000,57 @@ four — with one responsibility correction.
 Adapter tests must pin fixtures to the observed live payload shape, not to
 the shape the implementer assumed. The card had the live shape documented;
 the miss was in test discipline, which is exactly what F3 restores.
+
+## 2026-07-20: P2-1 fix1 approved — destination suitability signals shipped
+
+### Summary
+
+`task-20260715-twp-p2-suitability-fix1` passed acceptance (Codex VS, Ubuntu):
+編碼驗收 pass、執行驗收 pass、結論 approved, no required actions. This closes
+out the P2-1 card (parent `task-20260715-twp-p2-suitability` is archived as
+superseded; its changes_required findings were fully addressed by fix1).
+
+### What shipped on phase2-dev
+
+- MOENV adapter tolerates both top-level list and `records`-wrapper payload
+  shapes (the live-shape bug that blocked AC4/AC5 on the first pass).
+- Current AQI via nearest-station mapping (aqx_p_432) and 3-day zone AQI
+  forecast (aqf_p_01, county->zone static mapping) both verified live:
+  `aqi_forecast_days=3`, AQI value present with level label.
+- Graceful handling when "today" falls outside the live CWA horizon: the
+  backend shifts focus to the earliest available day and returns additive
+  `requested_date` / `date_adjusted` fields instead of a 400; the frontend
+  surfaces an honest adjustment notice. Explicit far-future dates still 400
+  with `date_out_of_range`. Verified live 2026-07-20: request for today
+  (2026-07-20) returned 200 with `date_adjusted=true`, focused on
+  2026-07-21; a far-future date correctly 400'd.
+- CWA weather-warning banner and moon (moonrise/moonset + phase) card, both
+  covered by mock-based component tests (active/no-warning two-state banner,
+  moon card render).
+- Full mock-based test coverage for S1-S6 (backend 36 passed, frontend 24
+  passed), zero-credential mode reverified green, ruff clean, frontend build
+  clean.
+
+### Process outcome
+
+- Acceptance independently reran every check rather than trusting the coding
+  agent's self-report (ruff, pytest, frontend tests/build, live smoke) — all
+  matched the Task Report.
+- Per-AC commit discipline (F4) held this round: 7 commits, one per AC
+  (`67c78c4`..`e67e3b7`), verified against `a40da57..HEAD`.
+- No red-line files touched (README.md, .github/workflows/**,
+  infra/terraform/**, .env); no key material found in the diff; no git push
+  to any remote — phase2-dev stays local-only per the Phase 2 operating
+  decision, main and the Azure demo remain untouched.
+
+### Task bookkeeping
+
+- `task-20260715-twp-p2-suitability` -> archived (superseded by fix1)
+- `task-20260715-twp-p2-suitability-fix1` -> completed
+
+### Next
+
+P2-2: TDX tourism (scenic spots / restaurants / activities) is next in the
+Phase 2 queue; OAuth2 client credentials are already provisioned in the
+Ubuntu backend/.env. After that, Gemini AI-summary activation once the
+AQI/warning context enriches the advice material.
