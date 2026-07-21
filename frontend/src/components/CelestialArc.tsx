@@ -41,12 +41,23 @@ export default function CelestialArc({ riseTime, setTime, targetDate, now, label
   const markerY = progress === null ? null : 84 - 144 * progress * (1 - progress);
 
   return (
-    <svg className="celestial-arc" data-testid={`${label}-arc`} viewBox="0 0 200 100" role="img" aria-label={`${label}升落弧線`}>
-      <path className="celestial-arc-path" d="M 10 84 Q 100 12 190 84" />
+    <svg className={`celestial-arc celestial-arc-${label}`} data-testid={`${label}-arc`} viewBox="0 0 200 108" role="img" aria-label={`${label}升落弧線`}>
+      <path className="celestial-arc-path celestial-arc-track" data-testid={`${label}-arc-track`} d="M 10 84 Q 100 12 190 84" pathLength="1" />
+      {progress !== null && (
+        <path
+          className="celestial-arc-path celestial-arc-traveled"
+          data-testid={`${label}-arc-traveled`}
+          d="M 10 84 Q 100 12 190 84"
+          pathLength="1"
+          strokeDasharray={`${progress} 1`}
+        />
+      )}
       <path className="celestial-horizon" d="M 4 84 H 196" />
       {markerX !== null && markerY !== null && (
         <circle className="celestial-position" data-testid={`${label}-arc-marker`} cx={markerX} cy={markerY} r="4.5" />
       )}
+      <text className="celestial-arc-end-label celestial-arc-start-label" x="10" y="103">{riseTime ?? "—"}</text>
+      <text className="celestial-arc-end-label celestial-arc-end-label-right" x="190" y="103">{setTime ?? "—"}</text>
     </svg>
   );
 }

@@ -453,18 +453,13 @@ export default function ForecastView({
       <div className="fact-grid">
         {sunrise && (
           <article className="fact-card">
-            <h3>日出日落</h3>
             <CelestialArc
               label="sun"
               riseTime={sunrise.sunrise_time}
               setTime={sunrise.sunset_time}
               targetDate={forecast.target_date}
             />
-            <p>
-              {formatDateLabel(forecast.target_date)} 日出 {sunrise.sunrise_time ?? "—"} · 日落{" "}
-              {sunrise.sunset_time ?? "—"}
-            </p>
-            <small>
+            <small className="celestial-context">
               {sunrise.county}
               {sunrise.is_approximate ? ` · ${formatSunriseSourceLabel(sunrise.source_date)}` : ""}
             </small>
@@ -487,12 +482,11 @@ export default function ForecastView({
         )}
         {moon && (
           <article className="fact-card moon-card">
-            <h3>月出月沒</h3>
             <div className="moon-visuals">
               <MoonPhaseDisc illuminationFraction={moon.illumination_fraction} waxing={moon.waxing} phase={moon.phase} icon={moon.icon} />
               <CelestialArc label="moon" riseTime={moon.moonrise_time} setTime={moon.moonset_time} targetDate={moon.target_date} />
             </div>
-            <p>{moon.phase} · 月出 {moon.moonrise_time ?? "—"} · 月沒 {moon.moonset_time ?? "—"}</p>
+            <p className="moon-phase-name">{moon.phase}</p>
             <small>{formatDateLabel(moon.target_date)}</small>
           </article>
         )}

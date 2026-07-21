@@ -124,7 +124,9 @@ describe("ForecastView", () => {
   test("shows selected sunrise date and centered chart place label", () => {
     render(<ForecastView result={buildResult("臺北市", "信義區")} />);
 
-    expect(screen.getByText(/7\/4（六） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("05:12")).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
+    expect(screen.queryByRole("heading", { name: "日出日落" })).toBeNull();
     expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
   });
@@ -177,8 +179,10 @@ describe("ForecastView", () => {
 
     render(<ForecastView result={result} />);
 
-    expect(screen.getByText("月出月沒")).not.toBeNull();
-    expect(screen.getByText(/眉月 · 月出 18:42 · 月沒 05:11/)).not.toBeNull();
+    expect(screen.queryByRole("heading", { name: "月出月沒" })).toBeNull();
+    expect(screen.getByText("眉月")).not.toBeNull();
+    expect(screen.getByText("18:42")).not.toBeNull();
+    expect(screen.getByText("05:11")).not.toBeNull();
     expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
   });
 
@@ -310,7 +314,7 @@ describe("ForecastView", () => {
     expect(secondCard.className).toContain("day-strip-card-selected");
     expect(secondCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
-    expect(screen.getByText(/7\/5（日） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("05:12")).not.toBeNull();
 
     thirdCard.focus();
     await user.keyboard("{Enter}");
@@ -320,7 +324,7 @@ describe("ForecastView", () => {
     expect(thirdCard.className).toContain("day-strip-card-selected");
     expect(thirdCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-06")).not.toBeNull();
-    expect(screen.getByText(/7\/6（一） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {

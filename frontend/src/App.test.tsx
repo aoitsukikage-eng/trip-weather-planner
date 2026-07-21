@@ -342,7 +342,8 @@ describe("App", () => {
     expect(screen.getByText("7/5 白天炎熱，記得補水。").closest(".summary-panel")?.getAttribute("aria-live")).toBe(
       "polite",
     );
-    expect(screen.getByText("7/5（日） 日出 05:13 · 日落 18:48")).not.toBeNull();
+    expect(screen.getByText("05:13")).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
     expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(document.activeElement).toBe(selectedButton);
@@ -376,7 +377,8 @@ describe("App", () => {
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(selectedButton.getAttribute("aria-current")).toBe("date");
     expect(screen.getByText("7/10 天氣穩定，適合安排長時間戶外行程。")).not.toBeNull();
-    expect(screen.getByText("7/10（五） 日出 05:16 · 日落 18:49")).not.toBeNull();
+    expect(screen.getByText("05:16")).not.toBeNull();
+    expect(screen.getByText("18:49")).not.toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -406,7 +408,8 @@ describe("App", () => {
     expect(await screen.findByRole("status")).not.toBeNull();
     expect(screen.getByText(/日期切換失敗：Date must be within the available forecast horizon\./)).not.toBeNull();
     expect(screen.getByText("7/4 留意午後陣雨。")).not.toBeNull();
-    expect(screen.getByText("7/4（六） 日出 05:12 · 日落 18:48")).not.toBeNull();
+    expect(screen.getByText("05:12")).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
     expect(initiallySelected.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByTestId("day-card-2026-07-05").getAttribute("aria-pressed")).toBe("false");
     expect(screen.queryByRole("alert")).toBeNull();
