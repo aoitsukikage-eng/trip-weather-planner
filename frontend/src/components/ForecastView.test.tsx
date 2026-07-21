@@ -168,6 +168,7 @@ describe("ForecastView", () => {
   test("renders the moon card when moon data is available", () => {
     const result = buildResult("臺北市", "信義區");
     result.forecast.moon = {
+      county: "臺北市",
       target_date: "2026-07-04",
       moonrise_time: "18:42",
       moonset_time: "05:11",
@@ -177,12 +178,13 @@ describe("ForecastView", () => {
       waxing: true,
     };
 
-    render(<ForecastView result={result} />);
+    const { container } = render(<ForecastView result={result} />);
 
     expect(screen.queryByRole("heading", { name: "月出月沒" })).toBeNull();
     expect(screen.getByText("眉月")).not.toBeNull();
     expect(screen.getByText("18:42")).not.toBeNull();
     expect(screen.getByText("05:11")).not.toBeNull();
+    expect(container.querySelector(".moon-card small")?.textContent).toContain("臺北市");
     expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
   });
 

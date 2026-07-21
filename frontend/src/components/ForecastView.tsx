@@ -487,7 +487,7 @@ export default function ForecastView({
               <CelestialArc label="moon" riseTime={moon.moonrise_time} setTime={moon.moonset_time} targetDate={moon.target_date} />
             </div>
             <p className="moon-phase-name">{moon.phase}</p>
-            <small>{formatDateLabel(moon.target_date)}</small>
+            <small>{moon.county} · {formatDateLabel(moon.target_date)}</small>
           </article>
         )}
       </div>
