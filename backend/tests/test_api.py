@@ -121,6 +121,10 @@ def test_forecast_returns_multiple_days_and_marks_target():
     assert len(forecast["hourly"]) == 24
     assert forecast["sunrise_sunset"]["target_date"] == target
     assert forecast["uv"]["source_label"] == "目前紫外線僅供參考"
+    assert forecast["moon"]["moonrise_time"] == "18:42"
+    assert forecast["moon"]["moonset_time"] == "05:11"
+    assert 0 <= forecast["moon"]["illumination_fraction"] <= 1
+    assert isinstance(forecast["moon"]["waxing"], bool)
 
 
 def test_forecast_includes_hourly_for_next_72_hours():
