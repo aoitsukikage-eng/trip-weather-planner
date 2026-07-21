@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import ForecastView, { getHourlyAnnotationStep } from "./ForecastView";
 import type { ForecastResult, HourlyForecast } from "../lib/api";
 
@@ -180,6 +180,26 @@ describe("ForecastView", () => {
     expect(screen.getByText("月出月沒")).not.toBeNull();
     expect(screen.getByText(/眉月 · 月出 18:42 · 月沒 05:11/)).not.toBeNull();
     expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
+  });
+
+  test("shows a current-position marker only for today's selected celestial card", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-04T12:00:00"));
+    const currentResult = buildResult("臺北市", "信義區");
+    const { rerender } = render(<ForecastView result={currentResult} />);
+
+    expect(screen.getByTestId("sun-arc-marker")).not.toBeNull();
+
+    rerender(
+      <ForecastView
+        result={{
+          ...currentResult,
+          forecast: { ...currentResult.forecast, target_date: "2026-07-05" },
+        }}
+      />,
+    );
+    expect(screen.queryByTestId("sun-arc-marker")).toBeNull();
+    vi.useRealTimers();
   });
 
   test("renders the day strip before advice and chart with seven compact cells", () => {
