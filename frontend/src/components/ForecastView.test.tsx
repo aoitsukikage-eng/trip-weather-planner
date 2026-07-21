@@ -171,12 +171,15 @@ describe("ForecastView", () => {
       moonset_time: "05:11",
       phase: "眉月",
       icon: "🌒",
+      illumination_fraction: 0.18,
+      waxing: true,
     };
 
     render(<ForecastView result={result} />);
 
-    expect(screen.getByText("🌒 月出月沒")).not.toBeNull();
+    expect(screen.getByText("月出月沒")).not.toBeNull();
     expect(screen.getByText(/眉月 · 月出 18:42 · 月沒 05:11/)).not.toBeNull();
+    expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
   });
 
   test("renders the day strip before advice and chart with seven compact cells", () => {
