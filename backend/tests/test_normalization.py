@@ -607,6 +607,32 @@ def test_fetch_sunrise_sunset_requests_exact_county_and_date(monkeypatch: pytest
     ]
 
 
+def test_fetch_moon_mock_includes_town_county():
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings())
+
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
+
+    assert result.county == "臺北市"
+    assert result.moonrise_time == "18:42"
+
+
+def test_fetch_moon_live_shape_includes_requested_town_county(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("keelung-ren-ai")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+
+    async def fake_request_json(*args, **kwargs):  # noqa: ANN002, ANN003
+        return {"CountyName": "基隆市", "MoonRiseTime": "18:42", "MoonSetTime": "05:11"}
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
+
+    assert result.county == "基隆市"
+    assert result.moonrise_time == "18:42"
+
+
 def test_fetch_sunrise_sunset_falls_back_when_exact_row_is_missing(
     monkeypatch: pytest.MonkeyPatch,
 ):
