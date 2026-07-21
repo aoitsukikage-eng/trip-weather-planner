@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import date, datetime
-from math import cos, radians, sqrt
+from math import cos, pi, radians, sqrt
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -278,7 +278,7 @@ class CWAAdapter:
 
     async def fetch_moon(self, town: Town, target_date: date) -> MoonInfo:
         """Fetch CWA A-B0063-001 moonrise/moonset; phase is computed locally."""
-        phase, icon = _moon_phase(target_date)
+        phase, icon, illumination_fraction, waxing = _moon_phase(target_date)
         if self._settings.use_mock:
             return MoonInfo(
                 target_date=target_date.isoformat(),
@@ -286,6 +286,8 @@ class CWAAdapter:
                 moonset_time="05:11",
                 phase=phase,
                 icon=icon,
+                illumination_fraction=illumination_fraction,
+                waxing=waxing,
             )
         try:
             payload = await self._request_json(
@@ -300,9 +302,17 @@ class CWAAdapter:
                 moonset_time=set_,
                 phase=phase,
                 icon=icon,
+                illumination_fraction=illumination_fraction,
+                waxing=waxing,
             )
         except UpstreamError:
-            return MoonInfo(target_date=target_date.isoformat(), phase=phase, icon=icon)
+            return MoonInfo(
+                target_date=target_date.isoformat(),
+                phase=phase,
+                icon=icon,
+                illumination_fraction=illumination_fraction,
+                waxing=waxing,
+            )
 
     async def _request_json(
         self,
@@ -775,21 +785,24 @@ def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
     )
 
 
-def _moon_phase(target_date: date) -> tuple[str, str]:
+def _moon_phase(target_date: date) -> tuple[str, str, float, bool]:
     known_new = date(2000, 1, 6)
-    age = (target_date - known_new).days % 29.53059
+    synodic_month = 29.53059
+    age = (target_date - known_new).days % synodic_month
+    illumination_fraction = (1 - cos(2 * pi * age / synodic_month)) / 2
+    waxing = age < synodic_month / 2
     if age < 1.85 or age >= 27.68:
-        return "新月", "🌑"
+        return "新月", "🌑", illumination_fraction, waxing
     if age < 7.38:
-        return "眉月", "🌒"
+        return "眉月", "🌒", illumination_fraction, waxing
     if age < 11.07:
-        return "上弦月", "🌓"
+        return "上弦月", "🌓", illumination_fraction, waxing
     if age < 14.77:
-        return "盈凸月", "🌔"
+        return "盈凸月", "🌔", illumination_fraction, waxing
     if age < 18.46:
-        return "滿月", "🌕"
+        return "滿月", "🌕", illumination_fraction, waxing
     if age < 22.15:
-        return "虧凸月", "🌖"
+        return "虧凸月", "🌖", illumination_fraction, waxing
     if age < 25.84:
-        return "下弦月", "🌗"
-    return "殘月", "🌘"
+        return "下弦月", "🌗", illumination_fraction, waxing
+    return "殘月", "🌘", illumination_fraction, waxing

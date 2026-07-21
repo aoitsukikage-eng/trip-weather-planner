@@ -175,6 +175,54 @@ header h1 {
   font-size: 1.05rem;
 }
 
+.celestial-arc {
+  display: block;
+  width: min(100%, 220px);
+  height: 82px;
+  margin: -0.35rem 0 0.1rem;
+}
+
+.celestial-arc-path {
+  fill: none;
+  stroke: #ef9b36;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.celestial-horizon {
+  fill: none;
+  stroke: #5ca9c8;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.celestial-position {
+  fill: #f97316;
+  stroke: #fff8e7;
+  stroke-width: 2;
+}
+
+.moon-visuals {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.moon-visuals .celestial-arc {
+  flex: 1;
+  min-width: 0;
+}
+
+.moon-phase-disc {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+}
+
+.moon-phase-shadow { fill: #28435c; }
+.moon-phase-light { fill: #fff1b8; }
+.moon-phase-outline { fill: none; stroke: rgba(23, 50, 77, 0.45); stroke-width: 1.5; }
+
 .hourly-chart {
   margin-top: 1.4rem;
   padding: 1rem 1rem 1.1rem;

@@ -120,6 +120,8 @@ class MoonInfo(BaseModel):
     moonset_time: str | None = None
     phase: str
     icon: str
+    illumination_fraction: float = Field(..., ge=0, le=1)
+    waxing: bool
 
 
 class AiSummary(BaseModel):

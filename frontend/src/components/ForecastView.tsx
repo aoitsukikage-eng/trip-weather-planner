@@ -1,5 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
+import CelestialArc from "./CelestialArc";
+import MoonPhaseDisc from "./MoonPhaseDisc";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -452,6 +454,12 @@ export default function ForecastView({
         {sunrise && (
           <article className="fact-card">
             <h3>日出日落</h3>
+            <CelestialArc
+              label="sun"
+              riseTime={sunrise.sunrise_time}
+              setTime={sunrise.sunset_time}
+              targetDate={forecast.target_date}
+            />
             <p>
               {formatDateLabel(forecast.target_date)} 日出 {sunrise.sunrise_time ?? "—"} · 日落{" "}
               {sunrise.sunset_time ?? "—"}
@@ -478,7 +486,15 @@ export default function ForecastView({
           <article className="fact-card aqi-card"><h3>{aqi.source_label}</h3><p> AQI {aqi.value ?? "—"} · {aqi.level ?? "資料不足"}</p><small>{!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}</small></article>
         )}
         {moon && (
-          <article className="fact-card"><h3>{moon.icon} 月出月沒</h3><p>{moon.phase} · 月出 {moon.moonrise_time ?? "—"} · 月沒 {moon.moonset_time ?? "—"}</p><small>{formatDateLabel(moon.target_date)}</small></article>
+          <article className="fact-card moon-card">
+            <h3>月出月沒</h3>
+            <div className="moon-visuals">
+              <MoonPhaseDisc illuminationFraction={moon.illumination_fraction} waxing={moon.waxing} phase={moon.phase} icon={moon.icon} />
+              <CelestialArc label="moon" riseTime={moon.moonrise_time} setTime={moon.moonset_time} targetDate={moon.target_date} />
+            </div>
+            <p>{moon.phase} · 月出 {moon.moonrise_time ?? "—"} · 月沒 {moon.moonset_time ?? "—"}</p>
+            <small>{formatDateLabel(moon.target_date)}</small>
+          </article>
         )}
       </div>
 

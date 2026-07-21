@@ -14,6 +14,7 @@ from app.adapters.cwa import (
     DATASET_WEEK,
     SUNRISE_CACHE_TTL,
     CWAAdapter,
+    _moon_phase,
     resolve_live_dataset,
     select_dataset,
 )
@@ -307,6 +308,24 @@ def test_select_dataset_near_vs_week():
     assert select_dataset(date(2026, 7, 2), today=today) == DATASET_NEAR
     assert select_dataset(date(2026, 7, 3), today=today) == DATASET_NEAR
     assert select_dataset(date(2026, 7, 5), today=today) == DATASET_WEEK
+
+
+@pytest.mark.parametrize(
+    ("target_date", "expected_fraction", "expected_waxing"),
+    [
+        (date(2000, 1, 6), 0.0, True),
+        (date(2000, 1, 21), 1.0, False),
+        (date(2000, 1, 10), 0.16, True),
+        (date(2000, 1, 25), 0.84, False),
+    ],
+)
+def test_moon_phase_exposes_illumination_and_waxing_direction(
+    target_date: date, expected_fraction: float, expected_waxing: bool
+):
+    _, _, illumination_fraction, waxing = _moon_phase(target_date)
+
+    assert illumination_fraction == pytest.approx(expected_fraction, abs=0.08)
+    assert waxing is expected_waxing
 
 
 def test_resolve_live_dataset_maps_city_specific_codes():
