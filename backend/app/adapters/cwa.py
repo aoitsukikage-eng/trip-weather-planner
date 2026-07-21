@@ -281,6 +281,7 @@ class CWAAdapter:
         phase, icon, illumination_fraction, waxing = _moon_phase(target_date)
         if self._settings.use_mock:
             return MoonInfo(
+                county=town.city,
                 target_date=target_date.isoformat(),
                 moonrise_time="18:42",
                 moonset_time="05:11",
@@ -297,6 +298,7 @@ class CWAAdapter:
             )
             rise, set_ = self._parse_moon_payload(payload, town.city, target_date)
             return MoonInfo(
+                county=town.city,
                 target_date=target_date.isoformat(),
                 moonrise_time=rise,
                 moonset_time=set_,
@@ -307,6 +309,7 @@ class CWAAdapter:
             )
         except UpstreamError:
             return MoonInfo(
+                county=town.city,
                 target_date=target_date.isoformat(),
                 phase=phase,
                 icon=icon,
