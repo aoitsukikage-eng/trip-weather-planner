@@ -1150,3 +1150,85 @@ into a scoped commit.
 
 P2-3: TDX tourism (scenic spots / restaurants / activities); OAuth2 client
 credentials are already provisioned in the Ubuntu backend/.env.
+
+## 2026-07-22: P2-2 fix3 — status-card slider gauges, symmetry fixes, grid-stretch bug
+
+### Summary
+
+User reviewed the shipped celestial redesign (task-20260721-twp-p2-celestial-redesign,
+task-20260721-twp-p2-moon-county-label) live and raised three more issues:
+every fact-card had become oversized, whether the standalone moon-phase disc
+was still necessary now that the arc marker itself could carry the phase,
+and whether the sun/moon arcs — and by extension UV/AQI — could get a more
+"designed" treatment instead of a plain thin-line meter.
+
+### Design exploration via live mockup
+
+Rather than dispatch another blind coding round, management built a live
+HTML/CSS mockup (Claude Artifact) using the user's own screenshot data
+(Nantou county: sunrise 05:21/18:44, UV 11 危險, AQI 63 普通, moonrise/set
+12:46/23:53 上弦月) and the app's actual approved CSS tokens and font stack,
+then iterated it directly against user feedback across several rounds:
+
+- Presented two celestial-arc directions (a conservative "refined meter" vs
+  an "atmosphere card" with a gradient sky-wash background + horizon
+  silhouette + glowing marker). User picked the atmosphere direction
+  decisively.
+- User then asked whether UV/AQI — both official ordinal severity scales,
+  verified live against `backend/app/adapters/cwa.py::_uv_level` (5 levels:
+  低/中/高/過量/危險) and `backend/app/adapters/moenv.py::aqi_level` (6
+  levels: 良好/普通/對敏感族群不健康/對所有族群不健康/非常不健康/危害) —
+  should reuse the same dome-arc language. Management extended the mockup
+  with a "slider" alternative (flat bar + glowing handle) mapped to a shared
+  5-step good/moderate/poor/severe/hazard severity ramp that reuses the
+  color grouping already informally present in the app's existing AQI CSS
+  (`.aqi-普通`, `.aqi-對敏感族群不健康`/`.aqi-對所有族群不健康`,
+  `.aqi-非常不健康`/`.aqi-危害`).
+- User compared both live in the mockup and made a final split decision:
+  keep the dome arc for sun/moon (a time-of-day journey), adopt the slider
+  for UV/AQI (a severity-in-range reading) — the two idioms staying visually
+  distinct is correct because the underlying data is genuinely different in
+  kind, not a consistency defect.
+- While building the mockup, management independently found and confirmed
+  two real regressions in the shipped code: the sunrise/sunset card lost its
+  date entirely when an earlier redesign card removed the old `<h3>`/`<p>`
+  heading (only county remained, while the moon card — which later gained a
+  county field — kept its date, so the two cards silently went asymmetric);
+  and `.fact-grid` used default CSS Grid `align-items: stretch`, so the
+  taller moon card was stretching the entire row including the unrelated UV
+  and AQI cards — the real cause of "every card became oversized," unrelated
+  to any style choice.
+
+### Dispatch and result
+
+`task-20260722-twp-p2-status-cards-and-symmetry` (background-systemd,
+gpt-5.6-terra/medium) shipped all of the above: `.fact-grid` fixed to
+`align-items: start`; sunrise card's secondary text restored to
+`county · date`; moon card's phase name relocated to the top kicker beside
+`月出月沒`, mirroring the sunrise card's structure; a new
+`frontend/src/components/StatusGauge.tsx` with a pure severity-mapping
+function (UV 0-14 domain, AQI 0-300 domain, both clamped past their ceiling,
+AQI's top two levels sharing the hazard tier) driving the new UV/AQI slider
+cards. `CelestialArc.tsx`/`MoonPhaseDisc.tsx` were explicitly protected from
+further changes per the finalized dome-arc decision.
+
+- 9 commits, one per AC (`0eb1107`..`b705e80`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged, no backend touched);
+  frontend `npm test` 43 passed (7 files, up from 31 — new StatusGauge and
+  symmetry coverage); frontend build PASS; mock mode (no CWA/MOENV keys)
+  verified deterministic for all four cards.
+
+### Process note
+
+The mockup-first approach (compare real rendered options before dispatching
+code) resolved three rounds of "still looks wrong" feedback in one dispatch
+instead of another blind round — worth defaulting to for future purely
+aesthetic asks on this project, reserving direct dispatch for behavior/data
+changes where the spec is unambiguous.
+
+### Pending
+
+Acceptance has not yet run on this card. Management will redeploy the
+Ubuntu dev preview (restoring the tunnel's local `vite.config.ts` tweak,
+stashed again before this dispatch to keep it out of the coding task's
+working tree) once acceptance is complete.
