@@ -126,7 +126,8 @@ describe("ForecastView", () => {
 
     expect(screen.getByText("05:12")).not.toBeNull();
     expect(screen.getByText("18:48")).not.toBeNull();
-    expect(screen.queryByRole("heading", { name: "日出日落" })).toBeNull();
+    expect(screen.getByText("日出日落")).not.toBeNull();
+    expect(screen.getByText(/臺北市 · 7\/4（六） · 參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
   });
@@ -146,7 +147,7 @@ describe("ForecastView", () => {
     render(<ForecastView result={result} />);
 
     expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
-    expect(screen.getByText("臺北市")).not.toBeNull();
+    expect(screen.getByText("臺北市 · 7/4（六）")).not.toBeNull();
   });
 
   test("renders a warning banner only while warnings are active", () => {
@@ -180,8 +181,8 @@ describe("ForecastView", () => {
 
     const { container } = render(<ForecastView result={result} />);
 
-    expect(screen.queryByRole("heading", { name: "月出月沒" })).toBeNull();
-    expect(screen.getByText("眉月")).not.toBeNull();
+    expect(container.querySelector(".moon-card .fact-kicker")?.textContent).toContain("月出月沒 眉月");
+    expect(container.querySelector(".moon-phase-name")).toBeNull();
     expect(screen.getByText("18:42")).not.toBeNull();
     expect(screen.getByText("05:11")).not.toBeNull();
     expect(container.querySelector(".moon-card small")?.textContent).toContain("臺北市");

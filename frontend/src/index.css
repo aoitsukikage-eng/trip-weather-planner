@@ -176,6 +176,18 @@ header h1 {
   font-size: 1.05rem;
 }
 
+.fact-kicker {
+  color: #3d556d;
+  font-size: 0.84rem;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+}
+
+.fact-kicker span {
+  color: #56738f;
+  font-weight: 500;
+}
+
 .celestial-arc {
   display: block;
   width: min(100%, 220px);
@@ -240,7 +252,6 @@ header h1 {
 
 .moon-phase-shadow { fill: #28435c; }
 .moon-phase-surface-ring { fill: none; stroke: rgba(255, 255, 255, 0.72); stroke-width: 1.5; }
-.moon-phase-name { text-align: center; }
 
 .hourly-chart {
   margin-top: 1.4rem;
