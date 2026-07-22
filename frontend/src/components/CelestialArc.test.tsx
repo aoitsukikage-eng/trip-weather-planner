@@ -41,4 +41,72 @@ describe("getArcProgress", () => {
     expect(screen.getByTestId("moon-arc").getAttribute("class")).toContain("celestial-arc-moon");
     expect(screen.queryByTestId("moon-arc-traveled")).toBeNull();
   });
+
+  test("renders a gradient-shaded moon phase marker at a larger radius", () => {
+    const { rerender } = render(
+      <CelestialArc
+        label="moon"
+        riseTime="06:00"
+        setTime="18:00"
+        targetDate="2026-07-04"
+        now={new Date("2026-07-04T12:00:00")}
+        illuminationFraction={0.02}
+        waxing
+        phaseName="新月"
+      />,
+    );
+    const marker = screen.getByTestId("moon-arc-marker");
+    const newMoonPath = screen.getByTestId("moon-phase-terminator").getAttribute("d");
+
+    expect(marker.getAttribute("data-illumination")).toBe("0.020");
+    expect(marker.getAttribute("data-waxing")).toBe("true");
+    expect(screen.getByTestId("moon-phase-gradient").tagName).toBe("linearGradient");
+    expect(screen.getByTestId("moon-phase-terminator").getAttribute("fill")).toContain("url(#moon-terminator-waxing-20)");
+    expect(marker.querySelector(".celestial-moon-shadow")?.getAttribute("r")).toBe("12");
+
+    rerender(
+      <CelestialArc
+        label="moon"
+        riseTime="06:00"
+        setTime="18:00"
+        targetDate="2026-07-04"
+        now={new Date("2026-07-04T12:00:00")}
+        illuminationFraction={0.5}
+        waxing
+      />,
+    );
+    expect(screen.getByTestId("moon-phase-terminator").getAttribute("d")).not.toBe(newMoonPath);
+
+    rerender(
+      <CelestialArc
+        label="moon"
+        riseTime="06:00"
+        setTime="18:00"
+        targetDate="2026-07-04"
+        now={new Date("2026-07-04T12:00:00")}
+        illuminationFraction={0.98}
+        waxing={false}
+      />,
+    );
+    expect(screen.getByTestId("moon-arc-marker").getAttribute("data-waxing")).toBe("false");
+    expect(screen.getByTestId("moon-phase-terminator").getAttribute("d")).not.toBe(newMoonPath);
+  });
+
+  test("keeps the sun marker as the original plain 4.5-radius circle without phase props", () => {
+    render(
+      <CelestialArc
+        label="sun"
+        riseTime="06:00"
+        setTime="18:00"
+        targetDate="2026-07-04"
+        now={new Date("2026-07-04T12:00:00")}
+      />,
+    );
+
+    const marker = screen.getByTestId("sun-arc-marker");
+    expect(marker.tagName).toBe("circle");
+    expect(marker.getAttribute("class")).toBe("celestial-position");
+    expect(marker.getAttribute("r")).toBe("4.5");
+    expect(marker.parentElement?.querySelector("[data-testid='moon-phase-gradient']")).toBeNull();
+  });
 });

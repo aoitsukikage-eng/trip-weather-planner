@@ -266,6 +266,9 @@ header h1 {
   stroke-width: 2;
 }
 
+.celestial-moon-shadow { fill: #28435c; }
+.celestial-moon-surface-ring { fill: none; stroke: rgba(255, 255, 255, 0.72); stroke-width: 1.5; }
+
 .celestial-arc-end-label {
   fill: #56738f;
   font-size: 12px;
@@ -279,26 +282,6 @@ header h1 {
   color: #56738f;
   font-size: 0.78rem;
 }
-
-.moon-visuals {
-  display: grid;
-  justify-items: center;
-  grid-template-columns: 1fr;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.moon-visuals .celestial-arc {
-  width: min(100%, 250px);
-}
-
-.moon-phase-disc {
-  width: 90px;
-  height: 90px;
-}
-
-.moon-phase-shadow { fill: #28435c; }
-.moon-phase-surface-ring { fill: none; stroke: rgba(255, 255, 255, 0.72); stroke-width: 1.5; }
 
 .hourly-chart {
   margin-top: 1.4rem;
@@ -651,10 +634,6 @@ footer {
 
   .hourly-chart-header {
     grid-template-columns: 1fr;
-  }
-
-  .moon-visuals .celestial-arc {
-    width: 100%;
   }
 
   .chart-legend {

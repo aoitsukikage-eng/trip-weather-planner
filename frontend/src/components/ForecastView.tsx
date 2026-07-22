@@ -1,7 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 import CelestialArc from "./CelestialArc";
-import MoonPhaseDisc from "./MoonPhaseDisc";
 import StatusGauge from "./StatusGauge";
 
 function popColor(pop: number | null): string {
@@ -492,11 +491,17 @@ export default function ForecastView({
             <p className="fact-kicker">
               月出月沒 <span>{moon.phase}</span>
             </p>
-            <div className="moon-visuals">
-              <MoonPhaseDisc illuminationFraction={moon.illumination_fraction} waxing={moon.waxing} phase={moon.phase} icon={moon.icon} />
-              <CelestialArc label="moon" riseTime={moon.moonrise_time} setTime={moon.moonset_time} targetDate={moon.target_date} />
-            </div>
-            <small>{moon.county} · {formatDateLabel(moon.target_date)}</small>
+            <CelestialArc
+              label="moon"
+              riseTime={moon.moonrise_time}
+              setTime={moon.moonset_time}
+              targetDate={moon.target_date}
+              illuminationFraction={moon.illumination_fraction}
+              waxing={moon.waxing}
+              phaseName={moon.phase}
+              phaseIcon={moon.icon}
+            />
+            <small className="celestial-context">{moon.county} · {formatDateLabel(moon.target_date)}</small>
           </article>
         )}
       </div>

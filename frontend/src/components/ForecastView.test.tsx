@@ -186,7 +186,10 @@ describe("ForecastView", () => {
     expect(screen.getByText("18:42")).not.toBeNull();
     expect(screen.getByText("05:11")).not.toBeNull();
     expect(container.querySelector(".moon-card small")?.textContent).toContain("臺北市");
-    expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
+    expect(container.querySelector(".moon-visuals")).toBeNull();
+    expect(container.querySelectorAll(".moon-card .celestial-arc")).toHaveLength(1);
+    expect(container.querySelectorAll(".moon-card > *")).toHaveLength(3);
+    expect(screen.queryByTestId("moon-phase-disc")).toBeNull();
   });
 
   test.each([
