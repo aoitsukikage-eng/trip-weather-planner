@@ -1054,3 +1054,99 @@ P2-2: TDX tourism (scenic spots / restaurants / activities) is next in the
 Phase 2 queue; OAuth2 client credentials are already provisioned in the
 Ubuntu backend/.env. After that, Gemini AI-summary activation once the
 AQI/warning context enriches the advice material.
+
+## 2026-07-22: P2-2 celestial visuals approved — redesign + moon county label
+
+### Summary
+
+Three cards shipped as one user-facing feature: `task-20260721-twp-p2-celestial-arc`
+(sun/moon horizon arcs + moon phase disc, data plumbing), `task-20260721-twp-p2-celestial-redesign`
+(visual overhaul after user feedback), and `task-20260721-twp-p2-moon-county-label`
+(moon card location parity fix). All three passed acceptance (Codex VS) with
+independently rerun checks; no required actions on either of the final two
+reports.
+
+### What changed since the first pass
+
+User reviewed the initial celestial-arc implementation live and called it out
+as visually poor: a single flat-color arc with no elapsed/remaining contrast,
+a hard two-color moon-phase split with a dark outline ring, redundant card
+titles duplicating information already carried by the arc, and a 58x58px
+moon-phase disc that read smaller and less legible than the plain emoji it
+replaced. Management diagnosed the implementation against the project's
+dataviz design skill and confirmed two concrete anti-patterns: thick flat
+color blocks with a border-as-separator (moon disc) and a progress arc with
+no traveled-vs-remaining visual distinction (not actually readable as a
+meter). User picked a 漸層量表風格 (gradient meter style) direction from two
+options presented.
+
+The redesign card (`task-20260721-twp-p2-celestial-redesign`) delivered:
+- CelestialArc now splits into an elapsed segment (full accent hue) and a
+  remaining segment (a lighter tint of the SAME hue) — sun uses a warm
+  family, moon a distinct cool family, so the two cards read differently at
+  a glance. No fabricated elapsed segment when there is no valid "now"
+  position (regression-safe against the prior card's marker-visibility
+  tests).
+- Card headings (`日出日落` / `月出月沒`) removed; rise/set times moved to
+  direct labels at the arc's own endpoints.
+- MoonPhaseDisc rewritten with an SVG gradient terminator (soft lit/dark
+  boundary) instead of a hard-edged two-path split, the dark outline ring
+  removed, and the rendered footprint enlarged well past the old 58x58px.
+- County label kept on the sunrise card (user explicitly decided information
+  that's real signal, even if small, should not be deleted — see the
+  2026-07-21 geography verification below).
+
+### Geography fact-check that shaped this decision
+
+Before finalizing the redesign, management fact-checked the user's question
+"is the location display fake precision, since Taiwan is small" by pulling
+live CWA data for Keelung (七堵, 25.10N) vs Hengchun/Pingtung (恆春,
+22.01N) on 2026-07-21: sunrise differed by 9 minutes, sunset by 1 minute,
+moonset by 10 minutes. The asymmetry (sunrise moves far more than sunset)
+confirmed BOTH longitude (near-uniform shift) and latitude (day-length
+effect, strongest near solstice) are real contributors — not just longitude
+as the user suspected. Conclusion: county-level display is real signal, not
+noise; keep it, only de-emphasize its visual weight. This same reasoning
+surfaced a real product gap: the moon card had no county field anywhere
+(unlike sunrise_sunset), even though moonrise/moonset varies by location for
+the same reason. `task-20260721-twp-p2-moon-county-label` closed that gap by
+threading `town.city` (already available inside `fetch_moon()`, same source
+`fetch_warnings()` already uses) into an additive `MoonInfo.county` field and
+displaying it in the same secondary `<small>` style as the sunrise card.
+
+### Also resolved this round: cross-agent tunnel coordination
+
+While reviewing the dev preview, a separate agent had stood up a Cloudflare
+quick tunnel (`twp-tunnel.service`, frontend :5173) with a local, uncommitted
+`frontend/vite.config.ts` `allowedHosts` addition to let the tunnel's host
+header through Vite's dev-server check. Management initially misidentified
+this as unrelated leftover cruft and stashed it; once the user clarified its
+origin, management restored it, and additionally learned mid-session that
+Vite auto-restarts on `vite.config.ts` changes (not just an in-memory
+setting), so file-level stash/pop operations during an active dev session
+have real, immediate effect on the running server, not just future starts.
+Care was taken to keep this local-only tunnel config isolated from every
+background coding task's working tree so it was never accidentally swept
+into a scoped commit.
+
+### Verification
+
+- Acceptance independently reran ruff, backend pytest (42 passed), frontend
+  build, and Vitest (31 passed) for the final stacked state across all three
+  cards — all green, no scope violations, no remote pushes.
+- Management redeployed the Ubuntu dev preview (backend :8080, frontend
+  :5173) after acceptance to serve the finally-approved code for user
+  review; confirmed live: moon payload now carries `county` (e.g. 基隆市),
+  and the existing Cloudflare tunnel URL still resolves through the
+  refreshed frontend process.
+
+### Task bookkeeping
+
+- `task-20260721-twp-p2-celestial-arc` -> completed
+- `task-20260721-twp-p2-celestial-redesign` -> completed
+- `task-20260721-twp-p2-moon-county-label` -> completed
+
+### Next
+
+P2-3: TDX tourism (scenic spots / restaurants / activities); OAuth2 client
+credentials are already provisioned in the Ubuntu backend/.env.
