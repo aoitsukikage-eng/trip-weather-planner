@@ -478,7 +478,14 @@ export default function ForecastView({
           />
         )}
         {aqi && (
-          <article className="fact-card aqi-card"><h3>{aqi.source_label}</h3><p> AQI {aqi.value ?? "—"} · {aqi.level ?? "資料不足"}</p><small>{!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}</small></article>
+          <StatusGauge
+            kind="aqi"
+            label={aqi.source_label}
+            value={aqi.value}
+            level={aqi.level}
+            maximum={300}
+            detail={!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}
+          />
         )}
         {moon && (
           <article className="fact-card moon-card">

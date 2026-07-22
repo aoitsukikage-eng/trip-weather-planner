@@ -208,6 +208,31 @@ describe("ForecastView", () => {
     expect(screen.getByText(level)).not.toBeNull();
   });
 
+  test.each([
+    ["良好", 25, "good", "0.0833"],
+    ["普通", 75, "moderate", "0.2500"],
+    ["對敏感族群不健康", 125, "poor", "0.4167"],
+    ["對所有族群不健康", 175, "severe", "0.5833"],
+    ["非常不健康", 225, "hazard", "0.7500"],
+    ["危害", 350, "hazard", "1.0000"],
+  ])("renders AQI %s with its shared severity tier and clamped slider progress", (level, value, severity, progress) => {
+    const result = buildResult("臺北市", "信義區");
+    result.forecast.aqi = {
+      value,
+      level,
+      station_name: "臺北",
+      observed_at: "2026-07-04T12:00:00+08:00",
+      source_label: "目前空氣品質",
+    };
+
+    render(<ForecastView result={result} />);
+
+    const gauge = screen.getByTestId("aqi-gauge");
+    expect(gauge.getAttribute("data-progress")).toBe(progress);
+    expect(gauge.closest(".status-gauge-card")?.getAttribute("data-severity")).toBe(severity);
+    expect(screen.getByText(level)).not.toBeNull();
+  });
+
   test("shows a current-position marker only for today's selected celestial card", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-04T12:00:00"));
