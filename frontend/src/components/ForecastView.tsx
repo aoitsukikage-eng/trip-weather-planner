@@ -2,6 +2,7 @@ import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 import CelestialArc from "./CelestialArc";
 import MoonPhaseDisc from "./MoonPhaseDisc";
+import StatusGauge from "./StatusGauge";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -467,16 +468,14 @@ export default function ForecastView({
           </article>
         )}
         {uv && (
-          <article className="fact-card">
-            <h3>{uv.source_label}</h3>
-            <p>
-              指數 {uv.value ?? "—"} · {uv.level ?? "資料不足"}
-            </p>
-            <small>
-              {formatUvSourceLabel(uv.source_type)}
-              {!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}
-            </small>
-          </article>
+          <StatusGauge
+            kind="uv"
+            label={uv.source_label}
+            value={uv.value}
+            level={uv.level}
+            maximum={14}
+            detail={`${formatUvSourceLabel(uv.source_type)}${!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}`}
+          />
         )}
         {aqi && (
           <article className="fact-card aqi-card"><h3>{aqi.source_label}</h3><p> AQI {aqi.value ?? "—"} · {aqi.level ?? "資料不足"}</p><small>{!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}</small></article>

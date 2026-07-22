@@ -188,6 +188,53 @@ header h1 {
   font-weight: 500;
 }
 
+.status-gauge-card {
+  --status-color: #22c55e;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--status-color) 14%, white), rgba(255, 255, 255, 0.94));
+}
+
+.severity-good { --status-color: #22c55e; }
+.severity-moderate { --status-color: #eab308; }
+.severity-poor { --status-color: #f97316; }
+.severity-severe { --status-color: #ea580c; }
+.severity-hazard { --status-color: #dc2626; }
+
+.status-gauge {
+  position: relative;
+  height: 0.45rem;
+  margin: 0.9rem 0 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-color) 18%, white);
+}
+
+.status-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--status-color);
+}
+
+.status-gauge-handle {
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--status-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color) 24%, transparent), 0 3px 8px rgba(48, 72, 92, 0.22);
+  transform: translate(-50%, -50%);
+}
+
+.status-gauge-value {
+  font-weight: 650;
+}
+
+.status-gauge-value span {
+  font-weight: 500;
+}
+
 .celestial-arc {
   display: block;
   width: min(100%, 220px);

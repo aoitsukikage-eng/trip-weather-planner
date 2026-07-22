@@ -189,6 +189,25 @@ describe("ForecastView", () => {
     expect(screen.getByTestId("moon-phase-disc")).not.toBeNull();
   });
 
+  test.each([
+    ["低", 1, "good", "0.0714"],
+    ["中", 4, "moderate", "0.2857"],
+    ["高", 7, "poor", "0.5000"],
+    ["過量", 10, "severe", "0.7143"],
+    ["危險", 18, "hazard", "1.0000"],
+  ])("renders UV %s with its severity tier and clamped slider progress", (level, value, severity, progress) => {
+    const result = buildResult("臺北市", "信義區");
+    if (!result.forecast.uv) throw new Error("expected UV data");
+    result.forecast.uv = { ...result.forecast.uv, level, value };
+
+    render(<ForecastView result={result} />);
+
+    const gauge = screen.getByTestId("uv-gauge");
+    expect(gauge.getAttribute("data-progress")).toBe(progress);
+    expect(gauge.closest(".status-gauge-card")?.getAttribute("data-severity")).toBe(severity);
+    expect(screen.getByText(level)).not.toBeNull();
+  });
+
   test("shows a current-position marker only for today's selected celestial card", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-04T12:00:00"));
