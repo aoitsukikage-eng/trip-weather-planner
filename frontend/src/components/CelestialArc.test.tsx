@@ -34,7 +34,7 @@ describe("getArcProgress", () => {
     expect(sunArc?.getAttribute("class")).toContain("celestial-arc-sun");
     expect(sunTrack).not.toBeNull();
     expect(sunTraveled?.getAttribute("stroke-dasharray")).toBe("0.5 1");
-    expect(screen.getByTestId("sun-arc-horizon").getAttribute("d")).toContain("Q 50 78");
+    expect(screen.getAllByTestId("sun-arc-horizon").slice(-1)[0]?.getAttribute("d")).toContain("Q 50 78");
     expect(screen.getAllByText("06:00").slice(-1)[0]).not.toBeNull();
     expect(screen.getAllByText("18:00").slice(-1)[0]).not.toBeNull();
 
@@ -106,11 +106,11 @@ describe("getArcProgress", () => {
       />,
     );
 
-    const marker = screen.getByTestId("sun-arc-marker");
+    const marker = screen.getAllByTestId("sun-arc-marker").slice(-1)[0];
     expect(marker.tagName).toBe("circle");
     expect(marker.getAttribute("class")).toBe("celestial-position");
     expect(marker.getAttribute("r")).toBe("4.5");
-    expect(screen.getByTestId("sun-arc-glow").getAttribute("r")).toBe("11");
+    expect(screen.getAllByTestId("sun-arc-glow").slice(-1)[0]?.getAttribute("r")).toBe("11");
     expect(marker.parentElement?.querySelector("[data-testid='moon-phase-gradient']")).toBeNull();
   });
 });
