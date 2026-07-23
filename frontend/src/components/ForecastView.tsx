@@ -487,7 +487,7 @@ export default function ForecastView({
           />
         )}
         {moon && (
-          <article className="fact-card moon-card">
+          <article className="fact-card moon-card atmosphere-card" data-testid="moon-atmosphere-card">
             <p className="fact-kicker">
               月出月沒 <span>{moon.phase}</span>
             </p>

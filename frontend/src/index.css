@@ -178,6 +178,28 @@ header h1 {
   --atmosphere-sky-stop: 78%;
 }
 
+.moon-card {
+  --atmosphere-sky-start: #1c2c52;
+  --atmosphere-sky-end: #3d4d84;
+  --atmosphere-sky-stop: 82%;
+  color: #eaf0ff;
+  border-color: color-mix(in srgb, #b9c4e8 28%, transparent);
+}
+
+.moon-card .fact-kicker,
+.moon-card .fact-kicker span {
+  color: #eaf0ff;
+}
+
+.moon-card small,
+.moon-card .celestial-context {
+  color: #b9c4e8;
+}
+
+.moon-card .celestial-arc-end-label {
+  fill: #b9c4e8;
+}
+
 .fact-card h3 {
   margin: 0 0 0.45rem;
   font-size: 1rem;

@@ -184,6 +184,8 @@ describe("ForecastView", () => {
     const { container } = render(<ForecastView result={result} />);
 
     expect(container.querySelector(".moon-card .fact-kicker")?.textContent).toContain("月出月沒 眉月");
+    expect(screen.getByTestId("moon-atmosphere-card").className).toContain("atmosphere-card");
+    expect(container.querySelector(".moon-card.atmosphere-card")).not.toBeNull();
     expect(container.querySelector(".moon-phase-name")).toBeNull();
     expect(screen.getByText("18:42")).not.toBeNull();
     expect(screen.getByText("05:11")).not.toBeNull();
