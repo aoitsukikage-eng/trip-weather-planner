@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from math import cos, pi, radians, sqrt
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -89,7 +89,11 @@ TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 
 def _taipei_today() -> date:
-    return datetime.now(TAIPEI_TZ).date()
+    return _taipei_now().date()
+
+
+def _taipei_now() -> datetime:
+    return datetime.now(TAIPEI_TZ)
 
 
 def select_dataset(target_date: date, today: date | None = None) -> str:
@@ -297,25 +301,41 @@ class CWAAdapter:
                 ttl=SUNRISE_CACHE_TTL,
             )
             rise, set_ = self._parse_moon_payload(payload, town.city, target_date)
-            return MoonInfo(
-                county=town.city,
-                target_date=target_date.isoformat(),
-                moonrise_time=rise,
-                moonset_time=set_,
-                phase=phase,
-                icon=icon,
-                illumination_fraction=illumination_fraction,
-                waxing=waxing,
-            )
         except UpstreamError:
-            return MoonInfo(
-                county=town.city,
-                target_date=target_date.isoformat(),
-                phase=phase,
-                icon=icon,
-                illumination_fraction=illumination_fraction,
-                waxing=waxing,
-            )
+            rise, set_ = None, None
+
+        now = _taipei_now()
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=TAIPEI_TZ)
+        else:
+            now = now.astimezone(TAIPEI_TZ)
+        if target_date == now.date() and _should_check_previous_moon_window(rise, now):
+            previous_date = target_date - timedelta(days=1)
+            try:
+                previous_payload = await self._request_json(
+                    DATASET_MOON,
+                    params={"CountyName": town.city, "Date": previous_date.isoformat()},
+                    ttl=SUNRISE_CACHE_TTL,
+                )
+                previous_rise, previous_set = self._parse_moon_payload(
+                    previous_payload, town.city, previous_date
+                )
+                if _is_within_moon_window(now, previous_date, previous_rise, previous_set):
+                    phase, icon, illumination_fraction, waxing = _moon_phase(previous_date)
+                    rise, set_ = previous_rise, previous_set
+            except UpstreamError:
+                pass
+
+        return MoonInfo(
+            county=town.city,
+            target_date=target_date.isoformat(),
+            moonrise_time=rise,
+            moonset_time=set_,
+            phase=phase,
+            icon=icon,
+            illumination_fraction=illumination_fraction,
+            waxing=waxing,
+        )
 
     async def _request_json(
         self,
@@ -671,6 +691,40 @@ def _safe_float(value: object) -> float | None:
 def _clean_clock(value: object) -> str | None:
     text = str(value or "").strip()
     return text or None
+
+
+def _should_check_previous_moon_window(rise_time: str | None, now: datetime) -> bool:
+    """Return whether today's own moonrise cannot yet describe the visible moon."""
+    rise = _clock_datetime(now.date(), rise_time)
+    return rise is None or now < rise
+
+
+def _is_within_moon_window(
+    now: datetime,
+    rise_date: date,
+    rise_time: str | None,
+    set_time: str | None,
+) -> bool:
+    """Check a moonrise/moonset pair, extending moonset over midnight when needed."""
+    rise = _clock_datetime(rise_date, rise_time)
+    set_ = _clock_datetime(rise_date, set_time)
+    if rise is None or set_ is None:
+        return False
+    if set_ < rise:
+        set_ += timedelta(days=1)
+    return rise <= now <= set_
+
+
+def _clock_datetime(day: date, value: str | None) -> datetime | None:
+    if not value:
+        return None
+    for pattern in ("%H:%M", "%H:%M:%S"):
+        try:
+            clock = datetime.strptime(value.strip(), pattern).time()
+            return datetime.combine(day, clock, tzinfo=TAIPEI_TZ)
+        except ValueError:
+            continue
+    return None
 
 
 def _normalize_county_name(value: object) -> str:
