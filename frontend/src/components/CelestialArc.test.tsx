@@ -65,6 +65,7 @@ describe("getArcProgress", () => {
     expect(screen.getByTestId("moon-phase-gradient").tagName).toBe("linearGradient");
     expect(screen.getByTestId("moon-phase-terminator").getAttribute("fill")).toContain("url(#moon-terminator-waxing-20)");
     expect(marker.querySelector(".celestial-moon-shadow")?.getAttribute("r")).toBe("12");
+    expect(screen.getByTestId("moon-arc-glow").getAttribute("r")).toBe("18");
 
     rerender(
       <CelestialArc
@@ -109,6 +110,7 @@ describe("getArcProgress", () => {
     expect(marker.tagName).toBe("circle");
     expect(marker.getAttribute("class")).toBe("celestial-position");
     expect(marker.getAttribute("r")).toBe("4.5");
+    expect(screen.getByTestId("sun-arc-glow").getAttribute("r")).toBe("11");
     expect(marker.parentElement?.querySelector("[data-testid='moon-phase-gradient']")).toBeNull();
   });
 });

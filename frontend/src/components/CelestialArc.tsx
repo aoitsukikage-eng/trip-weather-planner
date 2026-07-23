@@ -99,12 +99,16 @@ export default function CelestialArc({
             data-waxing={String(waxing)}
             aria-label={`${phaseName ?? "月相"}${phaseIcon ? ` ${phaseIcon}` : ""}`}
           >
+            <circle className="celestial-marker-glow" data-testid={`${label}-arc-glow`} cx={markerX} cy={markerY} r="18" />
             <circle className="celestial-moon-shadow" cx={markerX} cy={markerY} r="12" />
             <path className="celestial-moon-terminator" data-testid="moon-phase-terminator" d={phasePath} fill={`url(#${gradientId})`} />
             <circle className="celestial-moon-surface-ring" cx={markerX} cy={markerY} r="12" />
           </g>
         ) : (
-          <circle className="celestial-position" data-testid={`${label}-arc-marker`} cx={markerX} cy={markerY} r="4.5" />
+          <>
+            <circle className="celestial-marker-glow" data-testid={`${label}-arc-glow`} cx={markerX} cy={markerY} r="11" />
+            <circle className="celestial-position" data-testid={`${label}-arc-marker`} cx={markerX} cy={markerY} r="4.5" />
+          </>
         )
       )}
       <text className="celestial-arc-end-label celestial-arc-start-label" x="10" y="103">{riseTime ?? "—"}</text>
