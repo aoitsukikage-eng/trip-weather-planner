@@ -1301,3 +1301,76 @@ This closes the P2-2 celestial/status card visual feature — all four
 fact-cards (sun, UV, AQI, moon) are now structurally and visually consistent.
 Next: P2-3 TDX tourism (scenic spots/restaurants/activities); OAuth2
 credentials already provisioned in the Ubuntu backend/.env.
+
+## 2026-07-24: P2-2 fix5 approved — the actual atmosphere-card background finally shipped
+
+### Summary
+
+After task-20260722-twp-p2-moon-marker-merge shipped (moon phase genuinely
+merged into the arc marker, verified via rendered-DOM assertions), the user
+kept reporting the redeployed preview "still looked the same" across several
+rounds. Management exhaustively ruled out deployment/caching causes: server
+source verified current via direct curl of the dev server AND through the
+public Cloudflare tunnel (`cf-cache-status: DYNAMIC`, `cache-control:
+no-cache`), no competing systemd-managed frontend process found, browser
+cache ruled out by the user across two browsers and hard refresh, and a full
+process teardown/restart with `setsid` performed for good measure — none of
+it changed anything, because none of it was the actual problem.
+
+The user then clarified precisely: the "氛圍卡片" (atmosphere card) design
+approved earlier via a live HTML/CSS mockup — a sky-gradient CARD
+BACKGROUND wash plus a horizon-hill silhouette plus a glowing marker, which
+the user called decisively better than the alternative ("方案B絕對優於方案
+A") — had never actually been implemented in the real app at all. Root
+cause, confirmed by direct code inspection: management's own task-card
+context sections for two subsequent cards (status-cards-and-symmetry,
+moon-marker-merge) asserted the atmosphere background was "already shipped"
+and told the coding agent not to touch it further — an assumption that was
+simply never true. What celestial-redesign actually shipped was a different,
+narrower thing: a "gradient meter" effect on the ARC LINE's own stroke
+(elapsed-vs-remaining coloring), never the CARD's background. Verified live:
+`.fact-card`'s base background was a flat `rgba(255,255,255,0.88)` for every
+card, with zero sky-gradient or horizon-hill CSS anywhere in the file. This
+was a specification gap carried forward silently across two cards, not a
+deployment or caching problem — the user was correctly describing what they
+saw; management's premise was wrong.
+
+### Fix
+
+`task-20260723-twp-p2-atmosphere-cards` implemented the actual approved
+mockup values: sun card day-sky gradient `#eaf6ff -> #fff3de`; moon card
+night-sky gradient `#1c2c52 -> #3d4d84` with text switched to legible light
+tones; horizon-hill silhouettes added to both arcs; soft glow halos added
+behind both markers (additive only — the marker's own rendering logic from
+the previous card, including the moon's gradient-terminator phase disc, was
+left untouched). The task reused the exact `color-mix`/`linear-gradient`
+technique already proven working for the UV/AQI `.status-gauge-card`
+background as its implementation template, removing any remaining ambiguity
+for the coding layer.
+
+- 10 commits, one per AC (`1631de2`..`d7d6471`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged, no backend touched);
+  frontend test 43 passed, build PASS; UV/AQI `StatusGauge.tsx` and
+  `.status-gauge-card` confirmed byte-unchanged; mock mode deterministic.
+
+### Lesson
+
+When a task card's `context` section asserts "X is already shipped, do not
+touch it," that assertion needs the same evidentiary bar as any acceptance
+criterion — verify it against current code before writing it, don't carry
+it forward from memory of an earlier planning conversation. This gap
+survived two full task cards because nothing in either card's acceptance
+criteria actually checked for the atmosphere background's presence; both
+cards' ACs only covered what was newly in scope, never re-verified the
+inherited assumption. Future cards that say "keep X as-is" should include a
+cheap sanity check confirming X actually exists as described, not just a
+prohibition on touching it.
+
+### Status
+
+The dev preview will be redeployed (backend/frontend restart, tunnel config
+restored) for user review. Two open items remain before P2-2 fully closes:
+(1) user confirmation that the atmosphere cards now match the approved
+mockup, (2) the still-unresolved height difference between the dome-arc
+cards (sun/moon) and the flat-slider cards (UV/AQI), deliberately deferred
+out of this card's scope pending a direct design conversation with the user.
