@@ -1232,3 +1232,72 @@ Acceptance has not yet run on this card. Management will redeploy the
 Ubuntu dev preview (restoring the tunnel's local `vite.config.ts` tweak,
 stashed again before this dispatch to keep it out of the coding task's
 working tree) once acceptance is complete.
+
+## 2026-07-22: P2-2 fix4 approved — moon phase actually merged into the arc marker
+
+### Summary
+
+User reported the moon card was still visibly taller than its siblings after
+task-20260722-twp-p2-status-cards-and-symmetry shipped, despite that card's
+`.fact-grid` height fix. Management re-verified against live code and found
+the real cause: the user's round-2 request ("is the standalone moon-phase
+disc necessary, or can the phase just render on the enlarged arc marker
+instead") had never actually been implemented across two prior cards
+(celestial-redesign, status-cards-and-symmetry) — both only polished the
+still-separate `MoonPhaseDisc` component (gradient terminator, size bump)
+while it remained stacked above `CelestialArc` inside a `.moon-visuals`
+wrapper. `align-items: start` on the grid stops row-stretch onto siblings;
+it cannot shrink a card whose own content is intrinsically taller (a 90x90px
+disc plus a full arc, two stacked graphics, versus one arc for every other
+card). This was a management specification miss, not an execution miss — the
+prior task cards never actually required the merge, only cosmetic polish of
+the existing two-element structure.
+
+### Fix
+
+`task-20260722-twp-p2-moon-marker-merge` explicitly lifted the previous
+card's "do not touch CelestialArc.tsx/MoonPhaseDisc.tsx" protection rule
+(that rule was based on the mistaken premise that the merge was already
+done) and required the actual merge: `CelestialArc` gained optional
+`illuminationFraction`/`waxing` props; when present, its own position marker
+renders the gradient-terminator phase shape at a visibly larger radius (12
+vs the sun's unchanged 4.5); when absent, the sun's marker renders exactly
+as before. `MoonPhaseDisc.tsx` and its test file were deleted as dead code
+once zero references remained. The moon card's DOM structure is now
+line-for-line parallel to the sun card: kicker / single arc / small text.
+
+### Verification rigor this round
+
+Acceptance (Codex VS) went beyond source reading: confirmed the sun marker's
+JSX line was character-for-character unchanged in the diff (only relocated
+into a ternary's else-branch, not edited), and confirmed the moon card's
+structural parity via actual rendered-DOM assertions (`.moon-card` has
+exactly 3 direct children, exactly 1 `svg`) rather than inferring from
+source code. This is the standard worth holding for future "does it actually
+look right" acceptance criteria — rendered-DOM checks catch what source
+inspection alone can miss.
+
+- 9 commits, one per AC (`a7855b4`..`b5af441`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged); frontend test 43 passed,
+  build PASS; mock mode deterministic for all four cards.
+
+### Lesson
+
+When a user's structural request ("remove X, merge it into Y") gets
+translated into a task card, the acceptance criteria must assert the
+structural outcome directly (e.g., "exactly one graphic element in the
+DOM"), not just "X looks nicer" — cosmetic-only acceptance criteria let a
+card ship without the actual requested restructuring twice in a row before
+the gap surfaced from live user feedback instead of from the task cards
+themselves.
+
+### Task bookkeeping
+
+- `task-20260722-twp-p2-moon-marker-merge` -> completed
+
+### Status
+
+This closes the P2-2 celestial/status card visual feature — all four
+fact-cards (sun, UV, AQI, moon) are now structurally and visually consistent.
+Next: P2-3 TDX tourism (scenic spots/restaurants/activities); OAuth2
+credentials already provisioned in the Ubuntu backend/.env.
