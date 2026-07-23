@@ -452,7 +452,7 @@ export default function ForecastView({
 
       <div className="fact-grid">
         {sunrise && (
-          <article className="fact-card">
+          <article className="fact-card sun-card atmosphere-card" data-testid="sun-atmosphere-card">
             <p className="fact-kicker">日出日落</p>
             <CelestialArc
               label="sun"

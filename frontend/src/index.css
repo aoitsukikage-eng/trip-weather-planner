@@ -166,6 +166,18 @@ header h1 {
   padding: 1rem 1.1rem;
 }
 
+.atmosphere-card {
+  background:
+    linear-gradient(180deg, var(--atmosphere-sky-start) 0%, var(--atmosphere-sky-end) var(--atmosphere-sky-stop)),
+    rgba(255, 255, 255, 0.88);
+}
+
+.sun-card {
+  --atmosphere-sky-start: #eaf6ff;
+  --atmosphere-sky-end: #fff3de;
+  --atmosphere-sky-stop: 78%;
+}
+
 .fact-card h3 {
   margin: 0 0 0.45rem;
   font-size: 1rem;

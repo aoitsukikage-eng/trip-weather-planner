@@ -122,7 +122,7 @@ describe("ForecastView", () => {
   });
 
   test("shows selected sunrise date and centered chart place label", () => {
-    render(<ForecastView result={buildResult("臺北市", "信義區")} />);
+    const { container } = render(<ForecastView result={buildResult("臺北市", "信義區")} />);
 
     expect(screen.getByText("05:12")).not.toBeNull();
     expect(screen.getByText("18:48")).not.toBeNull();
@@ -130,6 +130,8 @@ describe("ForecastView", () => {
     expect(screen.getByText(/臺北市 · 7\/4（六） · 參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
+    expect(screen.getByTestId("sun-atmosphere-card").className).toContain("sun-card");
+    expect(container.querySelector(".sun-card.atmosphere-card")).not.toBeNull();
   });
 
   test("hides the sunrise caveat for exact rows", () => {
