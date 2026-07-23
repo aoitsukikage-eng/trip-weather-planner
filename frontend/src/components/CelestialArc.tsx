@@ -86,7 +86,11 @@ export default function CelestialArc({
           strokeDasharray={`${progress} 1`}
         />
       )}
-      <path className="celestial-horizon" d="M 4 84 H 196" />
+      <path
+        className="celestial-horizon"
+        data-testid={`${label}-arc-horizon`}
+        d="M -4 92 Q 50 78 100 90 Q 150 100 204 88 V 116 H -4 Z"
+      />
       {markerX !== null && markerY !== null && (
         hasPhaseMarker ? (
           <g

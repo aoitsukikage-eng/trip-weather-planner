@@ -34,11 +34,13 @@ describe("getArcProgress", () => {
     expect(sunArc?.getAttribute("class")).toContain("celestial-arc-sun");
     expect(sunTrack).not.toBeNull();
     expect(sunTraveled?.getAttribute("stroke-dasharray")).toBe("0.5 1");
+    expect(screen.getByTestId("sun-arc-horizon").getAttribute("d")).toContain("Q 50 78");
     expect(screen.getAllByText("06:00").slice(-1)[0]).not.toBeNull();
     expect(screen.getAllByText("18:00").slice(-1)[0]).not.toBeNull();
 
     rerender(<CelestialArc label="moon" riseTime="18:42" setTime="05:11" targetDate="2026-07-05" now={new Date("2026-07-04T23:00:00")} />);
     expect(screen.getByTestId("moon-arc").getAttribute("class")).toContain("celestial-arc-moon");
+    expect(screen.getByTestId("moon-arc-horizon").getAttribute("d")).toContain("Q 150 100");
     expect(screen.queryByTestId("moon-arc-traveled")).toBeNull();
   });
 
