@@ -614,6 +614,7 @@ def test_fetch_moon_mock_includes_town_county():
     result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
 
     assert result.county == "臺北市"
+    assert result.source_date == "2026-07-04"
     assert result.moonrise_time == "18:42"
 
 
@@ -630,6 +631,7 @@ def test_fetch_moon_live_shape_includes_requested_town_county(
     result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
 
     assert result.county == "基隆市"
+    assert result.source_date == "2026-07-04"
     assert result.moonrise_time == "18:42"
 
 
@@ -655,6 +657,7 @@ def test_fetch_moon_uses_previous_pair_before_todays_rise_when_still_up(
     result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 24)))
 
     assert result.target_date == "2026-07-24"
+    assert result.source_date == "2026-07-23"
     assert (result.moonrise_time, result.moonset_time) == ("13:41", "00:32")
     assert result.phase == _moon_phase(date(2026, 7, 23))[0]
     assert calls == [
@@ -680,6 +683,7 @@ def test_fetch_moon_keeps_todays_pair_after_todays_rise(monkeypatch: pytest.Monk
     result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 24)))
 
     assert (result.moonrise_time, result.moonset_time) == ("14:36", "00:32")
+    assert result.source_date == "2026-07-24"
     assert calls == [{"CountyName": "臺北市", "Date": "2026-07-24"}]
 
 
