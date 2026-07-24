@@ -117,6 +117,7 @@ class WeatherWarning(BaseModel):
 class MoonInfo(BaseModel):
     county: str
     target_date: str
+    source_date: str
     moonrise_time: str | None = None
     moonset_time: str | None = None
     phase: str

@@ -287,6 +287,7 @@ class CWAAdapter:
             return MoonInfo(
                 county=town.city,
                 target_date=target_date.isoformat(),
+                source_date=target_date.isoformat(),
                 moonrise_time="18:42",
                 moonset_time="05:11",
                 phase=phase,
@@ -304,6 +305,7 @@ class CWAAdapter:
         except UpstreamError:
             rise, set_ = None, None
 
+        source_date = target_date
         now = _taipei_now()
         if now.tzinfo is None:
             now = now.replace(tzinfo=TAIPEI_TZ)
@@ -323,12 +325,14 @@ class CWAAdapter:
                 if _is_within_moon_window(now, previous_date, previous_rise, previous_set):
                     phase, icon, illumination_fraction, waxing = _moon_phase(previous_date)
                     rise, set_ = previous_rise, previous_set
+                    source_date = previous_date
             except UpstreamError:
                 pass
 
         return MoonInfo(
             county=town.city,
             target_date=target_date.isoformat(),
+            source_date=source_date.isoformat(),
             moonrise_time=rise,
             moonset_time=set_,
             phase=phase,
