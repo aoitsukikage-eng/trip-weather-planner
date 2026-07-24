@@ -173,6 +173,7 @@ describe("ForecastView", () => {
     result.forecast.moon = {
       county: "臺北市",
       target_date: "2026-07-04",
+      source_date: "2026-07-04",
       moonrise_time: "18:42",
       moonset_time: "05:11",
       phase: "眉月",

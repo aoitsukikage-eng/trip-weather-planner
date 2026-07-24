@@ -10,18 +10,23 @@ export interface CelestialArcProps {
   phaseIcon?: string;
 }
 
-function clockMinutes(value: string | null): number | null {
+function clockInstant(targetDate: string, value: string | null): Date | null {
   if (!value || !/^\d{1,2}:\d{2}$/.test(value)) return null;
   const [hours, minutes] = value.split(":").map(Number);
   if (hours > 23 || minutes > 59) return null;
-  return hours * 60 + minutes;
-}
-
-function localIsoDate(now: Date): string {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(targetDate);
+  if (!dateParts) return null;
+  const [, yearText, monthText, dayText] = dateParts;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const instant = new Date(year, month - 1, day, hours, minutes);
+  if (
+    instant.getFullYear() !== year
+    || instant.getMonth() !== month - 1
+    || instant.getDate() !== day
+  ) return null;
+  return instant;
 }
 
 export function getArcProgress(
@@ -30,13 +35,12 @@ export function getArcProgress(
   targetDate: string,
   now = new Date(),
 ): number | null {
-  const rise = clockMinutes(riseTime);
-  let set = clockMinutes(setTime);
-  if (rise === null || set === null || targetDate !== localIsoDate(now)) return null;
-  const current = now.getHours() * 60 + now.getMinutes();
-  if (set < rise) set += 24 * 60;
-  if (current < rise || current > set) return null;
-  return (current - rise) / (set - rise);
+  const rise = clockInstant(targetDate, riseTime);
+  const set = clockInstant(targetDate, setTime);
+  if (rise === null || set === null || Number.isNaN(now.getTime())) return null;
+  if (set <= rise) set.setTime(set.getTime() + 24 * 60 * 60 * 1000);
+  if (now < rise || now > set) return null;
+  return (now.getTime() - rise.getTime()) / (set.getTime() - rise.getTime());
 }
 
 export default function CelestialArc({

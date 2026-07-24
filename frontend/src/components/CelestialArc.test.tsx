@@ -15,6 +15,29 @@ describe("getArcProgress", () => {
     expect(progress).toBeLessThan(1);
   });
 
+  test("shows the moon marker for a previous-day window that crosses midnight", () => {
+    const now = new Date("2026-07-24T00:12:00");
+    const progress = getArcProgress("13:41", "00:32", "2026-07-23", now);
+
+    expect(progress).not.toBeNull();
+    expect(progress).toBeGreaterThan(0.95);
+    expect(progress).toBeLessThan(1);
+
+    const { unmount } = render(
+      <CelestialArc
+        label="moon"
+        riseTime="13:41"
+        setTime="00:32"
+        targetDate="2026-07-23"
+        now={now}
+        illuminationFraction={0.18}
+        waxing
+      />,
+    );
+    expect(screen.getByTestId("moon-arc-marker")).not.toBeNull();
+    unmount();
+  });
+
   test("hides the marker for another date or outside the rise/set window", () => {
     const now = new Date("2026-07-04T12:00:00");
     const { rerender } = render(<CelestialArc label="sun" riseTime="06:00" setTime="18:00" targetDate="2026-07-05" now={now} />);

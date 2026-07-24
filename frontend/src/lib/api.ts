@@ -50,7 +50,7 @@ export interface UVInfo {
 }
 
 export interface AQIInfo { value: number | null; level: string | null; station_name: string | null; observed_at: string | null; source_label: string; }
-export interface MoonInfo { county: string; target_date: string; moonrise_time: string | null; moonset_time: string | null; phase: string; icon: string; illumination_fraction: number; waxing: boolean; }
+export interface MoonInfo { county: string; target_date: string; source_date: string; moonrise_time: string | null; moonset_time: string | null; phase: string; icon: string; illumination_fraction: number; waxing: boolean; }
 export interface WeatherWarning { title: string; severity: string; description: string | null; }
 
 export interface ForecastResult {
@@ -192,7 +192,7 @@ function mockForecast(town: Town, date: string): ForecastResult {
       },
       aqi: { value: 42, level: "良好", station_name: "示範測站", observed_at: `${clampedDate}T12:00:00+08:00`, source_label: "目前空氣品質（示範）" },
       warnings: [],
-      moon: { county: town.city, target_date: clampedDate, moonrise_time: "18:42", moonset_time: "05:11", phase: "眉月", icon: "🌒", illumination_fraction: 0.18, waxing: true },
+      moon: { county: town.city, target_date: clampedDate, source_date: clampedDate, moonrise_time: "18:42", moonset_time: "05:11", phase: "眉月", icon: "🌒", illumination_fraction: 0.18, waxing: true },
       generated_at: new Date().toISOString(),
     },
     ai_summary: {

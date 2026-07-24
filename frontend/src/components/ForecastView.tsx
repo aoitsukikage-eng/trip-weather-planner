@@ -495,7 +495,7 @@ export default function ForecastView({
               label="moon"
               riseTime={moon.moonrise_time}
               setTime={moon.moonset_time}
-              targetDate={moon.target_date}
+              targetDate={moon.source_date ?? moon.target_date}
               illuminationFraction={moon.illumination_fraction}
               waxing={moon.waxing}
               phaseName={moon.phase}
