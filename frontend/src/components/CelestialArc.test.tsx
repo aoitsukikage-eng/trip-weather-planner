@@ -7,6 +7,11 @@ describe("getArcProgress", () => {
     expect(getArcProgress("06:00", "18:00", "2026-07-04", new Date("2026-07-04T12:00:00"))).toBe(0.5);
   });
 
+  test("preserves normal same-day sun and moon marker progress", () => {
+    expect(getArcProgress("06:00", "18:00", "2026-07-04", new Date("2026-07-04T12:00:00"))).toBe(0.5);
+    expect(getArcProgress("18:00", "23:00", "2026-07-04", new Date("2026-07-04T20:30:00"))).toBe(0.5);
+  });
+
   test("handles moonset after midnight without a negative progress value", () => {
     const progress = getArcProgress("18:42", "05:11", "2026-07-04", new Date("2026-07-04T23:00:00"));
 
