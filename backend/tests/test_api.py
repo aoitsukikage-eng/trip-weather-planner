@@ -122,6 +122,7 @@ def test_forecast_returns_multiple_days_and_marks_target():
     assert forecast["sunrise_sunset"]["target_date"] == target
     assert forecast["uv"]["source_label"] == "目前紫外線僅供參考"
     assert forecast["moon"]["county"] == "花蓮縣"
+    assert forecast["moon"]["source_date"] == target
     assert forecast["moon"]["moonrise_time"] == "18:42"
     assert forecast["moon"]["moonset_time"] == "05:11"
     assert 0 <= forecast["moon"]["illumination_fraction"] <= 1
