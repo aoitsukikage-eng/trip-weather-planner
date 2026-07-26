@@ -1498,3 +1498,50 @@ All shipped and approved on `phase2-dev` (local only, never pushed,
 2. P2-3 TDX tourism (scenic spots/restaurants/activities) — next feature in
    the Phase 2 queue; OAuth2 credentials already provisioned in the Ubuntu
    backend/.env, no new registration needed.
+
+## 2026-07-27: UV source semantics audited; correction deferred
+
+### Summary
+
+User noticed that every queried township still displayed a non-zero UV value
+after midnight. Management audited the live API responses and the backend
+adapter instead of treating the card as a current nighttime observation.
+
+### Confirmed source and behavior
+
+- The current backend reads CWA dataset `O-A0005-001` and maps each township
+  to the geographically nearest UV station.
+- CWA defines `O-A0005-001` as the station's **daily maximum UV index**,
+  published around 14:00 and updated once per day; it is not an instantaneous
+  nighttime UV observation.
+- Live checks shortly after midnight on 2026-07-27 returned values dated
+  2026-07-26: Taipei/Xinyi 10 from Taipei station, Nantou/Puli 8 from Sun Moon
+  Lake station, Kaohsiung/Lingya 9 from Kaohsiung station, and Hualien City 12
+  from Hualien station.
+- The values were real CWA-backed station data, not frontend mock data. Every
+  township receives a UV card because the adapter resolves the nearest
+  available UV station; nearby townships can therefore share a station/value.
+- The product currently labels this daily-maximum value as `目前紫外線` and
+  does not expose `observed_at` in the card, so the presentation overstates
+  freshness and is semantically incorrect after the observation date rolls
+  over.
+
+Official dataset reference:
+`https://opendata.cwa.gov.tw/dataset/all/O-A0005-001`
+
+### Management decision
+
+- Do not change UV code in the current round.
+- Record the issue as a backlog item only; no coding or acceptance card is
+  opened from this audit.
+- When resumed, evaluate CWA `O-A0003-001` (10-minute station observations)
+  for current UV, retain `O-A0005-001` only with an honest daily-maximum label,
+  and display station plus observation time. Nighttime/stale-data behavior must
+  be specified explicitly before dispatch.
+
+### Repository state at decision time
+
+- Favorite-town shortcuts were already approved and fast-forwarded into
+  `phase2-dev` at `d2c8042` on both Ubuntu and the Mac SSD mirror.
+- This entry is documentation-only and intentionally does not alter frontend,
+  backend, deployment, or tunnel behavior.
