@@ -1,5 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
+import CelestialArc from "./CelestialArc";
+import StatusGauge from "./StatusGauge";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -315,6 +317,7 @@ function buildDayAriaLabel(day: DailyForecast): string {
   if (hasDailyPop(day.max_pop_percent)) {
     parts.push(`降雨 ${day.max_pop_percent}%`);
   }
+  if (day.aqi_forecast?.value != null) parts.push(`空氣品質 ${day.aqi_forecast.value}`);
   return parts.join(" ");
 }
 
@@ -336,6 +339,9 @@ export default function ForecastView({
   const chartForecast = chartResult?.forecast ?? forecast;
   const sunrise = forecast.sunrise_sunset;
   const uv = forecast.uv;
+  const aqi = forecast.aqi;
+  const moon = forecast.moon;
+  const warnings = forecast.warnings ?? [];
   const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
   const chartPlaceLabel = `${chartForecast.town.city} ${chartForecast.town.name}`;
   const showMockBadge = isMockForecast(result);
@@ -355,6 +361,19 @@ export default function ForecastView({
       <h2>
         {placeLabel} · {formatDateLabel(forecast.target_date)}
       </h2>
+
+      {forecast.date_adjusted && forecast.requested_date && (
+        <p className="section-hint" data-testid="adjusted-focus-notice" role="status">
+          {formatDateLabel(forecast.requested_date)} 的預報已結束，已顯示最早可用的 {formatDateLabel(forecast.target_date)} 預報。
+        </p>
+      )}
+
+      {warnings.length > 0 && (
+        <section className="warning-banner" data-testid="warning-banner" data-severity={warnings[0].severity} aria-label="天氣特報">
+          {warnings.slice(0, 2).map((warning) => <p key={warning.title}><strong>{warning.title}</strong>{warning.description ? `：${warning.description}` : ""}</p>)}
+          {warnings.length > 2 && <details><summary>另有 {warnings.length - 2} 則特報</summary>{warnings.slice(2).map((warning) => <p key={warning.title}>{warning.title}</p>)}</details>}
+        </section>
+      )}
 
       <section className="day-strip-section" aria-label="七天預報選擇列">
         <div className="day-strip-header">
@@ -403,6 +422,7 @@ export default function ForecastView({
                     </span>
                   </span>
                   <span className="day-strip-weather">{day.weather ?? "天氣資料不足"}</span>
+                  {day.aqi_forecast?.value != null && <span className={`aqi-dot aqi-${day.aqi_forecast.level}`} title={`空氣品質 ${day.aqi_forecast.value} ${day.aqi_forecast.level ?? ""}`} aria-label={`空氣品質 ${day.aqi_forecast.value}`} />}
                   <span className="day-strip-temp">
                     <strong>高 {day.temp_high_c ?? "—"}°</strong>
                     <span>低 {day.temp_low_c ?? "—"}°</span>
@@ -432,28 +452,56 @@ export default function ForecastView({
 
       <div className="fact-grid">
         {sunrise && (
-          <article className="fact-card">
-            <h3>日出日落</h3>
-            <p>
-              {formatDateLabel(forecast.target_date)} 日出 {sunrise.sunrise_time ?? "—"} · 日落{" "}
-              {sunrise.sunset_time ?? "—"}
-            </p>
-            <small>
-              {sunrise.county}
+          <article className="fact-card sun-card atmosphere-card" data-testid="sun-atmosphere-card">
+            <p className="fact-kicker">日出日落</p>
+            <CelestialArc
+              label="sun"
+              riseTime={sunrise.sunrise_time}
+              setTime={sunrise.sunset_time}
+              targetDate={forecast.target_date}
+            />
+            <small className="celestial-context">
+              {sunrise.county} · {formatDateLabel(sunrise.target_date)}
               {sunrise.is_approximate ? ` · ${formatSunriseSourceLabel(sunrise.source_date)}` : ""}
             </small>
           </article>
         )}
         {uv && (
-          <article className="fact-card">
-            <h3>{uv.source_label}</h3>
-            <p>
-              指數 {uv.value ?? "—"} · {uv.level ?? "資料不足"}
+          <StatusGauge
+            kind="uv"
+            label={uv.source_label}
+            value={uv.value}
+            level={uv.level}
+            maximum={14}
+            detail={`${formatUvSourceLabel(uv.source_type)}${!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}`}
+          />
+        )}
+        {aqi && (
+          <StatusGauge
+            kind="aqi"
+            label={aqi.source_label}
+            value={aqi.value}
+            level={aqi.level}
+            maximum={300}
+            detail={!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}
+          />
+        )}
+        {moon && (
+          <article className="fact-card moon-card atmosphere-card" data-testid="moon-atmosphere-card">
+            <p className="fact-kicker">
+              月出月沒 <span>{moon.phase}</span>
             </p>
-            <small>
-              {formatUvSourceLabel(uv.source_type)}
-              {!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}
-            </small>
+            <CelestialArc
+              label="moon"
+              riseTime={moon.moonrise_time}
+              setTime={moon.moonset_time}
+              targetDate={moon.source_date ?? moon.target_date}
+              illuminationFraction={moon.illumination_fraction}
+              waxing={moon.waxing}
+              phaseName={moon.phase}
+              phaseIcon={moon.icon}
+            />
+            <small className="celestial-context">{moon.county} · {formatDateLabel(moon.target_date)}</small>
           </article>
         )}
       </div>

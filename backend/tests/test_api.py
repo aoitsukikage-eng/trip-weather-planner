@@ -31,18 +31,26 @@ def _past(days: int) -> str:
 
 @pytest.fixture(autouse=True)
 def force_mock_mode():
-    original = os.environ.get("CWA_API_KEY")
+    original_cwa = os.environ.get("CWA_API_KEY")
+    original_moenv = os.environ.get("MOENV_API_KEY")
     os.environ["CWA_API_KEY"] = ""
+    os.environ["MOENV_API_KEY"] = ""
     get_settings.cache_clear()
     app_settings.cwa_api_key = ""
+    app_settings.moenv_api_key = ""
     app.state.cache.clear()
     yield
-    if original is None:
+    if original_cwa is None:
         os.environ.pop("CWA_API_KEY", None)
     else:
-        os.environ["CWA_API_KEY"] = original
+        os.environ["CWA_API_KEY"] = original_cwa
+    if original_moenv is None:
+        os.environ.pop("MOENV_API_KEY", None)
+    else:
+        os.environ["MOENV_API_KEY"] = original_moenv
     get_settings.cache_clear()
-    app_settings.cwa_api_key = original or ""
+    app_settings.cwa_api_key = original_cwa or ""
+    app_settings.moenv_api_key = original_moenv or ""
     app.state.cache.clear()
 
 
@@ -113,6 +121,12 @@ def test_forecast_returns_multiple_days_and_marks_target():
     assert len(forecast["hourly"]) == 24
     assert forecast["sunrise_sunset"]["target_date"] == target
     assert forecast["uv"]["source_label"] == "目前紫外線僅供參考"
+    assert forecast["moon"]["county"] == "花蓮縣"
+    assert forecast["moon"]["source_date"] == target
+    assert forecast["moon"]["moonrise_time"] == "18:42"
+    assert forecast["moon"]["moonset_time"] == "05:11"
+    assert 0 <= forecast["moon"]["illumination_fraction"] <= 1
+    assert isinstance(forecast["moon"]["waxing"], bool)
 
 
 def test_forecast_includes_hourly_for_next_72_hours():
@@ -205,6 +219,52 @@ def test_forecast_discards_partial_eighth_day_from_live_horizon(
     rejected = client.get(f"/api/forecast?town=taipei-xinyi&date={_future(7)}").json()
     assert rejected["success"] is False
     assert rejected["error"]["message"] == "Date must be within the available forecast horizon."
+
+
+def test_today_outside_live_horizon_focuses_earliest_available_day(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter, ForecastSlices
+    from app.core.errors import UpstreamError
+
+    os.environ["CWA_API_KEY"] = "demo-key"
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = "demo-key"
+    first_day = _today_taipei() + timedelta(days=1)
+
+    def build_slice(offset: int) -> TimeSlice:
+        start_at = datetime.combine(
+            first_day + timedelta(days=offset), datetime.min.time()
+        ).isoformat()
+        return TimeSlice(
+            start=start_at,
+            end=start_at,
+            temp_c=28,
+            pop_percent=20,
+            weather="多雲",
+        )
+
+    async def fake_fetch_forecast_slices(self, town):  # noqa: ARG001
+        daily = [build_slice(offset) for offset in range(7)]
+        return ForecastSlices(daily=daily, hourly=[], source_label="test-live")
+
+    async def unavailable(*args, **kwargs):  # noqa: ARG001
+        raise UpstreamError("test upstream unavailable", error_code="test_upstream")
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", fake_fetch_forecast_slices)
+    monkeypatch.setattr(CWAAdapter, "fetch_sunrise_sunset", unavailable)
+    monkeypatch.setattr(CWAAdapter, "fetch_uv_info", unavailable)
+    monkeypatch.setattr(CWAAdapter, "fetch_moon", unavailable)
+
+    today = _future(0)
+    body = client.get(f"/api/forecast?town=taipei-xinyi&date={today}").json()
+
+    assert body["success"] is True
+    forecast = body["data"]["forecast"]
+    assert forecast["requested_date"] == today
+    assert forecast["date_adjusted"] is True
+    assert forecast["target_date"] == _future(1)
+    assert any(day["date"] == forecast["target_date"] for day in forecast["days"])
 
 
 def test_summary_text_follows_selected_non_first_day():

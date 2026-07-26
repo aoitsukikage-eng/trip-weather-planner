@@ -114,6 +114,12 @@ header h1 {
   box-shadow: 0 12px 28px rgba(77, 110, 143, 0.1);
 }
 
+.warning-banner { margin: 0 0 1rem; padding: .8rem 1rem; border-radius: 12px; border-left: 5px solid #d97706; background: #fff7e6; color: #78350f; }
+.warning-banner[data-severity="danger"] { border-left-color: #dc2626; background: #fff0f0; color: #7f1d1d; }
+.warning-banner p { margin: .2rem 0; }
+.aqi-dot { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; background: #22c55e; }
+.aqi-普通 { background: #eab308; }.aqi-對敏感族群不健康, .aqi-對所有族群不健康 { background: #f97316; }.aqi-非常不健康, .aqi-危害 { background: #dc2626; }
+
 .summary-badges {
   display: flex;
   gap: 0.55rem;
@@ -148,6 +154,7 @@ header h1 {
 .fact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -159,6 +166,40 @@ header h1 {
   padding: 1rem 1.1rem;
 }
 
+.atmosphere-card {
+  background:
+    linear-gradient(180deg, var(--atmosphere-sky-start) 0%, var(--atmosphere-sky-end) var(--atmosphere-sky-stop)),
+    rgba(255, 255, 255, 0.88);
+}
+
+.sun-card {
+  --atmosphere-sky-start: #eaf6ff;
+  --atmosphere-sky-end: #fff3de;
+  --atmosphere-sky-stop: 78%;
+}
+
+.moon-card {
+  --atmosphere-sky-start: #1c2c52;
+  --atmosphere-sky-end: #3d4d84;
+  --atmosphere-sky-stop: 82%;
+  color: #eaf0ff;
+  border-color: color-mix(in srgb, #b9c4e8 28%, transparent);
+}
+
+.moon-card .fact-kicker,
+.moon-card .fact-kicker span {
+  color: #eaf0ff;
+}
+
+.moon-card small,
+.moon-card .celestial-context {
+  color: #b9c4e8;
+}
+
+.moon-card .celestial-arc-end-label {
+  fill: #b9c4e8;
+}
+
 .fact-card h3 {
   margin: 0 0 0.45rem;
   font-size: 1rem;
@@ -167,6 +208,123 @@ header h1 {
 .fact-card p {
   margin: 0 0 0.2rem;
   font-size: 1.05rem;
+}
+
+.fact-kicker {
+  color: #3d556d;
+  font-size: 0.84rem;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+}
+
+.fact-kicker span {
+  color: #56738f;
+  font-weight: 500;
+}
+
+.status-gauge-card {
+  --status-color: #22c55e;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--status-color) 14%, white), rgba(255, 255, 255, 0.94));
+}
+
+.severity-good { --status-color: #22c55e; }
+.severity-moderate { --status-color: #eab308; }
+.severity-poor { --status-color: #f97316; }
+.severity-severe { --status-color: #ea580c; }
+.severity-hazard { --status-color: #dc2626; }
+
+.status-gauge {
+  position: relative;
+  height: 0.45rem;
+  margin: 0.9rem 0 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-color) 18%, white);
+}
+
+.status-gauge-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--status-color);
+}
+
+.status-gauge-handle {
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--status-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color) 24%, transparent), 0 3px 8px rgba(48, 72, 92, 0.22);
+  transform: translate(-50%, -50%);
+}
+
+.status-gauge-value {
+  font-weight: 650;
+}
+
+.status-gauge-value span {
+  font-weight: 500;
+}
+
+.celestial-arc {
+  display: block;
+  width: min(100%, 220px);
+  height: 90px;
+  margin: -0.35rem 0 0.1rem;
+}
+
+.celestial-arc-path {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.celestial-arc-sun { --celestial-accent: #ef9b36; --celestial-track: #f9d8a7; }
+.celestial-arc-moon { --celestial-accent: #5367b7; --celestial-track: #c7d0ed; }
+.celestial-arc-track { stroke: var(--celestial-track); }
+.celestial-arc-traveled { stroke: var(--celestial-accent); }
+
+.celestial-horizon {
+  stroke: none;
+}
+
+.celestial-arc-sun .celestial-horizon {
+  fill: rgb(29 61 80 / 8%);
+}
+
+.celestial-arc-moon .celestial-horizon {
+  fill: rgb(255 255 255 / 8%);
+}
+
+.celestial-position {
+  fill: var(--celestial-accent);
+  stroke: #fff8e7;
+  stroke-width: 2;
+}
+
+.celestial-marker-glow {
+  fill: var(--celestial-accent);
+  opacity: 0.2;
+}
+
+.celestial-moon-shadow { fill: #28435c; }
+.celestial-moon-surface-ring { fill: none; stroke: rgba(255, 255, 255, 0.72); stroke-width: 1.5; }
+
+.celestial-arc-end-label {
+  fill: #56738f;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.celestial-arc-end-label-right { text-anchor: end; }
+
+.celestial-context {
+  display: block;
+  color: #56738f;
+  font-size: 0.78rem;
 }
 
 .hourly-chart {
@@ -479,6 +637,210 @@ header h1 {
   .day-strip-temp strong {
     font-size: 0.94rem;
   }
+}
+
+/* ── Favorite Towns ───────────────────────────────────────────────────────── */
+
+.fav-section {
+  margin-bottom: 0.75rem;
+}
+
+.fav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.4rem;
+}
+
+.fav-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #6b7f92;
+  font-style: italic;
+}
+
+.fav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid rgba(124, 162, 197, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #1f4967;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.fav-chip:hover:not(:disabled) {
+  background: rgba(211, 233, 248, 0.9);
+  border-color: rgba(14, 116, 183, 0.5);
+}
+
+.fav-chip:focus-visible {
+  outline: 3px solid rgba(14, 116, 183, 0.35);
+  outline-offset: 2px;
+}
+
+.fav-chip:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.fav-chip-active {
+  background: linear-gradient(135deg, rgba(196, 228, 247, 0.95), rgba(222, 241, 252, 0.95));
+  border-color: #085b90;
+  font-weight: 600;
+}
+
+.fav-default-star {
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #d97706;
+}
+
+.fav-add-btn,
+.fav-edit-btn,
+.fav-done-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.fav-add-btn {
+  border: 1px dashed rgba(14, 116, 183, 0.5);
+  background: transparent;
+  color: #0e74b7;
+}
+
+.fav-add-btn:hover {
+  background: rgba(211, 233, 248, 0.6);
+}
+
+.fav-add-btn:focus-visible,
+.fav-edit-btn:focus-visible,
+.fav-done-btn:focus-visible {
+  outline: 3px solid rgba(14, 116, 183, 0.35);
+  outline-offset: 2px;
+}
+
+.fav-edit-btn {
+  border: 1px solid rgba(124, 162, 197, 0.4);
+  background: transparent;
+  color: #37506a;
+  margin-left: auto;
+}
+
+.fav-edit-btn:hover {
+  background: rgba(226, 239, 249, 0.7);
+}
+
+.fav-done-btn {
+  margin-top: 0.6rem;
+  border: 1px solid rgba(14, 116, 183, 0.5);
+  background: transparent;
+  color: #0e74b7;
+}
+
+.fav-done-btn:hover {
+  background: rgba(211, 233, 248, 0.6);
+}
+
+.fav-edit-list {
+  list-style: none;
+  margin: 0 0 0.25rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fav-edit-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(124, 162, 197, 0.22);
+  border-radius: 12px;
+}
+
+.fav-edit-item-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #1f4967;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.fav-edit-item-controls {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.fav-ctrl-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(124, 162, 197, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: #37506a;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease;
+}
+
+.fav-ctrl-btn:hover:not(:disabled) {
+  background: rgba(211, 233, 248, 0.7);
+}
+
+.fav-ctrl-btn:focus-visible {
+  outline: 3px solid rgba(14, 116, 183, 0.35);
+  outline-offset: 2px;
+}
+
+.fav-ctrl-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.fav-ctrl-default {
+  color: #94a3b8;
+}
+
+.fav-ctrl-default-active {
+  color: #d97706;
+  background: rgba(254, 243, 199, 0.7);
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.fav-ctrl-remove {
+  color: #b91c1c;
+  font-size: 1.1rem;
+}
+
+.fav-ctrl-remove:hover:not(:disabled) {
+  background: rgba(255, 235, 235, 0.9);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 footer {

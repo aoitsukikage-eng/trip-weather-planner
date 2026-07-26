@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
-from math import cos, radians, sqrt
+from datetime import date, datetime, timedelta
+from math import cos, pi, radians, sqrt
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -15,13 +15,15 @@ from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_u
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
-from app.schemas.weather import SunriseSunset, TimeSlice, Town, UVInfo
+from app.schemas.weather import MoonInfo, SunriseSunset, TimeSlice, Town, UVInfo, WeatherWarning
 
 DATASET_NEAR = "F-D0047-093"
 DATASET_WEEK = "F-D0047-091"
 DATASET_SUNRISE = "A-B0062-001"
 DATASET_UV = "O-A0005-001"
 DATASET_STATIONS = "O-A0001-001"
+DATASET_WARNINGS = "W-C0033-001"
+DATASET_MOON = "A-B0063-001"
 
 TOWNS_CACHE_KEY = "cwa:towns"
 SUNRISE_CACHE_KEY = "cwa:sunrise"
@@ -87,7 +89,11 @@ TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 
 def _taipei_today() -> date:
-    return datetime.now(TAIPEI_TZ).date()
+    return _taipei_now().date()
+
+
+def _taipei_now() -> datetime:
+    return datetime.now(TAIPEI_TZ)
 
 
 def select_dataset(target_date: date, today: date | None = None) -> str:
@@ -265,6 +271,75 @@ class CWAAdapter:
                 error_code="uv_not_found",
             )
         return _label_uv_info(result, target_date)
+
+    async def fetch_warnings(self, town: Town) -> list[WeatherWarning]:
+        if self._settings.use_mock:
+            return []
+        payload = await self._request_json(
+            DATASET_WARNINGS, params={"CountyName": town.city}, ttl=AUXILIARY_CACHE_TTL
+        )
+        return self._parse_warning_payload(payload, town.city)
+
+    async def fetch_moon(self, town: Town, target_date: date) -> MoonInfo:
+        """Fetch CWA A-B0063-001 moonrise/moonset; phase is computed locally."""
+        phase, icon, illumination_fraction, waxing = _moon_phase(target_date)
+        if self._settings.use_mock:
+            return MoonInfo(
+                county=town.city,
+                target_date=target_date.isoformat(),
+                source_date=target_date.isoformat(),
+                moonrise_time="18:42",
+                moonset_time="05:11",
+                phase=phase,
+                icon=icon,
+                illumination_fraction=illumination_fraction,
+                waxing=waxing,
+            )
+        try:
+            payload = await self._request_json(
+                DATASET_MOON,
+                params={"CountyName": town.city, "Date": target_date.isoformat()},
+                ttl=SUNRISE_CACHE_TTL,
+            )
+            rise, set_ = self._parse_moon_payload(payload, town.city, target_date)
+        except UpstreamError:
+            rise, set_ = None, None
+
+        source_date = target_date
+        now = _taipei_now()
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=TAIPEI_TZ)
+        else:
+            now = now.astimezone(TAIPEI_TZ)
+        if target_date == now.date() and _should_check_previous_moon_window(rise, now):
+            previous_date = target_date - timedelta(days=1)
+            try:
+                previous_payload = await self._request_json(
+                    DATASET_MOON,
+                    params={"CountyName": town.city, "Date": previous_date.isoformat()},
+                    ttl=SUNRISE_CACHE_TTL,
+                )
+                previous_rise, previous_set = self._parse_moon_payload(
+                    previous_payload, town.city, previous_date
+                )
+                if _is_within_moon_window(now, previous_date, previous_rise, previous_set):
+                    phase, icon, illumination_fraction, waxing = _moon_phase(previous_date)
+                    rise, set_ = previous_rise, previous_set
+                    source_date = previous_date
+            except UpstreamError:
+                pass
+
+        return MoonInfo(
+            county=town.city,
+            target_date=target_date.isoformat(),
+            source_date=source_date.isoformat(),
+            moonrise_time=rise,
+            moonset_time=set_,
+            phase=phase,
+            icon=icon,
+            illumination_fraction=illumination_fraction,
+            waxing=waxing,
+        )
 
     async def _request_json(
         self,
@@ -465,6 +540,55 @@ class CWAAdapter:
             station_name=station.station_name,
         )
 
+    @staticmethod
+    def _parse_warning_payload(payload: dict[str, Any], county: str) -> list[WeatherWarning]:
+        text = str(payload.get("records") or "")
+        if not text or county not in text:
+            return []
+        warnings: list[WeatherWarning] = []
+        for title, severity in (
+            ("豪雨特報", "danger"),
+            ("大雨特報", "warning"),
+            ("陸上強風特報", "advisory"),
+        ):
+            if title in text:
+                warnings.append(
+                    WeatherWarning(
+                        title=title,
+                        severity=severity,
+                        description=f"{county}{title}，請留意最新天氣資訊。",
+                    )
+                )
+        return warnings
+
+    @staticmethod
+    def _parse_moon_payload(
+        payload: dict[str, Any], county: str, target_date: date
+    ) -> tuple[str | None, str | None]:
+        text = str(payload)
+        if county not in text:
+            return None, None
+
+        def find(keys: tuple[str, ...]) -> str | None:
+            def walk(value: object) -> str | None:
+                if isinstance(value, dict):
+                    for key, item in value.items():
+                        if key in keys and str(item).strip():
+                            return str(item).strip()
+                        result = walk(item)
+                        if result:
+                            return result
+                if isinstance(value, list):
+                    for item in value:
+                        result = walk(item)
+                        if result:
+                            return result
+                return None
+
+            return walk(payload)
+
+        return find(("MoonRiseTime", "MoonRise")), find(("MoonSetTime", "MoonSet"))
+
     def _cache_get(self, key: str) -> Any | None:
         if self._cache is None:
             return None
@@ -571,6 +695,40 @@ def _safe_float(value: object) -> float | None:
 def _clean_clock(value: object) -> str | None:
     text = str(value or "").strip()
     return text or None
+
+
+def _should_check_previous_moon_window(rise_time: str | None, now: datetime) -> bool:
+    """Return whether today's own moonrise cannot yet describe the visible moon."""
+    rise = _clock_datetime(now.date(), rise_time)
+    return rise is None or now < rise
+
+
+def _is_within_moon_window(
+    now: datetime,
+    rise_date: date,
+    rise_time: str | None,
+    set_time: str | None,
+) -> bool:
+    """Check a moonrise/moonset pair, extending moonset over midnight when needed."""
+    rise = _clock_datetime(rise_date, rise_time)
+    set_ = _clock_datetime(rise_date, set_time)
+    if rise is None or set_ is None:
+        return False
+    if set_ < rise:
+        set_ += timedelta(days=1)
+    return rise <= now <= set_
+
+
+def _clock_datetime(day: date, value: str | None) -> datetime | None:
+    if not value:
+        return None
+    for pattern in ("%H:%M", "%H:%M:%S"):
+        try:
+            clock = datetime.strptime(value.strip(), pattern).time()
+            return datetime.combine(day, clock, tzinfo=TAIPEI_TZ)
+        except ValueError:
+            continue
+    return None
 
 
 def _normalize_county_name(value: object) -> str:
@@ -686,3 +844,26 @@ def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
         station_id=info.station_id,
         station_name=info.station_name,
     )
+
+
+def _moon_phase(target_date: date) -> tuple[str, str, float, bool]:
+    known_new = date(2000, 1, 6)
+    synodic_month = 29.53059
+    age = (target_date - known_new).days % synodic_month
+    illumination_fraction = (1 - cos(2 * pi * age / synodic_month)) / 2
+    waxing = age < synodic_month / 2
+    if age < 1.85 or age >= 27.68:
+        return "新月", "🌑", illumination_fraction, waxing
+    if age < 7.38:
+        return "眉月", "🌒", illumination_fraction, waxing
+    if age < 11.07:
+        return "上弦月", "🌓", illumination_fraction, waxing
+    if age < 14.77:
+        return "盈凸月", "🌔", illumination_fraction, waxing
+    if age < 18.46:
+        return "滿月", "🌕", illumination_fraction, waxing
+    if age < 22.15:
+        return "虧凸月", "🌖", illumination_fraction, waxing
+    if age < 25.84:
+        return "下弦月", "🌗", illumination_fraction, waxing
+    return "殘月", "🌘", illumination_fraction, waxing

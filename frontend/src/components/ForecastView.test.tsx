@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import ForecastView, { getHourlyAnnotationStep } from "./ForecastView";
 import type { ForecastResult, HourlyForecast } from "../lib/api";
 
@@ -122,11 +122,16 @@ describe("ForecastView", () => {
   });
 
   test("shows selected sunrise date and centered chart place label", () => {
-    render(<ForecastView result={buildResult("臺北市", "信義區")} />);
+    const { container } = render(<ForecastView result={buildResult("臺北市", "信義區")} />);
 
-    expect(screen.getByText(/7\/4（六） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("05:12")).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
+    expect(screen.getByText("日出日落")).not.toBeNull();
+    expect(screen.getByText(/臺北市 · 7\/4（六） · 參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByText(/參考 2026-06-29 天文資料/)).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("臺北市 信義區");
+    expect(screen.getByTestId("sun-atmosphere-card").className).toContain("sun-card");
+    expect(container.querySelector(".sun-card.atmosphere-card")).not.toBeNull();
   });
 
   test("hides the sunrise caveat for exact rows", () => {
@@ -144,7 +149,115 @@ describe("ForecastView", () => {
     render(<ForecastView result={result} />);
 
     expect(screen.queryByText(/參考 .* 天文資料/)).toBeNull();
-    expect(screen.getByText("臺北市")).not.toBeNull();
+    expect(screen.getByText("臺北市 · 7/4（六）")).not.toBeNull();
+  });
+
+  test("renders a warning banner only while warnings are active", () => {
+    const activeWarning = buildResult("臺北市", "信義區");
+    activeWarning.forecast.warnings = [
+      { title: "大雨特報", severity: "warning", description: "臺北市大雨特報，請留意最新天氣資訊。" },
+    ];
+    const { container, rerender } = render(<ForecastView result={activeWarning} />);
+
+    expect(screen.getByTestId("warning-banner").textContent).toContain("大雨特報");
+    expect(container.querySelector(".warning-banner")).not.toBeNull();
+
+    rerender(<ForecastView result={buildResult("臺北市", "信義區")} />);
+
+    expect(screen.queryByTestId("warning-banner")).toBeNull();
+    expect(container.querySelector(".warning-banner")).toBeNull();
+  });
+
+  test("renders the moon card when moon data is available", () => {
+    const result = buildResult("臺北市", "信義區");
+    result.forecast.moon = {
+      county: "臺北市",
+      target_date: "2026-07-04",
+      source_date: "2026-07-04",
+      moonrise_time: "18:42",
+      moonset_time: "05:11",
+      phase: "眉月",
+      icon: "🌒",
+      illumination_fraction: 0.18,
+      waxing: true,
+    };
+
+    const { container } = render(<ForecastView result={result} />);
+
+    expect(container.querySelector(".moon-card .fact-kicker")?.textContent).toContain("月出月沒 眉月");
+    expect(screen.getByTestId("moon-atmosphere-card").className).toContain("atmosphere-card");
+    expect(container.querySelector(".moon-card.atmosphere-card")).not.toBeNull();
+    expect(container.querySelector(".moon-phase-name")).toBeNull();
+    expect(screen.getByText("18:42")).not.toBeNull();
+    expect(screen.getByText("05:11")).not.toBeNull();
+    expect(container.querySelector(".moon-card small")?.textContent).toContain("臺北市");
+    expect(container.querySelectorAll(".moon-card .celestial-arc")).toHaveLength(1);
+    expect(container.querySelectorAll(".moon-card > *")).toHaveLength(3);
+    expect(container.querySelectorAll(".moon-card > svg")).toHaveLength(1);
+  });
+
+  test.each([
+    ["低", 1, "good", "0.0714"],
+    ["中", 4, "moderate", "0.2857"],
+    ["高", 7, "poor", "0.5000"],
+    ["過量", 10, "severe", "0.7143"],
+    ["危險", 18, "hazard", "1.0000"],
+  ])("renders UV %s with its severity tier and clamped slider progress", (level, value, severity, progress) => {
+    const result = buildResult("臺北市", "信義區");
+    if (!result.forecast.uv) throw new Error("expected UV data");
+    result.forecast.uv = { ...result.forecast.uv, level, value };
+
+    render(<ForecastView result={result} />);
+
+    const gauge = screen.getByTestId("uv-gauge");
+    expect(gauge.getAttribute("data-progress")).toBe(progress);
+    expect(gauge.closest(".status-gauge-card")?.getAttribute("data-severity")).toBe(severity);
+    expect(screen.getByText(level)).not.toBeNull();
+  });
+
+  test.each([
+    ["良好", 25, "good", "0.0833"],
+    ["普通", 75, "moderate", "0.2500"],
+    ["對敏感族群不健康", 125, "poor", "0.4167"],
+    ["對所有族群不健康", 175, "severe", "0.5833"],
+    ["非常不健康", 225, "hazard", "0.7500"],
+    ["危害", 350, "hazard", "1.0000"],
+  ])("renders AQI %s with its shared severity tier and clamped slider progress", (level, value, severity, progress) => {
+    const result = buildResult("臺北市", "信義區");
+    result.forecast.aqi = {
+      value,
+      level,
+      station_name: "臺北",
+      observed_at: "2026-07-04T12:00:00+08:00",
+      source_label: "目前空氣品質",
+    };
+
+    render(<ForecastView result={result} />);
+
+    const gauge = screen.getByTestId("aqi-gauge");
+    expect(gauge.getAttribute("data-progress")).toBe(progress);
+    expect(gauge.closest(".status-gauge-card")?.getAttribute("data-severity")).toBe(severity);
+    expect(screen.getByText(level)).not.toBeNull();
+  });
+
+  test("shows a current-position marker only for today's selected celestial card", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-04T12:00:00"));
+    const currentResult = buildResult("臺北市", "信義區");
+    const { rerender } = render(<ForecastView result={currentResult} />);
+
+    expect(screen.getByTestId("sun-arc-marker")).not.toBeNull();
+
+    rerender(
+      <ForecastView
+        result={{
+          ...currentResult,
+          forecast: { ...currentResult.forecast, target_date: "2026-07-05" },
+        }}
+      />,
+    );
+    expect(screen.queryByTestId("sun-arc-marker")).toBeNull();
+    vi.useRealTimers();
   });
 
   test("renders the day strip before advice and chart with seven compact cells", () => {
@@ -255,7 +368,7 @@ describe("ForecastView", () => {
     expect(secondCard.className).toContain("day-strip-card-selected");
     expect(secondCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
-    expect(screen.getByText(/7\/5（日） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("05:12")).not.toBeNull();
 
     thirdCard.focus();
     await user.keyboard("{Enter}");
@@ -265,7 +378,7 @@ describe("ForecastView", () => {
     expect(thirdCard.className).toContain("day-strip-card-selected");
     expect(thirdCard).toBe(document.activeElement);
     expect(screen.getByText("summary for 2026-07-06")).not.toBeNull();
-    expect(screen.getByText(/7\/6（一） 日出 05:12 · 日落 18:48/)).not.toBeNull();
+    expect(screen.getByText("18:48")).not.toBeNull();
   });
 
   test("thins hourly annotations when the chart gets too dense", () => {

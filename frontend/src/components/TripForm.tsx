@@ -1,16 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { Town } from "../lib/api";
 
 interface Props {
   towns: Town[];
   loading: boolean;
+  city: string;
+  townCode: string;
+  onCityChange: (city: string) => void;
+  onTownCodeChange: (code: string) => void;
   onSubmit: (town: Town) => void;
 }
 
-export default function TripForm({ towns, loading, onSubmit }: Props) {
-  const [city, setCity] = useState("");
-  const [townCode, setTownCode] = useState("");
-
+export default function TripForm({
+  towns,
+  loading,
+  city,
+  townCode,
+  onCityChange,
+  onTownCodeChange,
+  onSubmit,
+}: Props) {
   const cities = Array.from(new Set(towns.map((town) => town.city))).sort((left, right) =>
     left.localeCompare(right, "zh-Hant"),
   );
@@ -18,20 +27,14 @@ export default function TripForm({ towns, loading, onSubmit }: Props) {
     .filter((town) => town.city === city)
     .sort((left, right) => left.name.localeCompare(right.name, "zh-Hant"));
 
+  // When city changes, auto-correct townCode to a valid town in the new city.
   useEffect(() => {
-    if (!towns.length) {
-      return;
+    if (!city || !filteredTowns.length) return;
+    if (!filteredTowns.some((t) => t.code === townCode)) {
+      onTownCodeChange(filteredTowns[0].code);
     }
-    setCity((current) => current || towns[0].city);
-  }, [towns]);
-
-  useEffect(() => {
-    if (!city) {
-      return;
-    }
-    const nextTown = filteredTowns.find((town) => town.code === townCode) ?? filteredTowns[0];
-    setTownCode(nextTown?.code ?? "");
-  }, [city, filteredTowns, townCode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city]);
 
   const handle = (event: React.FormEvent) => {
     event.preventDefault();
@@ -45,7 +48,7 @@ export default function TripForm({ towns, loading, onSubmit }: Props) {
     <form className="trip-form" onSubmit={handle}>
       <label className="form-field">
         縣市
-        <select value={city} onChange={(event) => setCity(event.target.value)}>
+        <select value={city} onChange={(event) => onCityChange(event.target.value)}>
           {cities.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -56,7 +59,7 @@ export default function TripForm({ towns, loading, onSubmit }: Props) {
 
       <label className="form-field">
         鄉鎮市區
-        <select value={townCode} onChange={(event) => setTownCode(event.target.value)}>
+        <select value={townCode} onChange={(event) => onTownCodeChange(event.target.value)}>
           {filteredTowns.map((town) => (
             <option key={town.code} value={town.code}>
               {town.name}

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date
+from datetime import date, datetime
 
 import httpx
 import pytest
@@ -14,6 +14,7 @@ from app.adapters.cwa import (
     DATASET_WEEK,
     SUNRISE_CACHE_TTL,
     CWAAdapter,
+    _moon_phase,
     resolve_live_dataset,
     select_dataset,
 )
@@ -309,6 +310,24 @@ def test_select_dataset_near_vs_week():
     assert select_dataset(date(2026, 7, 5), today=today) == DATASET_WEEK
 
 
+@pytest.mark.parametrize(
+    ("target_date", "expected_fraction", "expected_waxing"),
+    [
+        (date(2000, 1, 6), 0.0, True),
+        (date(2000, 1, 21), 1.0, False),
+        (date(2000, 1, 10), 0.16, True),
+        (date(2000, 1, 25), 0.84, False),
+    ],
+)
+def test_moon_phase_exposes_illumination_and_waxing_direction(
+    target_date: date, expected_fraction: float, expected_waxing: bool
+):
+    _, _, illumination_fraction, waxing = _moon_phase(target_date)
+
+    assert illumination_fraction == pytest.approx(expected_fraction, abs=0.08)
+    assert waxing is expected_waxing
+
+
 def test_resolve_live_dataset_maps_city_specific_codes():
     assert resolve_live_dataset(DATASET_NEAR, get_town("taipei-xinyi")) == "F-D0047-061"
     assert resolve_live_dataset(DATASET_WEEK, get_town("hualien-hualien")) == "F-D0047-043"
@@ -586,6 +605,107 @@ def test_fetch_sunrise_sunset_requests_exact_county_and_date(monkeypatch: pytest
             "ttl": SUNRISE_CACHE_TTL,
         }
     ]
+
+
+def test_fetch_moon_mock_includes_town_county():
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key=""))
+
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
+
+    assert result.county == "臺北市"
+    assert result.source_date == "2026-07-04"
+    assert result.moonrise_time == "18:42"
+
+
+def test_fetch_moon_live_shape_includes_requested_town_county(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("keelung-ren-ai")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+
+    async def fake_request_json(*args, **kwargs):  # noqa: ANN002, ANN003
+        return {"CountyName": "基隆市", "MoonRiseTime": "18:42", "MoonSetTime": "05:11"}
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 4)))
+
+    assert result.county == "基隆市"
+    assert result.source_date == "2026-07-04"
+    assert result.moonrise_time == "18:42"
+
+
+def test_fetch_moon_uses_previous_pair_before_todays_rise_when_still_up(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+    calls: list[dict[str, str] | None] = []
+
+    async def fake_request_json(dataset: str, *, params=None, **kwargs):  # noqa: ANN001, ANN002, ANN003
+        assert dataset == "A-B0063-001"
+        calls.append(params)
+        if params["Date"] == "2026-07-24":
+            return {"CountyName": "臺北市", "MoonRiseTime": "14:36", "MoonSetTime": "00:32"}
+        return {"CountyName": "臺北市", "MoonRiseTime": "13:41", "MoonSetTime": "00:32"}
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    monkeypatch.setattr(
+        "app.adapters.cwa._taipei_now", lambda: datetime(2026, 7, 24, 0, 12, tzinfo=None)
+    )
+
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 24)))
+
+    assert result.target_date == "2026-07-24"
+    assert result.source_date == "2026-07-23"
+    assert (result.moonrise_time, result.moonset_time) == ("13:41", "00:32")
+    assert result.phase == _moon_phase(date(2026, 7, 23))[0]
+    assert calls == [
+        {"CountyName": "臺北市", "Date": "2026-07-24"},
+        {"CountyName": "臺北市", "Date": "2026-07-23"},
+    ]
+
+
+def test_fetch_moon_keeps_todays_pair_after_todays_rise(monkeypatch: pytest.MonkeyPatch):
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+    calls: list[dict[str, str] | None] = []
+
+    async def fake_request_json(dataset: str, *, params=None, **kwargs):  # noqa: ANN001, ANN002, ANN003
+        calls.append(params)
+        return {"CountyName": "臺北市", "MoonRiseTime": "14:36", "MoonSetTime": "00:32"}
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    monkeypatch.setattr(
+        "app.adapters.cwa._taipei_now", lambda: datetime(2026, 7, 24, 15, 0, tzinfo=None)
+    )
+
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 24)))
+
+    assert (result.moonrise_time, result.moonset_time) == ("14:36", "00:32")
+    assert result.source_date == "2026-07-24"
+    assert calls == [{"CountyName": "臺北市", "Date": "2026-07-24"}]
+
+
+def test_fetch_moon_keeps_todays_pair_when_no_previous_window_applies(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("taipei-xinyi")
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+
+    async def fake_request_json(dataset: str, *, params=None, **kwargs):  # noqa: ANN001, ANN002, ANN003
+        if params["Date"] == "2026-07-24":
+            return {"CountyName": "臺北市", "MoonRiseTime": "14:36", "MoonSetTime": "00:32"}
+        return {"CountyName": "臺北市", "MoonRiseTime": "13:41", "MoonSetTime": "23:00"}
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+    monkeypatch.setattr(
+        "app.adapters.cwa._taipei_now", lambda: datetime(2026, 7, 24, 0, 45, tzinfo=None)
+    )
+
+    result = asyncio.run(adapter.fetch_moon(town, date(2026, 7, 24)))
+
+    assert (result.moonrise_time, result.moonset_time) == ("14:36", "00:32")
 
 
 def test_fetch_sunrise_sunset_falls_back_when_exact_row_is_missing(

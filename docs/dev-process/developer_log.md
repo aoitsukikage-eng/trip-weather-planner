@@ -901,3 +901,649 @@ The final submission favors reproducible truth over architectural symmetry.
 Static Web Apps would have been a cleaner single-brand frontend story, but the
 working Azure Storage fallback better represents the platform constraints and
 keeps the demo honest.
+
+## 2026-07-09: Phase 2 kickoff — destination suitability completion
+
+### Summary
+
+Phase 1 was submitted on 2026-07-06 and passed the Cathay review. The `main`
+branch (`2f3ce32`) and the Azure public demo are now a frozen, stable baseline
+kept intact for the interview period. Phase 2 development starts today on a
+new branch `phase2-dev`, created from that baseline.
+
+### Operating decisions
+
+- All Phase 2 work happens on `phase2-dev`; `main` receives no direct commits.
+- The branch is intentionally not pushed to origin and the Azure demo is not
+  redeployed. Development and verification run on the Ubuntu workstation only,
+  so the public Phase 1 demo stays exactly as reviewed.
+- The management/coding/acceptance bridge workflow validated in Phase 1
+  continues unchanged.
+
+### Scope
+
+Phase 2 resumes the original three-source plan
+(`docs/dev-process/台灣公開API接入清單_旅行目的地評估.md`) by completing the
+"is this destination worth going" storyline before moving to "what to do
+there":
+
+1. MOENV air quality: real-time AQI via nearest-station mapping (same pattern
+   as the existing UV card) plus the official 3-day air-quality-zone forecast
+   (`aqx_p_408`, issued 10:30/16:30/22:00 daily).
+2. CWA weather warnings and typhoon advisories (`W-C0033` family), carried
+   over from the Phase 1 backlog; zero new credentials required.
+3. Astronomy extension: moonrise/moonset with moon phase, joining the existing
+   sunrise/sunset fact card family.
+4. TDX tourism (scenic spots / restaurants / activities) as a later card;
+   OAuth2 client credentials are already provisioned in the Ubuntu `.env`.
+
+### UI decisions agreed with the user
+
+- Warnings render as a conditional full-width alert banner between the header
+  and the 7-day strip: zero footprint on calm days, severity-colored, stacks
+  naturally on mobile. Side columns were rejected because they do not survive
+  the mobile single-column collapse.
+- Current AQI and the moon card extend the existing auto-fit fact-card grid.
+- The 3-day AQI forecast integrates into existing components: a small
+  color-coded dot on the first three day-strip cards and AQI-aware wording in
+  the selected-day advice panel. No new layout region is introduced.
+
+### Pending
+
+- MOENV open-data platform registration (instant email key) is the only
+  missing credential; `GEMINI_API_KEY` stays empty until the AI-summary card
+  is scheduled.
+
+## 2026-07-15: P2-1 first pass rejected — changes_required
+
+### Summary
+
+The background unit for `task-20260715-twp-p2-suitability` completed and
+delivered the MOENV/warnings/moon adapters plus the agreed UI integration in a
+single commit (`ed64802`). Lint, both test suites, and the frontend build were
+green and mock mode stayed intact. Acceptance (Codex VS) nevertheless returned
+**changes_required** with four blockers, and management triage confirmed all
+four — with one responsibility correction.
+
+### Findings and triage
+
+- MOENV live parsing is broken (card-introduced). The adapter only accepts a
+  dict payload and reads `records`, but MOENV v2 returns a top-level JSON
+  list for both `aqx_p_432` and `aqf_p_01`, so live AQI resolves to empty.
+  The task card's dataset notes had documented the list shape; the agent
+  tested only against its own dict-shaped mocks.
+- `date_out_of_range` for "today" near 23:00 is NOT a card regression:
+  the horizon logic (`trim_daily_to_window` + `_horizon_contains_date`)
+  exists in the frozen Phase 1 baseline (`e7ae6a0`). Late at night the CWA
+  live horizon starts tomorrow, so the frontend's default today query 400s.
+  Pre-existing live E2E gap, surfaced by late-night verification; scheduled
+  into the fix card because it breaks the default flow for real users.
+- Required mock-based tests (S7) were not written at all; the green suites
+  are pre-existing coverage only.
+- AC10 (one commit per acceptance criterion) was violated: one squashed
+  commit for the whole card.
+
+### Decisions
+
+- Keep `ed64802` as-is: rewriting history to fake per-AC commits after the
+  fact records a process that did not happen. The deviation is logged here;
+  per-AC commits are enforced as a hard acceptance item on the fix card.
+- Dispatched `task-20260715-twp-p2-suitability-fix1` (background-systemd,
+  gpt-5.6-terra/medium): F1 tolerant list/dict MOENV parsing with live-shape
+  list fixtures in tests, F2 graceful handling when today is outside the live
+  horizon (default query must never 400; focus the earliest available day
+  with honest wording), F3 full S1-S6 mock-based test coverage including the
+  two-state warning banner component test, F4 per-AC commit discipline.
+
+### Lesson
+
+Adapter tests must pin fixtures to the observed live payload shape, not to
+the shape the implementer assumed. The card had the live shape documented;
+the miss was in test discipline, which is exactly what F3 restores.
+
+## 2026-07-20: P2-1 fix1 approved — destination suitability signals shipped
+
+### Summary
+
+`task-20260715-twp-p2-suitability-fix1` passed acceptance (Codex VS, Ubuntu):
+編碼驗收 pass、執行驗收 pass、結論 approved, no required actions. This closes
+out the P2-1 card (parent `task-20260715-twp-p2-suitability` is archived as
+superseded; its changes_required findings were fully addressed by fix1).
+
+### What shipped on phase2-dev
+
+- MOENV adapter tolerates both top-level list and `records`-wrapper payload
+  shapes (the live-shape bug that blocked AC4/AC5 on the first pass).
+- Current AQI via nearest-station mapping (aqx_p_432) and 3-day zone AQI
+  forecast (aqf_p_01, county->zone static mapping) both verified live:
+  `aqi_forecast_days=3`, AQI value present with level label.
+- Graceful handling when "today" falls outside the live CWA horizon: the
+  backend shifts focus to the earliest available day and returns additive
+  `requested_date` / `date_adjusted` fields instead of a 400; the frontend
+  surfaces an honest adjustment notice. Explicit far-future dates still 400
+  with `date_out_of_range`. Verified live 2026-07-20: request for today
+  (2026-07-20) returned 200 with `date_adjusted=true`, focused on
+  2026-07-21; a far-future date correctly 400'd.
+- CWA weather-warning banner and moon (moonrise/moonset + phase) card, both
+  covered by mock-based component tests (active/no-warning two-state banner,
+  moon card render).
+- Full mock-based test coverage for S1-S6 (backend 36 passed, frontend 24
+  passed), zero-credential mode reverified green, ruff clean, frontend build
+  clean.
+
+### Process outcome
+
+- Acceptance independently reran every check rather than trusting the coding
+  agent's self-report (ruff, pytest, frontend tests/build, live smoke) — all
+  matched the Task Report.
+- Per-AC commit discipline (F4) held this round: 7 commits, one per AC
+  (`67c78c4`..`e67e3b7`), verified against `a40da57..HEAD`.
+- No red-line files touched (README.md, .github/workflows/**,
+  infra/terraform/**, .env); no key material found in the diff; no git push
+  to any remote — phase2-dev stays local-only per the Phase 2 operating
+  decision, main and the Azure demo remain untouched.
+
+### Task bookkeeping
+
+- `task-20260715-twp-p2-suitability` -> archived (superseded by fix1)
+- `task-20260715-twp-p2-suitability-fix1` -> completed
+
+### Next
+
+P2-2: TDX tourism (scenic spots / restaurants / activities) is next in the
+Phase 2 queue; OAuth2 client credentials are already provisioned in the
+Ubuntu backend/.env. After that, Gemini AI-summary activation once the
+AQI/warning context enriches the advice material.
+
+## 2026-07-22: P2-2 celestial visuals approved — redesign + moon county label
+
+### Summary
+
+Three cards shipped as one user-facing feature: `task-20260721-twp-p2-celestial-arc`
+(sun/moon horizon arcs + moon phase disc, data plumbing), `task-20260721-twp-p2-celestial-redesign`
+(visual overhaul after user feedback), and `task-20260721-twp-p2-moon-county-label`
+(moon card location parity fix). All three passed acceptance (Codex VS) with
+independently rerun checks; no required actions on either of the final two
+reports.
+
+### What changed since the first pass
+
+User reviewed the initial celestial-arc implementation live and called it out
+as visually poor: a single flat-color arc with no elapsed/remaining contrast,
+a hard two-color moon-phase split with a dark outline ring, redundant card
+titles duplicating information already carried by the arc, and a 58x58px
+moon-phase disc that read smaller and less legible than the plain emoji it
+replaced. Management diagnosed the implementation against the project's
+dataviz design skill and confirmed two concrete anti-patterns: thick flat
+color blocks with a border-as-separator (moon disc) and a progress arc with
+no traveled-vs-remaining visual distinction (not actually readable as a
+meter). User picked a 漸層量表風格 (gradient meter style) direction from two
+options presented.
+
+The redesign card (`task-20260721-twp-p2-celestial-redesign`) delivered:
+- CelestialArc now splits into an elapsed segment (full accent hue) and a
+  remaining segment (a lighter tint of the SAME hue) — sun uses a warm
+  family, moon a distinct cool family, so the two cards read differently at
+  a glance. No fabricated elapsed segment when there is no valid "now"
+  position (regression-safe against the prior card's marker-visibility
+  tests).
+- Card headings (`日出日落` / `月出月沒`) removed; rise/set times moved to
+  direct labels at the arc's own endpoints.
+- MoonPhaseDisc rewritten with an SVG gradient terminator (soft lit/dark
+  boundary) instead of a hard-edged two-path split, the dark outline ring
+  removed, and the rendered footprint enlarged well past the old 58x58px.
+- County label kept on the sunrise card (user explicitly decided information
+  that's real signal, even if small, should not be deleted — see the
+  2026-07-21 geography verification below).
+
+### Geography fact-check that shaped this decision
+
+Before finalizing the redesign, management fact-checked the user's question
+"is the location display fake precision, since Taiwan is small" by pulling
+live CWA data for Keelung (七堵, 25.10N) vs Hengchun/Pingtung (恆春,
+22.01N) on 2026-07-21: sunrise differed by 9 minutes, sunset by 1 minute,
+moonset by 10 minutes. The asymmetry (sunrise moves far more than sunset)
+confirmed BOTH longitude (near-uniform shift) and latitude (day-length
+effect, strongest near solstice) are real contributors — not just longitude
+as the user suspected. Conclusion: county-level display is real signal, not
+noise; keep it, only de-emphasize its visual weight. This same reasoning
+surfaced a real product gap: the moon card had no county field anywhere
+(unlike sunrise_sunset), even though moonrise/moonset varies by location for
+the same reason. `task-20260721-twp-p2-moon-county-label` closed that gap by
+threading `town.city` (already available inside `fetch_moon()`, same source
+`fetch_warnings()` already uses) into an additive `MoonInfo.county` field and
+displaying it in the same secondary `<small>` style as the sunrise card.
+
+### Also resolved this round: cross-agent tunnel coordination
+
+While reviewing the dev preview, a separate agent had stood up a Cloudflare
+quick tunnel (`twp-tunnel.service`, frontend :5173) with a local, uncommitted
+`frontend/vite.config.ts` `allowedHosts` addition to let the tunnel's host
+header through Vite's dev-server check. Management initially misidentified
+this as unrelated leftover cruft and stashed it; once the user clarified its
+origin, management restored it, and additionally learned mid-session that
+Vite auto-restarts on `vite.config.ts` changes (not just an in-memory
+setting), so file-level stash/pop operations during an active dev session
+have real, immediate effect on the running server, not just future starts.
+Care was taken to keep this local-only tunnel config isolated from every
+background coding task's working tree so it was never accidentally swept
+into a scoped commit.
+
+### Verification
+
+- Acceptance independently reran ruff, backend pytest (42 passed), frontend
+  build, and Vitest (31 passed) for the final stacked state across all three
+  cards — all green, no scope violations, no remote pushes.
+- Management redeployed the Ubuntu dev preview (backend :8080, frontend
+  :5173) after acceptance to serve the finally-approved code for user
+  review; confirmed live: moon payload now carries `county` (e.g. 基隆市),
+  and the existing Cloudflare tunnel URL still resolves through the
+  refreshed frontend process.
+
+### Task bookkeeping
+
+- `task-20260721-twp-p2-celestial-arc` -> completed
+- `task-20260721-twp-p2-celestial-redesign` -> completed
+- `task-20260721-twp-p2-moon-county-label` -> completed
+
+### Next
+
+P2-3: TDX tourism (scenic spots / restaurants / activities); OAuth2 client
+credentials are already provisioned in the Ubuntu backend/.env.
+
+## 2026-07-22: P2-2 fix3 — status-card slider gauges, symmetry fixes, grid-stretch bug
+
+### Summary
+
+User reviewed the shipped celestial redesign (task-20260721-twp-p2-celestial-redesign,
+task-20260721-twp-p2-moon-county-label) live and raised three more issues:
+every fact-card had become oversized, whether the standalone moon-phase disc
+was still necessary now that the arc marker itself could carry the phase,
+and whether the sun/moon arcs — and by extension UV/AQI — could get a more
+"designed" treatment instead of a plain thin-line meter.
+
+### Design exploration via live mockup
+
+Rather than dispatch another blind coding round, management built a live
+HTML/CSS mockup (Claude Artifact) using the user's own screenshot data
+(Nantou county: sunrise 05:21/18:44, UV 11 危險, AQI 63 普通, moonrise/set
+12:46/23:53 上弦月) and the app's actual approved CSS tokens and font stack,
+then iterated it directly against user feedback across several rounds:
+
+- Presented two celestial-arc directions (a conservative "refined meter" vs
+  an "atmosphere card" with a gradient sky-wash background + horizon
+  silhouette + glowing marker). User picked the atmosphere direction
+  decisively.
+- User then asked whether UV/AQI — both official ordinal severity scales,
+  verified live against `backend/app/adapters/cwa.py::_uv_level` (5 levels:
+  低/中/高/過量/危險) and `backend/app/adapters/moenv.py::aqi_level` (6
+  levels: 良好/普通/對敏感族群不健康/對所有族群不健康/非常不健康/危害) —
+  should reuse the same dome-arc language. Management extended the mockup
+  with a "slider" alternative (flat bar + glowing handle) mapped to a shared
+  5-step good/moderate/poor/severe/hazard severity ramp that reuses the
+  color grouping already informally present in the app's existing AQI CSS
+  (`.aqi-普通`, `.aqi-對敏感族群不健康`/`.aqi-對所有族群不健康`,
+  `.aqi-非常不健康`/`.aqi-危害`).
+- User compared both live in the mockup and made a final split decision:
+  keep the dome arc for sun/moon (a time-of-day journey), adopt the slider
+  for UV/AQI (a severity-in-range reading) — the two idioms staying visually
+  distinct is correct because the underlying data is genuinely different in
+  kind, not a consistency defect.
+- While building the mockup, management independently found and confirmed
+  two real regressions in the shipped code: the sunrise/sunset card lost its
+  date entirely when an earlier redesign card removed the old `<h3>`/`<p>`
+  heading (only county remained, while the moon card — which later gained a
+  county field — kept its date, so the two cards silently went asymmetric);
+  and `.fact-grid` used default CSS Grid `align-items: stretch`, so the
+  taller moon card was stretching the entire row including the unrelated UV
+  and AQI cards — the real cause of "every card became oversized," unrelated
+  to any style choice.
+
+### Dispatch and result
+
+`task-20260722-twp-p2-status-cards-and-symmetry` (background-systemd,
+gpt-5.6-terra/medium) shipped all of the above: `.fact-grid` fixed to
+`align-items: start`; sunrise card's secondary text restored to
+`county · date`; moon card's phase name relocated to the top kicker beside
+`月出月沒`, mirroring the sunrise card's structure; a new
+`frontend/src/components/StatusGauge.tsx` with a pure severity-mapping
+function (UV 0-14 domain, AQI 0-300 domain, both clamped past their ceiling,
+AQI's top two levels sharing the hazard tier) driving the new UV/AQI slider
+cards. `CelestialArc.tsx`/`MoonPhaseDisc.tsx` were explicitly protected from
+further changes per the finalized dome-arc decision.
+
+- 9 commits, one per AC (`0eb1107`..`b705e80`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged, no backend touched);
+  frontend `npm test` 43 passed (7 files, up from 31 — new StatusGauge and
+  symmetry coverage); frontend build PASS; mock mode (no CWA/MOENV keys)
+  verified deterministic for all four cards.
+
+### Process note
+
+The mockup-first approach (compare real rendered options before dispatching
+code) resolved three rounds of "still looks wrong" feedback in one dispatch
+instead of another blind round — worth defaulting to for future purely
+aesthetic asks on this project, reserving direct dispatch for behavior/data
+changes where the spec is unambiguous.
+
+### Pending
+
+Acceptance has not yet run on this card. Management will redeploy the
+Ubuntu dev preview (restoring the tunnel's local `vite.config.ts` tweak,
+stashed again before this dispatch to keep it out of the coding task's
+working tree) once acceptance is complete.
+
+## 2026-07-22: P2-2 fix4 approved — moon phase actually merged into the arc marker
+
+### Summary
+
+User reported the moon card was still visibly taller than its siblings after
+task-20260722-twp-p2-status-cards-and-symmetry shipped, despite that card's
+`.fact-grid` height fix. Management re-verified against live code and found
+the real cause: the user's round-2 request ("is the standalone moon-phase
+disc necessary, or can the phase just render on the enlarged arc marker
+instead") had never actually been implemented across two prior cards
+(celestial-redesign, status-cards-and-symmetry) — both only polished the
+still-separate `MoonPhaseDisc` component (gradient terminator, size bump)
+while it remained stacked above `CelestialArc` inside a `.moon-visuals`
+wrapper. `align-items: start` on the grid stops row-stretch onto siblings;
+it cannot shrink a card whose own content is intrinsically taller (a 90x90px
+disc plus a full arc, two stacked graphics, versus one arc for every other
+card). This was a management specification miss, not an execution miss — the
+prior task cards never actually required the merge, only cosmetic polish of
+the existing two-element structure.
+
+### Fix
+
+`task-20260722-twp-p2-moon-marker-merge` explicitly lifted the previous
+card's "do not touch CelestialArc.tsx/MoonPhaseDisc.tsx" protection rule
+(that rule was based on the mistaken premise that the merge was already
+done) and required the actual merge: `CelestialArc` gained optional
+`illuminationFraction`/`waxing` props; when present, its own position marker
+renders the gradient-terminator phase shape at a visibly larger radius (12
+vs the sun's unchanged 4.5); when absent, the sun's marker renders exactly
+as before. `MoonPhaseDisc.tsx` and its test file were deleted as dead code
+once zero references remained. The moon card's DOM structure is now
+line-for-line parallel to the sun card: kicker / single arc / small text.
+
+### Verification rigor this round
+
+Acceptance (Codex VS) went beyond source reading: confirmed the sun marker's
+JSX line was character-for-character unchanged in the diff (only relocated
+into a ternary's else-branch, not edited), and confirmed the moon card's
+structural parity via actual rendered-DOM assertions (`.moon-card` has
+exactly 3 direct children, exactly 1 `svg`) rather than inferring from
+source code. This is the standard worth holding for future "does it actually
+look right" acceptance criteria — rendered-DOM checks catch what source
+inspection alone can miss.
+
+- 9 commits, one per AC (`a7855b4`..`b5af441`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged); frontend test 43 passed,
+  build PASS; mock mode deterministic for all four cards.
+
+### Lesson
+
+When a user's structural request ("remove X, merge it into Y") gets
+translated into a task card, the acceptance criteria must assert the
+structural outcome directly (e.g., "exactly one graphic element in the
+DOM"), not just "X looks nicer" — cosmetic-only acceptance criteria let a
+card ship without the actual requested restructuring twice in a row before
+the gap surfaced from live user feedback instead of from the task cards
+themselves.
+
+### Task bookkeeping
+
+- `task-20260722-twp-p2-moon-marker-merge` -> completed
+
+### Status
+
+This closes the P2-2 celestial/status card visual feature — all four
+fact-cards (sun, UV, AQI, moon) are now structurally and visually consistent.
+Next: P2-3 TDX tourism (scenic spots/restaurants/activities); OAuth2
+credentials already provisioned in the Ubuntu backend/.env.
+
+## 2026-07-24: P2-2 fix5 approved — the actual atmosphere-card background finally shipped
+
+### Summary
+
+After task-20260722-twp-p2-moon-marker-merge shipped (moon phase genuinely
+merged into the arc marker, verified via rendered-DOM assertions), the user
+kept reporting the redeployed preview "still looked the same" across several
+rounds. Management exhaustively ruled out deployment/caching causes: server
+source verified current via direct curl of the dev server AND through the
+public Cloudflare tunnel (`cf-cache-status: DYNAMIC`, `cache-control:
+no-cache`), no competing systemd-managed frontend process found, browser
+cache ruled out by the user across two browsers and hard refresh, and a full
+process teardown/restart with `setsid` performed for good measure — none of
+it changed anything, because none of it was the actual problem.
+
+The user then clarified precisely: the "氛圍卡片" (atmosphere card) design
+approved earlier via a live HTML/CSS mockup — a sky-gradient CARD
+BACKGROUND wash plus a horizon-hill silhouette plus a glowing marker, which
+the user called decisively better than the alternative ("方案B絕對優於方案
+A") — had never actually been implemented in the real app at all. Root
+cause, confirmed by direct code inspection: management's own task-card
+context sections for two subsequent cards (status-cards-and-symmetry,
+moon-marker-merge) asserted the atmosphere background was "already shipped"
+and told the coding agent not to touch it further — an assumption that was
+simply never true. What celestial-redesign actually shipped was a different,
+narrower thing: a "gradient meter" effect on the ARC LINE's own stroke
+(elapsed-vs-remaining coloring), never the CARD's background. Verified live:
+`.fact-card`'s base background was a flat `rgba(255,255,255,0.88)` for every
+card, with zero sky-gradient or horizon-hill CSS anywhere in the file. This
+was a specification gap carried forward silently across two cards, not a
+deployment or caching problem — the user was correctly describing what they
+saw; management's premise was wrong.
+
+### Fix
+
+`task-20260723-twp-p2-atmosphere-cards` implemented the actual approved
+mockup values: sun card day-sky gradient `#eaf6ff -> #fff3de`; moon card
+night-sky gradient `#1c2c52 -> #3d4d84` with text switched to legible light
+tones; horizon-hill silhouettes added to both arcs; soft glow halos added
+behind both markers (additive only — the marker's own rendering logic from
+the previous card, including the moon's gradient-terminator phase disc, was
+left untouched). The task reused the exact `color-mix`/`linear-gradient`
+technique already proven working for the UV/AQI `.status-gauge-card`
+background as its implementation template, removing any remaining ambiguity
+for the coding layer.
+
+- 10 commits, one per AC (`1631de2`..`d7d6471`), working tree clean, no push.
+- ruff PASS; backend pytest 42 passed (unchanged, no backend touched);
+  frontend test 43 passed, build PASS; UV/AQI `StatusGauge.tsx` and
+  `.status-gauge-card` confirmed byte-unchanged; mock mode deterministic.
+
+### Lesson
+
+When a task card's `context` section asserts "X is already shipped, do not
+touch it," that assertion needs the same evidentiary bar as any acceptance
+criterion — verify it against current code before writing it, don't carry
+it forward from memory of an earlier planning conversation. This gap
+survived two full task cards because nothing in either card's acceptance
+criteria actually checked for the atmosphere background's presence; both
+cards' ACs only covered what was newly in scope, never re-verified the
+inherited assumption. Future cards that say "keep X as-is" should include a
+cheap sanity check confirming X actually exists as described, not just a
+prohibition on touching it.
+
+### Status
+
+The dev preview will be redeployed (backend/frontend restart, tunnel config
+restored) for user review. Two open items remain before P2-2 fully closes:
+(1) user confirmation that the atmosphere cards now match the approved
+mockup, (2) the still-unresolved height difference between the dome-arc
+cards (sun/moon) and the flat-slider cards (UV/AQI), deliberately deferred
+out of this card's scope pending a direct design conversation with the user.
+
+## 2026-07-25: P2-2 fix8 approved — moon cross-midnight marker fixed after three attempts
+
+### Summary
+
+User spotted at 2026-07-24 00:12 that the moon fact-card showed no position
+marker even though a moon (risen 7/23 13:41, not yet set) was still up.
+Resolving this took three dispatched cards, worth recording as a case study
+in scope discipline and honest failure.
+
+### Attempt 1 — task-20260724-twp-p2-moon-crossmidnight-window (changes_required)
+
+Correctly added backend logic to `fetch_moon()` substituting the previous
+day's moonrise/moonset pair when 'now' falls before today's own moonrise but
+still inside yesterday's still-open window. Acceptance rejected it for a
+real gap: `MoonInfo.target_date` stayed unchanged even when the substitution
+happened, so the frontend had no way to know the returned rise/set pair
+belonged to yesterday. The substitution logic itself was correct and its
+commits were kept, not reverted.
+
+### Attempt 2 — task-20260724-twp-p2-moon-source-date (failed, zero changes)
+
+Management's fix: add `source_date` to `MoonInfo` (mirroring the existing
+`sunrise_sunset.source_date` pattern) and have the frontend pass it to
+`CelestialArc`. But the task card ALSO explicitly forbade modifying
+`getArcProgress()` — a self-contradiction, because that function gates on
+`targetDate !== localIsoDate(now)`, which rejects any date that isn't
+literally today regardless of what the caller passes. The coding agent
+correctly refused to fake a workaround and reported two precise blocking
+facts instead of guessing: the date-equality gate, and a second, deeper
+issue — even ignoring that gate, the function compares raw
+minutes-since-midnight-of-today against the rise time's own minutes, which
+cannot express "now is shortly before midnight relative to a rise that
+happened yesterday afternoon." This is the correct failure mode: stop and
+report rather than ship a broken half-fix. Management archived the card with
+the coding agent's own analysis linked as the root-cause record.
+
+### Attempt 3 — task-20260725-twp-p2-moon-arc-progress-rewrite (approved)
+
+Management explicitly lifted the restriction on `getArcProgress()` this
+time — there was no correct fix that avoided touching it — and specified the
+actual algorithm: replace the same-day string-equality gate and
+minutes-of-day arithmetic with absolute-instant comparison anchored on the
+caller-supplied date (rise/set both resolved to full date+time instants,
+set pushed +24h if it falls at or before rise, then `now` compared directly
+against that instant range). This single change correctly subsumes every
+prior case with no special-casing: a future 7-day-strip day naturally has
+both instants in the future and still returns no marker; a same-day sun/moon
+case is unaffected; the cross-midnight moon case now resolves correctly.
+
+Independent second-layer review (Claude Code VS) went further than the
+first acceptance pass: hand-verified the exact cross-midnight arithmetic
+(rise 7/23 13:41 +24h-adjusted set 7/24 00:32, now 00:12, progress ≈
+10h31m/10h51m ≈ 0.969) against the shipped test's own assertion bounds, and
+confirmed the test performs a real `render()` with a DOM assertion that the
+marker element exists, not just a pure-function return-value check.
+
+- 8 commits, one per AC (`e2e6040`..`b975fce`), working tree clean, no push.
+- ruff PASS; backend pytest 45 passed; frontend test 47 passed, build PASS;
+  StatusGauge/moon-phase rendering/atmosphere styling all confirmed
+  untouched.
+
+### Lesson
+
+When a fix keeps failing against the same restriction, the restriction
+itself is usually the bug — not the third attempt at a workaround. The
+correct move once a coding agent reports "this task card is internally
+impossible" is to re-examine the constraint that made it impossible, not to
+rephrase the same constraint a second time. Attempt 2's failure report was
+the single most useful artifact in this whole thread: it named both blocking
+facts precisely enough that attempt 3's task card could specify a complete
+algorithm on the first try instead of guessing again.
+
+### Status
+
+This closes the moon cross-midnight bug. Two items remain open before P2-2
+fully wraps: (1) dev preview redeploy for final user confirmation, (2) the
+still-unresolved height difference between the dome-arc cards (sun/moon) and
+the flat-slider cards (UV/AQI), deliberately deferred pending a direct
+design conversation with the user. After that: P2-3 TDX tourism.
+
+## 2026-07-26: Dev preview tunnel rotated; P2-2 status recap
+
+### Summary
+
+While redeploying the dev preview to verify task-20260725-twp-p2-moon-arc-progress-rewrite,
+management found the existing Cloudflare quick tunnel (`twp-tunnel.service`)
+had restarted independently (new process, PID 2172, started 2026-07-26
+21:13:18 CST) and, as Cloudflare quick tunnels always do on restart, was
+issued a brand-new random hostname. The old preview URL
+(`cooper-albany-groundwater-characteristics.trycloudflare.com`) no longer
+resolves at all (DNS lookup failure, not an app-level error). The current
+URL, confirmed reachable (HTTP 200):
+
+`https://structure-refuse-consolidated-jay.trycloudflare.com`
+
+Backend/frontend dev servers were restarted clean (`setsid`-detached,
+verified no stale PIDs) serving current `phase2-dev` HEAD; live API smoke
+confirmed `moon.source_date` is present in the forecast payload.
+
+### P2-2 status recap
+
+All shipped and approved on `phase2-dev` (local only, never pushed,
+`main`/Azure demo remain the frozen Phase 1 baseline):
+
+- MOENV AQI (current + 3-day zone forecast), CWA weather warnings, moon
+  astronomy — task-20260715-twp-p2-suitability + fix1
+- Celestial arc redesign: gradient meter, atmosphere sky-wash card
+  backgrounds, horizon silhouettes, marker glow — across
+  celestial-arc / celestial-redesign / status-cards-and-symmetry /
+  moon-marker-merge / atmosphere-cards
+- Moon cross-midnight marker fix (source_date + absolute-instant
+  getArcProgress rewrite) — moon-arc-progress-rewrite, approved after two
+  prior attempts correctly failed rather than shipping a broken fix
+- UV/AQI severity slider gauges, shared 5-tier color ramp
+
+### Open items
+
+1. Dome-arc (sun/moon) vs flat-slider (UV/AQI) card height mismatch —
+   deliberately deferred pending a direct design conversation with the user,
+   not yet scheduled.
+2. P2-3 TDX tourism (scenic spots/restaurants/activities) — next feature in
+   the Phase 2 queue; OAuth2 credentials already provisioned in the Ubuntu
+   backend/.env, no new registration needed.
+
+## 2026-07-27: UV source semantics audited; official behavior confirmed
+
+### Summary
+
+User noticed that every queried township still displayed a non-zero UV value
+after midnight. Management audited the live API responses and the backend
+adapter to confirm what the selected CWA dataset actually represents.
+
+### Confirmed source and behavior
+
+- The current backend reads CWA dataset `O-A0005-001` and maps each township
+  to the geographically nearest UV station.
+- CWA defines `O-A0005-001` as the station's **daily maximum UV index**,
+  published around 14:00 and updated once per day. The approximate 14:00 time
+  is the publication time, not a single fixed UV measurement time.
+- The dataset exposes an observation date (`Date`) but no occurrence timestamp
+  for the daily maximum, so the exact time of the peak cannot be inferred from
+  this API.
+- Live checks shortly after midnight on 2026-07-27 returned values dated
+  2026-07-26: Taipei/Xinyi 10 from Taipei station, Nantou/Puli 8 from Sun Moon
+  Lake station, Kaohsiung/Lingya 9 from Kaohsiung station, and Hualien City 12
+  from Hualien station.
+- The values were real CWA-backed station data, not frontend mock data. Every
+  township receives a UV card because the adapter resolves the nearest
+  available UV station; nearby townships can therefore share a station/value.
+- A non-zero value after midnight is therefore expected: until the next daily
+  publication, the API continues to expose the previous observation date's
+  daily maximum.
+
+Official dataset reference:
+`https://opendata.cwa.gov.tw/dataset/all/O-A0005-001`
+
+### Management decision
+
+- Treat the returned value as the official daily UV risk indicator supplied by
+  `O-A0005-001`, not as a data defect.
+- Keep the current UV implementation and display behavior unchanged; no coding
+  task, acceptance task, or correction backlog is required.
+- `O-A0003-001` remains only a possible future product alternative if the
+  desired requirement changes to intraday/instantaneous UV observations; it is
+  not needed to correct the present feature.
+
+### Repository state at decision time
+
+- Favorite-town shortcuts were already approved and fast-forwarded into
+  `phase2-dev` at `d2c8042` on both Ubuntu and the Mac SSD mirror.
+- This entry is documentation-only and intentionally does not alter frontend,
+  backend, deployment, or tunnel behavior.

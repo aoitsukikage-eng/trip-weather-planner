@@ -34,6 +34,24 @@ describe("getForecast", () => {
     expect(result.forecast.target_date).toBe("2026-07-05");
   });
 
+  test("returns deterministic mock data for all four fact cards", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-05T10:00:00+08:00"));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+
+    const first = await getForecast(TOWN, "2026-07-05");
+    const second = await getForecast(TOWN, "2026-07-05");
+
+    expect(first.forecast.sunrise_sunset).toEqual(second.forecast.sunrise_sunset);
+    expect(first.forecast.uv).toEqual(second.forecast.uv);
+    expect(first.forecast.aqi).toEqual(second.forecast.aqi);
+    expect(first.forecast.moon).toEqual(second.forecast.moon);
+    expect(first.forecast.sunrise_sunset?.target_date).toBe("2026-07-05");
+    expect(first.forecast.uv?.value).not.toBeNull();
+    expect(first.forecast.aqi?.value).not.toBeNull();
+    expect(first.forecast.moon?.phase).toBeTruthy();
+  });
+
   test("surfaces backend validation errors instead of masking them with mock data", async () => {
     vi.stubGlobal(
       "fetch",
