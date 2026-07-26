@@ -1374,3 +1374,83 @@ restored) for user review. Two open items remain before P2-2 fully closes:
 mockup, (2) the still-unresolved height difference between the dome-arc
 cards (sun/moon) and the flat-slider cards (UV/AQI), deliberately deferred
 out of this card's scope pending a direct design conversation with the user.
+
+## 2026-07-25: P2-2 fix8 approved — moon cross-midnight marker fixed after three attempts
+
+### Summary
+
+User spotted at 2026-07-24 00:12 that the moon fact-card showed no position
+marker even though a moon (risen 7/23 13:41, not yet set) was still up.
+Resolving this took three dispatched cards, worth recording as a case study
+in scope discipline and honest failure.
+
+### Attempt 1 — task-20260724-twp-p2-moon-crossmidnight-window (changes_required)
+
+Correctly added backend logic to `fetch_moon()` substituting the previous
+day's moonrise/moonset pair when 'now' falls before today's own moonrise but
+still inside yesterday's still-open window. Acceptance rejected it for a
+real gap: `MoonInfo.target_date` stayed unchanged even when the substitution
+happened, so the frontend had no way to know the returned rise/set pair
+belonged to yesterday. The substitution logic itself was correct and its
+commits were kept, not reverted.
+
+### Attempt 2 — task-20260724-twp-p2-moon-source-date (failed, zero changes)
+
+Management's fix: add `source_date` to `MoonInfo` (mirroring the existing
+`sunrise_sunset.source_date` pattern) and have the frontend pass it to
+`CelestialArc`. But the task card ALSO explicitly forbade modifying
+`getArcProgress()` — a self-contradiction, because that function gates on
+`targetDate !== localIsoDate(now)`, which rejects any date that isn't
+literally today regardless of what the caller passes. The coding agent
+correctly refused to fake a workaround and reported two precise blocking
+facts instead of guessing: the date-equality gate, and a second, deeper
+issue — even ignoring that gate, the function compares raw
+minutes-since-midnight-of-today against the rise time's own minutes, which
+cannot express "now is shortly before midnight relative to a rise that
+happened yesterday afternoon." This is the correct failure mode: stop and
+report rather than ship a broken half-fix. Management archived the card with
+the coding agent's own analysis linked as the root-cause record.
+
+### Attempt 3 — task-20260725-twp-p2-moon-arc-progress-rewrite (approved)
+
+Management explicitly lifted the restriction on `getArcProgress()` this
+time — there was no correct fix that avoided touching it — and specified the
+actual algorithm: replace the same-day string-equality gate and
+minutes-of-day arithmetic with absolute-instant comparison anchored on the
+caller-supplied date (rise/set both resolved to full date+time instants,
+set pushed +24h if it falls at or before rise, then `now` compared directly
+against that instant range). This single change correctly subsumes every
+prior case with no special-casing: a future 7-day-strip day naturally has
+both instants in the future and still returns no marker; a same-day sun/moon
+case is unaffected; the cross-midnight moon case now resolves correctly.
+
+Independent second-layer review (Claude Code VS) went further than the
+first acceptance pass: hand-verified the exact cross-midnight arithmetic
+(rise 7/23 13:41 +24h-adjusted set 7/24 00:32, now 00:12, progress ≈
+10h31m/10h51m ≈ 0.969) against the shipped test's own assertion bounds, and
+confirmed the test performs a real `render()` with a DOM assertion that the
+marker element exists, not just a pure-function return-value check.
+
+- 8 commits, one per AC (`e2e6040`..`b975fce`), working tree clean, no push.
+- ruff PASS; backend pytest 45 passed; frontend test 47 passed, build PASS;
+  StatusGauge/moon-phase rendering/atmosphere styling all confirmed
+  untouched.
+
+### Lesson
+
+When a fix keeps failing against the same restriction, the restriction
+itself is usually the bug — not the third attempt at a workaround. The
+correct move once a coding agent reports "this task card is internally
+impossible" is to re-examine the constraint that made it impossible, not to
+rephrase the same constraint a second time. Attempt 2's failure report was
+the single most useful artifact in this whole thread: it named both blocking
+facts precisely enough that attempt 3's task card could specify a complete
+algorithm on the first try instead of guessing again.
+
+### Status
+
+This closes the moon cross-midnight bug. Two items remain open before P2-2
+fully wraps: (1) dev preview redeploy for final user confirmation, (2) the
+still-unresolved height difference between the dome-arc cards (sun/moon) and
+the flat-slider cards (UV/AQI), deliberately deferred pending a direct
+design conversation with the user. After that: P2-3 TDX tourism.
