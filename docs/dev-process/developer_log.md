@@ -1454,3 +1454,47 @@ fully wraps: (1) dev preview redeploy for final user confirmation, (2) the
 still-unresolved height difference between the dome-arc cards (sun/moon) and
 the flat-slider cards (UV/AQI), deliberately deferred pending a direct
 design conversation with the user. After that: P2-3 TDX tourism.
+
+## 2026-07-26: Dev preview tunnel rotated; P2-2 status recap
+
+### Summary
+
+While redeploying the dev preview to verify task-20260725-twp-p2-moon-arc-progress-rewrite,
+management found the existing Cloudflare quick tunnel (`twp-tunnel.service`)
+had restarted independently (new process, PID 2172, started 2026-07-26
+21:13:18 CST) and, as Cloudflare quick tunnels always do on restart, was
+issued a brand-new random hostname. The old preview URL
+(`cooper-albany-groundwater-characteristics.trycloudflare.com`) no longer
+resolves at all (DNS lookup failure, not an app-level error). The current
+URL, confirmed reachable (HTTP 200):
+
+`https://structure-refuse-consolidated-jay.trycloudflare.com`
+
+Backend/frontend dev servers were restarted clean (`setsid`-detached,
+verified no stale PIDs) serving current `phase2-dev` HEAD; live API smoke
+confirmed `moon.source_date` is present in the forecast payload.
+
+### P2-2 status recap
+
+All shipped and approved on `phase2-dev` (local only, never pushed,
+`main`/Azure demo remain the frozen Phase 1 baseline):
+
+- MOENV AQI (current + 3-day zone forecast), CWA weather warnings, moon
+  astronomy — task-20260715-twp-p2-suitability + fix1
+- Celestial arc redesign: gradient meter, atmosphere sky-wash card
+  backgrounds, horizon silhouettes, marker glow — across
+  celestial-arc / celestial-redesign / status-cards-and-symmetry /
+  moon-marker-merge / atmosphere-cards
+- Moon cross-midnight marker fix (source_date + absolute-instant
+  getArcProgress rewrite) — moon-arc-progress-rewrite, approved after two
+  prior attempts correctly failed rather than shipping a broken fix
+- UV/AQI severity slider gauges, shared 5-tier color ramp
+
+### Open items
+
+1. Dome-arc (sun/moon) vs flat-slider (UV/AQI) card height mismatch —
+   deliberately deferred pending a direct design conversation with the user,
+   not yet scheduled.
+2. P2-3 TDX tourism (scenic spots/restaurants/activities) — next feature in
+   the Phase 2 queue; OAuth2 credentials already provisioned in the Ubuntu
+   backend/.env, no new registration needed.
