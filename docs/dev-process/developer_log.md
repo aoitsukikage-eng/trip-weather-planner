@@ -1499,21 +1499,24 @@ All shipped and approved on `phase2-dev` (local only, never pushed,
    the Phase 2 queue; OAuth2 credentials already provisioned in the Ubuntu
    backend/.env, no new registration needed.
 
-## 2026-07-27: UV source semantics audited; correction deferred
+## 2026-07-27: UV source semantics audited; official behavior confirmed
 
 ### Summary
 
 User noticed that every queried township still displayed a non-zero UV value
 after midnight. Management audited the live API responses and the backend
-adapter instead of treating the card as a current nighttime observation.
+adapter to confirm what the selected CWA dataset actually represents.
 
 ### Confirmed source and behavior
 
 - The current backend reads CWA dataset `O-A0005-001` and maps each township
   to the geographically nearest UV station.
 - CWA defines `O-A0005-001` as the station's **daily maximum UV index**,
-  published around 14:00 and updated once per day; it is not an instantaneous
-  nighttime UV observation.
+  published around 14:00 and updated once per day. The approximate 14:00 time
+  is the publication time, not a single fixed UV measurement time.
+- The dataset exposes an observation date (`Date`) but no occurrence timestamp
+  for the daily maximum, so the exact time of the peak cannot be inferred from
+  this API.
 - Live checks shortly after midnight on 2026-07-27 returned values dated
   2026-07-26: Taipei/Xinyi 10 from Taipei station, Nantou/Puli 8 from Sun Moon
   Lake station, Kaohsiung/Lingya 9 from Kaohsiung station, and Hualien City 12
@@ -1521,23 +1524,22 @@ adapter instead of treating the card as a current nighttime observation.
 - The values were real CWA-backed station data, not frontend mock data. Every
   township receives a UV card because the adapter resolves the nearest
   available UV station; nearby townships can therefore share a station/value.
-- The product currently labels this daily-maximum value as `目前紫外線` and
-  does not expose `observed_at` in the card, so the presentation overstates
-  freshness and is semantically incorrect after the observation date rolls
-  over.
+- A non-zero value after midnight is therefore expected: until the next daily
+  publication, the API continues to expose the previous observation date's
+  daily maximum.
 
 Official dataset reference:
 `https://opendata.cwa.gov.tw/dataset/all/O-A0005-001`
 
 ### Management decision
 
-- Do not change UV code in the current round.
-- Record the issue as a backlog item only; no coding or acceptance card is
-  opened from this audit.
-- When resumed, evaluate CWA `O-A0003-001` (10-minute station observations)
-  for current UV, retain `O-A0005-001` only with an honest daily-maximum label,
-  and display station plus observation time. Nighttime/stale-data behavior must
-  be specified explicitly before dispatch.
+- Treat the returned value as the official daily UV risk indicator supplied by
+  `O-A0005-001`, not as a data defect.
+- Keep the current UV implementation and display behavior unchanged; no coding
+  task, acceptance task, or correction backlog is required.
+- `O-A0003-001` remains only a possible future product alternative if the
+  desired requirement changes to intraday/instantaneous UV observations; it is
+  not needed to correct the present feature.
 
 ### Repository state at decision time
 
