@@ -28,7 +28,7 @@
 ## 架構一覽
 
 ```
-前端 (React/Vite)  ──►  FastAPI 後端  ──►  CWA（天氣 / UV / 月象 / 警特報）
+前端 (React/Vite)  ──►  FastAPI 後端  ──►  CWA（天氣 / UV / 月相 / 警特報）
  Azure Storage 靜態網站   Azure Container Apps   ──►  MOENV（AQI 即時 + 3 日預報）
                                │
                                ├─ Azure Container Registry (image)
@@ -119,7 +119,7 @@ cd frontend && npm run build
 ## 憑證（免費，實作到真資料時才需要）
 
 - **CWA 授權碼**：https://opendata.cwa.gov.tw → 註冊氣象會員 → 取得授權碼 → 填入 `backend/.env` 的 `CWA_API_KEY`。
-- **MOENV 授權碼**：https://data.moenv.gov.tw → 註冊會員 → 取得授權碼 → 填入 `backend/.env` 的 `MOENV_API_KEY`（選填；未設定時 AQI 欄位顯示為空）。
+- **MOENV 授權碼**：https://data.moenv.gov.tw → 註冊會員 → 取得授權碼 → 填入 `backend/.env` 的 `MOENV_API_KEY`（選填；未設定時即時 AQI 使用示範值降級，3 日 AQI 預報留空）。
 
 ## 目錄
 
