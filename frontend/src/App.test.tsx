@@ -263,6 +263,7 @@ describe("App", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   test("shows a visible error when the backend returns a validation error", async () => {
@@ -443,5 +444,272 @@ describe("App", () => {
     await screen.findByText("花蓮市天氣偏濕，注意短時降雨。");
     expect(screen.getByTestId("chart-place").textContent).toBe("花蓮縣 花蓮市");
     expect(document.querySelector(".hourly-chart svg")?.innerHTML).not.toBe(initialChart);
+  });
+});
+
+// ── AC1: Initialization priority ─────────────────────────────────────────────
+
+describe("App — initialization priority (AC1)", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  function forecastFetch(first: unknown, other = first) {
+    let count = 0;
+    return vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      count += 1;
+      return Promise.resolve(jsonResponse(count === 1 ? first : other));
+    });
+  }
+
+  function firstForecastUrl(fetchMock: ReturnType<typeof vi.fn>): string {
+    const calls = (fetchMock.mock.calls as unknown[][]).filter((args) =>
+      String(args[0]).includes("/api/forecast"),
+    );
+    return String(calls[0]?.[0] ?? "");
+  }
+
+  test("defaultTown takes highest priority over lastTown and taipei-xinyi", async () => {
+    localStorage.setItem("trip-weather-planner:default-town:v1", "hualien-hualien");
+    localStorage.setItem("trip-weather-planner:last-town:v1", "taipei-xinyi");
+    const fetchMock = forecastFetch(otherTownForecastBody);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=hualien-hualien");
+    });
+  });
+
+  test("lastTown used when no defaultTown is stored", async () => {
+    localStorage.setItem("trip-weather-planner:last-town:v1", "hualien-hualien");
+    const fetchMock = forecastFetch(otherTownForecastBody);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=hualien-hualien");
+    });
+  });
+
+  test("taipei-xinyi used when no stored prefs and it exists in towns list", async () => {
+    // Put hualien-hualien first so towns[0] !== taipei-xinyi
+    const reorderedTowns = {
+      ...townsBody,
+      data: [townsBody.data[1], townsBody.data[0]],
+    };
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(reorderedTowns));
+      return Promise.resolve(jsonResponse(liveForecastBody));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=taipei-xinyi");
+    });
+  });
+
+  test("falls back to towns[0] when no prefs and no taipei-xinyi in list", async () => {
+    const noXinyiTowns = { ...townsBody, data: [townsBody.data[1]] };
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(noXinyiTowns));
+      return Promise.resolve(jsonResponse(otherTownForecastBody));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=hualien-hualien");
+    });
+  });
+
+  test("ignores invalid defaultTown code and uses next fallback", async () => {
+    localStorage.setItem("trip-weather-planner:default-town:v1", "defunct-code");
+    const fetchMock = forecastFetch(liveForecastBody);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=taipei-xinyi");
+    });
+  });
+
+  test("ignores invalid lastTown code and uses next fallback", async () => {
+    localStorage.setItem("trip-weather-planner:last-town:v1", "defunct-code");
+    const fetchMock = forecastFetch(liveForecastBody);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=taipei-xinyi");
+    });
+  });
+
+  test("corrupt localStorage favorites does not crash the app", async () => {
+    localStorage.setItem("trip-weather-planner:favorites:v1", "{{invalid}}");
+    const fetchMock = forecastFetch(liveForecastBody);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(firstForecastUrl(fetchMock)).toContain("town=taipei-xinyi");
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+// ── AC1: TripForm sync with FavoriteTowns ─────────────────────────────────────
+
+describe("App — TripForm and FavoriteTowns sync (AC1)", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  test("clicking a favorite chip syncs TripForm city and townCode selects", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "trip-weather-planner:favorites:v1",
+      JSON.stringify(["hualien-hualien"]),
+    );
+
+    let forecastCount = 0;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      forecastCount += 1;
+      return Promise.resolve(
+        jsonResponse(forecastCount === 1 ? liveForecastBody : otherTownForecastBody),
+      );
+    }));
+
+    render(<App />);
+    await screen.findByText("7/4 留意午後陣雨。");
+
+    await user.click(screen.getByRole("button", { name: /花蓮市/ }));
+
+    await waitFor(() => {
+      const citySelect = screen.getByLabelText("縣市") as HTMLSelectElement;
+      expect(citySelect.value).toBe("花蓮縣");
+      const townSelect = screen.getByLabelText("鄉鎮市區") as HTMLSelectElement;
+      expect(townSelect.value).toBe("hualien-hualien");
+    });
+  });
+});
+
+// ── AC4: Date preservation and lastTown write ─────────────────────────────────
+
+describe("App — date preservation and lastTown write (AC4)", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  test("form submit preserves the currently viewed date (not reset to today)", async () => {
+    const user = userEvent.setup();
+    let count = 0;
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      count += 1;
+      if (count === 1) return Promise.resolve(jsonResponse(liveForecastBody));
+      if (count === 2) return Promise.resolve(jsonResponse(nextDayForecastBody));
+      return Promise.resolve(jsonResponse(otherTownForecastBody));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByText("7/4 留意午後陣雨。");
+
+    // Navigate to 7/5
+    await user.click(screen.getByRole("button", { name: /7\/5/ }));
+    await screen.findByText("7/5 白天炎熱，記得補水。");
+
+    // Submit form for different town — should preserve date 2026-07-05
+    await user.selectOptions(screen.getByLabelText("縣市"), "花蓮縣");
+    await user.selectOptions(screen.getByLabelText("鄉鎮市區"), "hualien-hualien");
+    await user.click(screen.getByRole("button", { name: "查詢天氣" }));
+
+    const forecastUrls = fetchMock.mock.calls
+      .map((args: unknown[]) => String(args[0]))
+      .filter((u: string) => u.includes("/api/forecast"));
+    expect(forecastUrls[2]).toContain("date=2026-07-05");
+    expect(forecastUrls[2]).toContain("town=hualien-hualien");
+  });
+
+  test("favorite chip click preserves currently viewed date", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "trip-weather-planner:favorites:v1",
+      JSON.stringify(["hualien-hualien"]),
+    );
+    let count = 0;
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      count += 1;
+      if (count === 1) return Promise.resolve(jsonResponse(liveForecastBody));
+      if (count === 2) return Promise.resolve(jsonResponse(nextDayForecastBody));
+      return Promise.resolve(jsonResponse(otherTownForecastBody));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+    await screen.findByText("7/4 留意午後陣雨。");
+
+    // Navigate to 7/5
+    await user.click(screen.getByRole("button", { name: /7\/5/ }));
+    await screen.findByText("7/5 白天炎熱，記得補水。");
+
+    // Click favorite chip — should preserve date 2026-07-05
+    await user.click(screen.getByRole("button", { name: /花蓮市/ }));
+
+    const forecastUrls = fetchMock.mock.calls
+      .map((args: unknown[]) => String(args[0]))
+      .filter((u: string) => u.includes("/api/forecast"));
+    expect(forecastUrls[2]).toContain("date=2026-07-05");
+    expect(forecastUrls[2]).toContain("town=hualien-hualien");
+  });
+
+  test("writes lastTown to localStorage after a successful query", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      return Promise.resolve(jsonResponse(liveForecastBody));
+    }));
+
+    render(<App />);
+
+    await screen.findByText("7/4 留意午後陣雨。");
+    expect(localStorage.getItem("trip-weather-planner:last-town:v1")).toBe("taipei-xinyi");
+  });
+
+  test("does NOT write lastTown when the query fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      return Promise.resolve(jsonResponse(validationErrorBody, false, 400));
+    }));
+
+    render(<App />);
+
+    await screen.findByRole("alert");
+    expect(localStorage.getItem("trip-weather-planner:last-town:v1")).toBeNull();
   });
 });
