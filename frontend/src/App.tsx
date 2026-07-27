@@ -3,7 +3,7 @@ import TripForm from "./components/TripForm";
 import ForecastView from "./components/ForecastView";
 import FavoriteTowns from "./components/FavoriteTowns";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
-import { formatLocalDate, startOfLocalDay } from "./lib/localDate";
+import { millisecondsUntilNextTaipeiDay, taipeiIsoDate } from "./lib/localDate";
 import {
   getFavorites,
   getDefaultTown,
@@ -18,7 +18,7 @@ import {
 } from "./lib/favoriteTowns";
 
 function todayIsoDate(): string {
-  return formatLocalDate(startOfLocalDay());
+  return taipeiIsoDate();
 }
 
 export default function App() {
@@ -33,6 +33,10 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>(() => getFavorites());
   const [defaultTownCode, setDefaultTownCode] = useState<string | null>(() => getDefaultTown());
   const activeRequestRef = useRef(0);
+  const latestSuccessfulTownRef = useRef<Town | null>(null);
+  const todayAnchorRef = useRef(todayIsoDate());
+  const autoRefreshDateRef = useRef<string | null>(null);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     getTowns().then(setTowns);
@@ -66,6 +70,7 @@ export default function App() {
     setSelectedCity(town.city);
     setSelectedTownCode(town.code);
     setLoading(true);
+    inFlightRef.current = true;
     setError(null);
     setDaySelectionError(null);
     try {
@@ -74,6 +79,7 @@ export default function App() {
         return;
       }
       setResult(nextResult);
+      latestSuccessfulTownRef.current = town;
       setLastTown(town.code);
       if (options?.updateChart ?? true) {
         setChartResult(nextResult);
@@ -96,13 +102,13 @@ export default function App() {
     } finally {
       if (requestId === activeRequestRef.current) {
         setLoading(false);
+        inFlightRef.current = false;
       }
     }
   };
 
   const handleSubmit = async (town: Town) => {
-    const currentDate = result?.forecast.target_date ?? todayIsoDate();
-    await runForecastQuery(town, currentDate, { updateChart: true });
+    await runForecastQuery(town, todayIsoDate(), { updateChart: true });
   };
 
   const handleSelectDate = async (date: string) => {
@@ -116,9 +122,51 @@ export default function App() {
   };
 
   const handleFavoriteSelect = async (town: Town) => {
-    const currentDate = result?.forecast.target_date ?? todayIsoDate();
-    await runForecastQuery(town, currentDate, { updateChart: true });
+    await runForecastQuery(town, todayIsoDate(), { updateChart: true });
   };
+
+  useEffect(() => {
+    let rolloverTimer: ReturnType<typeof window.setTimeout> | undefined;
+
+    const checkForDateRollover = () => {
+      const today = todayIsoDate();
+      if (today === todayAnchorRef.current || inFlightRef.current) {
+        return;
+      }
+
+      const town = latestSuccessfulTownRef.current;
+      if (!town || autoRefreshDateRef.current === today) {
+        return;
+      }
+
+      todayAnchorRef.current = today;
+      autoRefreshDateRef.current = today;
+      void runForecastQuery(town, today, { updateChart: true });
+    };
+
+    const scheduleRolloverCheck = () => {
+      rolloverTimer = window.setTimeout(() => {
+        checkForDateRollover();
+        scheduleRolloverCheck();
+      }, millisecondsUntilNextTaipeiDay());
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkForDateRollover();
+      }
+    };
+
+    checkForDateRollover();
+    scheduleRolloverCheck();
+    window.addEventListener("focus", checkForDateRollover);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      if (rolloverTimer !== undefined) window.clearTimeout(rolloverTimer);
+      window.removeEventListener("focus", checkForDateRollover);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [result]);
 
   const handleFavoriteAdd = (code: string) => {
     setFavorites(libAddFavorite(code));

@@ -1,7 +1,8 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import App from "./App";
+import { taipeiIsoDate } from "./lib/localDate";
 
 function jsonResponse(body: unknown, ok = true, status = ok ? 200 : 400): Response {
   return {
@@ -612,16 +613,17 @@ describe("App — TripForm and FavoriteTowns sync (AC1)", () => {
   });
 });
 
-// ── AC4: Date preservation and lastTown write ─────────────────────────────────
+// ── AC1: Date intent and lastTown write ───────────────────────────────────────
 
-describe("App — date preservation and lastTown write (AC4)", () => {
+describe("App — date intent and lastTown write (AC1)", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     localStorage.clear();
   });
 
-  test("form submit preserves the currently viewed date (not reset to today)", async () => {
+  test("form submit uses today's Asia/Taipei date instead of the viewed card", async () => {
     const user = userEvent.setup();
     let count = 0;
     const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
@@ -641,7 +643,7 @@ describe("App — date preservation and lastTown write (AC4)", () => {
     await user.click(screen.getByRole("button", { name: /7\/5/ }));
     await screen.findByText("7/5 白天炎熱，記得補水。");
 
-    // Submit form for different town — should preserve date 2026-07-05
+    // Submit form for different town — should reset to the current requested day.
     await user.selectOptions(screen.getByLabelText("縣市"), "花蓮縣");
     await user.selectOptions(screen.getByLabelText("鄉鎮市區"), "hualien-hualien");
     await user.click(screen.getByRole("button", { name: "查詢天氣" }));
@@ -649,11 +651,11 @@ describe("App — date preservation and lastTown write (AC4)", () => {
     const forecastUrls = fetchMock.mock.calls
       .map((args: unknown[]) => String(args[0]))
       .filter((u: string) => u.includes("/api/forecast"));
-    expect(forecastUrls[2]).toContain("date=2026-07-05");
+    expect(forecastUrls[2]).toContain(`date=${taipeiIsoDate()}`);
     expect(forecastUrls[2]).toContain("town=hualien-hualien");
   });
 
-  test("favorite chip click preserves currently viewed date", async () => {
+  test("favorite chip click uses today's Asia/Taipei date instead of the viewed card", async () => {
     const user = userEvent.setup();
     localStorage.setItem(
       "trip-weather-planner:favorites:v1",
@@ -677,14 +679,50 @@ describe("App — date preservation and lastTown write (AC4)", () => {
     await user.click(screen.getByRole("button", { name: /7\/5/ }));
     await screen.findByText("7/5 白天炎熱，記得補水。");
 
-    // Click favorite chip — should preserve date 2026-07-05
+    // Click favorite chip — should reset to the current requested day.
     await user.click(screen.getByRole("button", { name: /花蓮市/ }));
 
     const forecastUrls = fetchMock.mock.calls
       .map((args: unknown[]) => String(args[0]))
       .filter((u: string) => u.includes("/api/forecast"));
-    expect(forecastUrls[2]).toContain("date=2026-07-05");
+    expect(forecastUrls[2]).toContain(`date=${taipeiIsoDate()}`);
     expect(forecastUrls[2]).toContain("town=hualien-hualien");
+  });
+
+  test("refreshes once after a Taipei date rollover when focus returns", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-04T15:59:00Z"));
+    let forecastCount = 0;
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      if (String(input).includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      forecastCount += 1;
+      return Promise.resolve(jsonResponse(liveForecastBody));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      render(<App />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(forecastCount).toBe(1);
+
+      vi.setSystemTime(new Date("2026-07-04T16:01:00Z"));
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+        document.dispatchEvent(new Event("visibilitychange"));
+        await Promise.resolve();
+      });
+
+      expect(forecastCount).toBe(2);
+      const forecastUrls = fetchMock.mock.calls
+        .map((args: unknown[]) => String(args[0]))
+        .filter((url: string) => url.includes("/api/forecast"));
+      expect(forecastUrls).toHaveLength(2);
+      expect(forecastUrls[1]).toContain("date=2026-07-05");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test("writes lastTown to localStorage after a successful query", async () => {

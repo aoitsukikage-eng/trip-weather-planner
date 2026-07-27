@@ -79,6 +79,20 @@ describe("getForecast", () => {
     });
   });
 
+  test("requests forecasts with browser caching disabled", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ success: true, data: { forecast: {}, ai_summary: {} }, error: null }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getForecast(TOWN, "2026-07-05");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/forecast?town=taipei-xinyi&date=2026-07-05"),
+      { cache: "no-store" },
+    );
+  });
+
   test("anchors frontend mock days at today and clamps out-of-window requests", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-05T10:00:00+08:00"));

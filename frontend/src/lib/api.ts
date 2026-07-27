@@ -218,6 +218,7 @@ export async function getForecast(town: Town, date: string): Promise<ForecastRes
   try {
     res = await fetch(
       `${API_BASE}/api/forecast?town=${encodeURIComponent(town.code)}&date=${date}`,
+      { cache: "no-store" },
     );
   } catch (error) {
     if (!_isNetworkFailure(error)) {

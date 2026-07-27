@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { buildDateOptions, formatLocalDate } from "./localDate";
+import {
+  buildDateOptions,
+  formatLocalDate,
+  millisecondsUntilNextTaipeiDay,
+  taipeiIsoDate,
+} from "./localDate";
 
 describe("localDate helpers", () => {
   test("formatLocalDate keeps the local calendar day before 08:00 in UTC+8", () => {
@@ -16,5 +21,14 @@ describe("localDate helpers", () => {
       "2026-07-05",
       "2026-07-06",
     ]);
+  });
+
+  test("anchors today to Asia/Taipei instead of the browser timezone", () => {
+    expect(taipeiIsoDate(new Date("2026-07-04T15:59:00Z"))).toBe("2026-07-04");
+    expect(taipeiIsoDate(new Date("2026-07-04T16:00:00Z"))).toBe("2026-07-05");
+  });
+
+  test("calculates the next Asia/Taipei midnight boundary", () => {
+    expect(millisecondsUntilNextTaipeiDay(new Date("2026-07-04T15:59:00Z"))).toBe(60_000);
   });
 });
