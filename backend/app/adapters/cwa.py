@@ -31,7 +31,8 @@ UV_CACHE_KEY = "cwa:uv"
 STATION_CACHE_KEY = "cwa:stations"
 TOWNS_CACHE_TTL = 86400
 SUNRISE_CACHE_TTL = 31536000
-AUXILIARY_CACHE_TTL = 3600
+UV_CACHE_TTL = 3600
+WARNINGS_CACHE_TTL = 600
 
 _NEAR_DATASETS_BY_CITY: dict[str, str] = {
     "宜蘭縣": "F-D0047-001",
@@ -166,6 +167,7 @@ class CWAAdapter:
         weekly_payload = await self._request_json(
             weekly.transport_dataset,
             params={"LocationName": town.name},
+            ttl=self._settings.cache_ttl_seconds,
         )
         daily_slices = self._parse_forecast_payload(weekly_payload, town)
         if not daily_slices:
@@ -177,6 +179,7 @@ class CWAAdapter:
         near_payload = await self._request_json(
             near_term.transport_dataset,
             params={"LocationName": town.name},
+            ttl=self._settings.cache_ttl_seconds,
         )
         hourly_slices = self._parse_forecast_payload(near_payload, town)
         if not hourly_slices:
@@ -257,7 +260,7 @@ class CWAAdapter:
         uv_payload = await self._request_json(
             DATASET_UV,
             cache_key=UV_CACHE_KEY,
-            ttl=AUXILIARY_CACHE_TTL,
+            ttl=UV_CACHE_TTL,
         )
         station_payload = await self._request_json(
             DATASET_STATIONS,
@@ -276,7 +279,7 @@ class CWAAdapter:
         if self._settings.use_mock:
             return []
         payload = await self._request_json(
-            DATASET_WARNINGS, params={"CountyName": town.city}, ttl=AUXILIARY_CACHE_TTL
+            DATASET_WARNINGS, params={"CountyName": town.city}, ttl=WARNINGS_CACHE_TTL
         )
         return self._parse_warning_payload(payload, town.city)
 

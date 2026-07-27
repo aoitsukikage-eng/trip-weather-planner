@@ -10,9 +10,15 @@ import pytest
 
 from app.adapters.cwa import (
     DATASET_NEAR,
+    DATASET_STATIONS,
     DATASET_SUNRISE,
+    DATASET_UV,
+    DATASET_WARNINGS,
     DATASET_WEEK,
     SUNRISE_CACHE_TTL,
+    TOWNS_CACHE_TTL,
+    UV_CACHE_TTL,
+    WARNINGS_CACHE_TTL,
     CWAAdapter,
     _moon_phase,
     resolve_live_dataset,
@@ -541,6 +547,40 @@ def test_parse_live_town_payload_includes_non_curated_town():
     gongliao = next(town for town in towns if town.code == "cwa-65000270")
     assert gongliao.city == "新北市"
     assert gongliao.name == "貢寮區"
+
+
+def test_dynamic_cwa_cache_ttls_are_separate_from_static_and_astronomy_rules(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key", cache_ttl_seconds=600))
+    calls: list[tuple[str, int | None]] = []
+
+    async def fake_request_json(dataset: str, **kwargs):  # noqa: ANN001
+        calls.append((dataset, kwargs.get("ttl")))
+        if dataset == DATASET_UV:
+            return _uv_payload()
+        if dataset == DATASET_STATIONS:
+            return _station_payload()
+        if dataset == DATASET_WARNINGS:
+            return {"records": {"location": []}}
+        return _week_payload()
+
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+
+    asyncio.run(adapter.fetch_forecast_slices(town))
+    asyncio.run(adapter.fetch_uv_info(town, date(2026, 7, 4)))
+    asyncio.run(adapter.fetch_warnings(town))
+
+    assert [ttl for _, ttl in calls[:2]] == [600, 600]
+    assert (DATASET_UV, UV_CACHE_TTL) in calls
+    assert (DATASET_STATIONS, TOWNS_CACHE_TTL) in calls
+    assert (DATASET_WARNINGS, WARNINGS_CACHE_TTL) in calls
+    assert UV_CACHE_TTL == 3600
+    assert WARNINGS_CACHE_TTL == 600
+    assert TOWNS_CACHE_TTL == 86400
+    assert SUNRISE_CACHE_TTL == 31536000
 
 
 def test_parse_sunrise_payload_prefers_exact_target_date():

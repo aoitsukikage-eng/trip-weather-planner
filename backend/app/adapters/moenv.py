@@ -127,7 +127,7 @@ class MOENVAdapter:
             raise UpstreamError("MOENV request failed.", error_code="moenv_upstream_error") from exc
         rows = _rows_from_payload(payload)
         if self._cache:
-            self._cache.set(key, rows, ttl=1800)
+            self._cache.set(key, rows, ttl=self._settings.cache_ttl_seconds)
         return rows
 
 

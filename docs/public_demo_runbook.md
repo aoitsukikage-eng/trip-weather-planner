@@ -97,7 +97,7 @@ az containerapp update \
   --resource-group rg-twp-demo \
   --image twpacr4316.azurecr.io/twp-backend:latest \
   --set-env-vars \
-    CACHE_TTL_SECONDS=1800 \
+    CACHE_TTL_SECONDS=600 \
     CORS_ORIGINS="https://twpfe5ce0.z23.web.core.windows.net" \
     UPSTREAM_TIMEOUT_SECONDS=10 \
     CWA_API_KEY=secretref:cwa-api-key
@@ -119,7 +119,7 @@ az containerapp create \
   --max-replicas 1 \
   --secrets cwa-api-key="$CWA_API_KEY" \
   --env-vars \
-    CACHE_TTL_SECONDS=1800 \
+    CACHE_TTL_SECONDS=600 \
     CORS_ORIGINS="https://twpfe5ce0.z23.web.core.windows.net" \
     UPSTREAM_TIMEOUT_SECONDS=10 \
     CWA_API_KEY=secretref:cwa-api-key

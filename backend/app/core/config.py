@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
 
     # Behaviour tuning.
-    cache_ttl_seconds: int = 1800
+    cache_ttl_seconds: int = 600
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # Upstream host (canonical is cwa.gov.tw; the legacy cwb.gov.tw is retired).

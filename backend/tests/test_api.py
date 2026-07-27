@@ -165,6 +165,29 @@ def test_forecast_cache_hit_on_second_call():
     assert second["meta"]["cached"] is True
 
 
+def test_forecast_cache_isolated_by_town_and_requested_date_and_not_http_cacheable():
+    today = _future(0)
+    tomorrow = _future(1)
+    first = client.get(f"/api/forecast?town=taipei-xinyi&date={today}")
+    same = client.get(f"/api/forecast?town=taipei-xinyi&date={today}")
+    other_town = client.get(f"/api/forecast?town=hualien-hualien&date={today}")
+    other_date = client.get(f"/api/forecast?town=taipei-xinyi&date={tomorrow}")
+
+    assert first.headers["cache-control"] == "no-store"
+    assert same.headers["cache-control"] == "no-store"
+    assert first.json()["meta"]["cached"] is False
+    assert same.json()["meta"]["cached"] is True
+    assert other_town.json()["meta"]["cached"] is False
+    assert other_date.json()["meta"]["cached"] is False
+
+
+def test_forecast_error_response_is_not_http_cacheable():
+    response = client.get(f"/api/forecast?town=nope&date={_future(0)}")
+
+    assert response.status_code == 404
+    assert response.headers["cache-control"] == "no-store"
+
+
 def test_unknown_town_and_bad_date():
     assert client.get(f"/api/forecast?town=nope&date={_future(2)}").status_code == 404
     assert client.get("/api/forecast?town=taipei-xinyi&date=2026-13-40").status_code == 400

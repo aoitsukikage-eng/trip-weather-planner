@@ -132,7 +132,7 @@ jobs:
             --resource-group "$RESOURCE_GROUP_NAME" \
             --image "$login_server/$BACKEND_IMAGE_NAME:${{ github.sha }}" \
             --set-env-vars \
-              CACHE_TTL_SECONDS=1800 \
+              CACHE_TTL_SECONDS=600 \
               CORS_ORIGINS="$FRONTEND_ORIGIN" \
               UPSTREAM_TIMEOUT_SECONDS=10 \
               CWA_API_KEY=secretref:cwa-api-key

@@ -42,7 +42,7 @@ variable "cwa_api_key" {
 variable "cache_ttl_seconds" {
   type        = number
   description = "Backend cache TTL in seconds."
-  default     = 1800
+  default     = 600
 }
 
 variable "upstream_timeout_seconds" {
