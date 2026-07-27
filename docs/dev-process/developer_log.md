@@ -1547,3 +1547,30 @@ Official dataset reference:
   `phase2-dev` at `d2c8042` on both Ubuntu and the Mac SSD mirror.
 - This entry is documentation-only and intentionally does not alter frontend,
   backend, deployment, or tunnel behavior.
+
+## 2026-07-27: Query-date intent and dynamic cache policy corrected
+
+### Root cause
+
+The favorite-town implementation had changed the primary form and favorite
+shortcut queries to reuse `result.forecast.target_date`. This was a view-state
+regression: the displayed target can be a user-selected forecast card or a
+backend `date_adjusted` fallback when today's upstream data is unavailable.
+It was not caused by localStorage persisting a forecast result. Local storage
+continues to retain only favorite ordering, default town, and last successful
+town code.
+
+### Final rules
+
+- Initial load, the main query action, and favorite shortcuts request the
+  current Asia/Taipei calendar date. Only a directly selected seven-day card
+  supplies an explicit non-today date.
+- An open page detects a Taipei midnight rollover on its timer, window focus,
+  or document visibility return and refreshes the last successful town once;
+  concurrent duplicate refreshes are suppressed.
+- `/api/forecast` is fetched with browser caching disabled and sends
+  `Cache-Control: no-store` for both success and error responses. The backend
+  remains the sole owner of its keyed TTL cache.
+- Dynamic forecast, MOENV, and warning data use a 600-second ceiling. The
+  official daily UV cache remains 3600 seconds, while town/station metadata
+  remains 86400 seconds and date-keyed sunrise/moon data remains one year.
