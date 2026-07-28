@@ -1574,3 +1574,19 @@ town code.
 - Dynamic forecast, MOENV, and warning data use a 600-second ceiling. The
   official daily UV cache remains 3600 seconds, while town/station metadata
   remains 86400 seconds and date-keyed sunrise/moon data remains one year.
+
+### Verification and integration status
+
+- Codex VS approved the implementation on 2026-07-28. Backend `ruff` passed,
+  backend `pytest` reported 48 passed, frontend `npm test` reported 110
+  passed, and the frontend build passed. The diff, range, protected-files, and
+  worktree checks also passed. See
+  `/home/esgcenter0/agent-bridge/reports/acceptance/task-20260727-twp-query-date-cache-policy-codexvs-verification.md`.
+- The first `ruff` attempt was blocked by the sandbox error
+  `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`; the same
+  read-only lint command was rerun with elevated permission and passed. This
+  was a non-blocking environment note.
+- At this devlog update, the implementation task head is `59b5057`. It has not
+  been merged, pushed, or deployed. `phase3-tourism` remains at `faa6baa`, and
+  the Ubuntu real `.env` and runtime have not been switched to the 600-second
+  TTL.
