@@ -1590,3 +1590,10 @@ town code.
   been merged, pushed, or deployed. `phase3-tourism` remains at `faa6baa`, and
   the Ubuntu real `.env` and runtime have not been switched to the 600-second
   TTL.
+
+### 2026-07-30 Portfolio mini feature implementation
+
+- Implemented independent `frontend-mini/`: typed API client, 8-second abort/no-store, Asia/Taipei date/rollover, deterministic Demo Data, responsive accessible UI, seven-day strip, AQI/warning signal, advice, and legacy Full Planner CTA.
+- Commits: `1dd87cd` scaffold/domain, `37b18bd` UI/state, `d3cd9b7` mini tests/build readiness. Final docs/evidence commit records screenshots and status.
+- Verified locally: mini 7 tests/build; backend ruff and 48 tests; full frontend 110 tests/build. Local ignored artifact: `frontend-mini/dist/`. Screenshots: desktop 1440x1000 and mobile 390x844, rendered from `/labs/trip-weather/?demo=1` with Demo Data label.
+- This feature is not merged, pushed, deployed, or Portfolio-integrated. No backend CORS/runtime/provider configuration changed; exact Portfolio origin remains required before production.

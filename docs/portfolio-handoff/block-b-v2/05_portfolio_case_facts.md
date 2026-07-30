@@ -228,6 +228,10 @@ Evidence：`ed64802`, adapters/router/schema; E-BEH-02～04。
 
 ## 11. Portfolio integration handoff
 
+## 12. Portfolio mini implementation update (feature branch only)
+
+The independent `frontend-mini/` source is implemented and locally verified on `feature/portfolio-mini`, with a `/labs/trip-weather/` build artifact and deterministic Demo Data screenshots. It is not merged, pushed, integrated into the Portfolio repository, or deployed. Backend CORS/runtime were not changed; production still requires the exact Portfolio origin and target-schema verification.
+
 Portfolio對話框可安全做：
 
 - 使用上面 short card、engineering highlight、data-contract highlight；

@@ -1,6 +1,8 @@
 # Portfolio Trip Weather Mini：Future Delivery Contract
 
-> **Status: PROPOSED / NOT IMPLEMENTED**
+> **Status: IMPLEMENTED AND LOCALLY VERIFIED ON `feature/portfolio-mini`; NOT MERGED, PUSHED, INTEGRATED, OR DEPLOYED**
+
+> Implementation update: `frontend-mini/` now provides the contracted Vite base, typed API client, Asia/Taipei rollover, explicit Demo Data, compact accessible UI, tests, local artifact, and deterministic screenshots. Portfolio integration, exact-origin CORS/runtime changes, merge/push, and deployment remain out of scope and incomplete.
 >
 > 本檔只定義 future mini。`frontend-mini/`、build artifact、Portfolio integration、CORS change、deployment與 screenshot目前都不存在；本 evidence task沒有建立任何一項。
 
