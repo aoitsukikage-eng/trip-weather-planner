@@ -1,0 +1,2 @@
+import { describe, expect, it } from "vitest"; import { taipeiToday, untilNextTaipeiMidnight, nextDays } from "./date";
+describe("Taipei date",()=>{it("uses Taipei rather than browser UTC",()=>expect(taipeiToday(new Date("2026-07-30T16:30:00Z"))).toBe("2026-07-31"));it("calculates a positive midnight delay",()=>expect(untilNextTaipeiMidnight(new Date("2026-07-30T15:59:59Z"))).toBeGreaterThan(0));it("renders seven consecutive days",()=>expect(nextDays("2026-07-30")).toHaveLength(7))});
