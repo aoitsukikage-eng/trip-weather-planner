@@ -1597,3 +1597,11 @@ town code.
 - Commits: `1dd87cd` scaffold/domain, `37b18bd` UI/state, `d3cd9b7` mini tests/build readiness. Final docs/evidence commit records screenshots and status.
 - Verified locally: mini 7 tests/build; backend ruff and 48 tests; full frontend 110 tests/build. Local ignored artifact: `frontend-mini/dist/`. Screenshots: desktop 1440x1000 and mobile 390x844, rendered from `/labs/trip-weather/?demo=1` with Demo Data label.
 - This feature is not merged, pushed, deployed, or Portfolio-integrated. No backend CORS/runtime/provider configuration changed; exact Portfolio origin remains required before production.
+
+### 2026-07-31 Portfolio mini test-coverage acceptance update
+
+- Final independent acceptance is `approved`. The test-coverage commit is `0d1bbee test(mini): cover request and UI state regressions`; relative to `7bbc544` it is exactly one commit and its diff contains only `frontend-mini/src/App.test.tsx` and `frontend-mini/src/lib/api.test.ts`.
+- The prior 7-test result above remains the 2026-07-30 implementation-time record. The subsequent accepted coverage run passed Mini tests (3 files / 15 tests) and Mini build; backend `ruff` and 48 `pytest` tests; full frontend tests (8 files / 110 tests) and build; `git diff --check`; and a clean worktree.
+- The regression coverage verifies timeout and external abort handling, stale request/town-query behavior, live-success mapping, warning/AQI presentation, and loading/cold-start/empty recovery states. These are test protections, not newly added production behavior.
+- Coding and acceptance used only temporary ignored `node_modules` symlinks matching the canonical lock; no dependencies were installed, and both `frontend/node_modules` and `frontend-mini/node_modules` symlinks were removed after verification.
+- Status boundary remains unchanged: `feature/portfolio-mini` is not merged, pushed, or deployed; the Portfolio repository is untouched; backend runtime CORS/TTL and services are unchanged; and the public Azure Demo cannot be represented as this latest Mini version.
