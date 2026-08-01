@@ -1637,3 +1637,93 @@ town code.
   manual run, so Azure has not received the v1.1/Phase 3 branch contents.
 - The Ubuntu/Cloudflare preview is the current integration preview. Its quick
   tunnel hostname is ephemeral and may rotate whenever the tunnel restarts.
+
+## 2026-08-02: Azure public demo updated to GitHub main (f502207)
+
+### Summary
+
+The Azure public demo was frozen at the Phase 1 baseline (deployed 2026-07-03,
+`main@7bd36a09`) while GitHub `main` had since advanced to `f502207` (Phase 1 +
+Phase 2 suitability features + query-date/cache-policy fixes + Block B v2
+docs). This entry records bringing the live Azure demo up to that same
+commit. Management (Claude Code, Mac) executed this directly at the
+requesting user's explicit direction, as a one-off exception to the normal
+management/coding-layer split for this personal project.
+
+### Findings before deploying
+
+- `deploy-demo.yml` could not currently succeed via `workflow_dispatch`: the
+  repo has zero GitHub Actions secrets and zero environments configured
+  (`gh secret list` / `gh api .../environments` both empty). The
+  `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` / `CWA_API_KEY`
+  secrets the workflow depends on do not exist, and no matching Azure AD app
+  registration was found under the account either.
+- Independently, `az acr build` (ACR Tasks remote build) is blocked at the
+  subscription level for this "Azure for Students" account
+  (`TasksOperationsNotAllowed`). This affects the manual runbook's preferred
+  path *and* `deploy-demo.yml`'s backend job equally — restoring the OIDC
+  secrets alone would not have made the existing workflow succeed; the
+  workflow's backend build step would need to switch to `docker build` +
+  `docker push` on the GitHub-hosted runner (which has Docker preinstalled and
+  is unaffected by this account-level restriction) to work in CI at all.
+- The live Container App was still running `trip-weather-backend:v2` (not the
+  `twp-backend` repository name the workflow/runbook default to — a naming
+  drift from however the original manual deploy was done). Its env vars had
+  no `CACHE_TTL_SECONDS` / `UPSTREAM_TIMEOUT_SECONDS` set at all (pure code
+  defaults), and `CORS_ORIGINS` already carried three allowed origins (prod +
+  two localhost dev ports) beyond the single-origin default the workflow/runbook
+  would otherwise set.
+- This Mac has no local Docker install. Ubuntu (`ubuntu-dev`) already has
+  Docker 29.1.3 and an existing `az` login to the same subscription/account —
+  strong evidence the original 2026-07-03 deploy was built there, not on Mac.
+- Ubuntu's checked-out `phase3-tourism` working tree was mid-flight (7 commits
+  ahead of `origin/phase3-tourism` from unreviewed Portfolio Mini work, plus an
+  uncommitted `frontend/vite.config.ts` change) and was left completely
+  untouched. The image was built from an isolated detached
+  `git worktree add --detach /tmp/twp-deploy-build f502207` instead, removed
+  immediately after the build/push completed.
+
+### What was deployed
+
+- Backend image built and pushed from Ubuntu at exactly `f502207`:
+  `twpacr4316.azurecr.io/trip-weather-backend` tagged `v3`, `f502207`, and
+  `latest` (same digest
+  `sha256:77632fafbe47d5f1672b09cff5b4c1b3f7b0bd03dbc8c4d86055bda1c4d5d159`).
+- `twp-backend` Container App updated to image `:v3`
+  (`latestReadyRevisionName: twp-backend--0000002`), with
+  `CACHE_TTL_SECONDS=600`, `UPSTREAM_TIMEOUT_SECONDS=10`, `CORS_ORIGINS`
+  preserved as the existing three-origin value, and `CWA_API_KEY` left
+  pointed at the pre-existing `cwa-api-key` secret (value untouched).
+- Frontend rebuilt with
+  `VITE_API_BASE=https://twp-backend.purplewave-91ee1594.southeastasia.azurecontainerapps.io`
+  and uploaded to the `twpfe5ce0` `$web` static website container via
+  `az storage blob upload-batch --account-key` (the logged-in user account
+  lacked the `Storage Blob Data Contributor` RBAC needed for `--auth-mode
+  login`, so the account key was used instead rather than changing IAM role
+  assignments).
+
+### Verification
+
+- Backend smoke test: `/` reports `mock_mode: false`; `/api/towns` and
+  `/api/forecast` return live CWA data; the forecast payload includes
+  `sunrise_sunset.source_date`, `uv`, `aqi`, `warnings`, and `moon.source_date`
+  fields, confirming the Phase 2 feature set is live and not the old Phase 1
+  payload shape. CORS preflight from the storage origin returns
+  `access-control-allow-origin` correctly.
+- Frontend smoke test: served `index.html` now references the freshly built
+  hashed JS bundle (`index-C4Pm-eF6.js`) with the live backend origin baked
+  in; `Last-Modified` advanced from the stale 2026-07-05 timestamp to the new
+  deploy time.
+
+### Deliberately not done in this pass
+
+- GitHub Actions (`deploy-demo.yml`) OIDC secrets were not restored, and the
+  workflow's `az acr build` step was not rewritten to `docker build`+`push`.
+  Both are real gaps for making future deploys CI-driven again, but were out
+  of scope for this one-off manual catch-up; noted here as follow-up.
+- The 7 unpushed Ubuntu Portfolio Mini commits and its uncommitted
+  `vite.config.ts` change were not reviewed, merged, or touched — this
+  deployment only carried what was already on GitHub `main`.
+- The stale pre-existing `trip-weather-backend:v1`/`:v2` images and the old
+  (now unreferenced) frontend JS/CSS blobs in `$web` were left in place; no
+  registry or blob cleanup was performed.
