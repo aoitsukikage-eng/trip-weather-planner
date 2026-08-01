@@ -1590,3 +1590,50 @@ town code.
   been merged, pushed, or deployed. `phase3-tourism` remains at `faa6baa`, and
   the Ubuntu real `.env` and runtime have not been switched to the 600-second
   TTL.
+
+## 2026-08-01: Cache-policy integration completed and main advanced
+
+### Integration result
+
+- The approved query-date/cache-policy sequence (`ab685c6` through `fc2e37d`)
+  and the approved Block B v2 documentation sequence (`4673e9c` through
+  `07c94eb`) were confirmed on `phase3-tourism`.
+- GitHub `phase3-tourism`, the Ubuntu canonical checkout, and the Mac SSD
+  mirror were aligned at `07c94eb` before the release-branch operation.
+- The preflight proved that `faa6baa` was an ancestor of `07c94eb`; the
+  `main` update was therefore a conflict-free fast-forward, not a merge commit.
+- GitHub `main` was advanced from `faa6baa` to `07c94eb`. The existing
+  `v1.1.0` tag intentionally remains attached to `faa6baa`; no new release tag
+  was created as part of this integration.
+
+### Post-push verification
+
+- GitHub reported that the administrator push bypassed the branch rule that
+  expects three status checks before updating `main`. The push immediately
+  triggered CI on the resulting `main` commit, so the final state was still
+  verified after publication.
+- GitHub Actions run `30702019484` completed successfully. Backend lint/tests,
+  frontend tests/build, and Terraform format/validate all passed.
+- The only CI annotations were non-blocking Node.js 20 deprecation notices for
+  selected GitHub Actions, which GitHub currently executes under Node.js 24.
+
+### Runtime cache-policy smoke test
+
+- The Ubuntu real backend environment now sets `CACHE_TTL_SECONDS=600`.
+- Backend, frontend, and the Cloudflare quick tunnel were running during the
+  smoke test. Local and public health endpoints returned HTTP 200.
+- A first same-town/current-date forecast request returned
+  `meta.cached=false`; the repeated request returned `meta.cached=true` with
+  `source=cache`. Both responses included `Cache-Control: no-store`, confirming
+  that browser persistence is disabled while the backend alone owns the
+  600-second keyed TTL cache.
+
+### Deployment boundary
+
+- This operation published the accepted code and documentation to GitHub
+  `main`; it did not trigger `.github/workflows/deploy-demo.yml`.
+- The Azure Storage frontend remains the v1.0.0 Phase 1 demo last published in
+  early July. The most recent `Deploy Demo` workflow run remains the 2026-07-03
+  manual run, so Azure has not received the v1.1/Phase 3 branch contents.
+- The Ubuntu/Cloudflare preview is the current integration preview. Its quick
+  tunnel hostname is ephemeral and may rotate whenever the tunnel restarts.
