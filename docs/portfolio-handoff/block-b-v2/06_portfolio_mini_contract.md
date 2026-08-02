@@ -6,6 +6,8 @@
 >
 > 本檔只定義 future mini。`frontend-mini/`、build artifact、Portfolio integration、CORS change、deployment與 screenshot目前都不存在；本 evidence task沒有建立任何一項。
 
+> **2026-08-02 implementation update:** `frontend-mini/` is implemented and locally verified, but remains **not merged, pushed, integrated, or deployed**. `?view=compact` is the sole Portfolio-home mode; default remains the standalone seven-day Mini. Compact keeps its selector in-card, uses `BASE_URL` + `_top` for `查看完整天氣預覽`, and renders warning/AQI/UV as separate signals. `forecast.uv` uses the existing `value`/`level`/`source_label` schema and is omitted when null; no backend contract changed.
+
 ## 1. Product scope
 
 ### 1.1 Goal
