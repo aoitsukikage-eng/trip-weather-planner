@@ -46,7 +46,7 @@ describe("Mini UI", () => {
   it("shows deterministic Demo Data, CTA and seven days", () => {
     history.replaceState({}, "", "/?demo=1");
     render(<App />);
-    expect(screen.getByText("Demo Data")).toBeTruthy();
+    expect(screen.getByText("Demo")).toBeTruthy();
     expect(screen.getByText(/Open Full Planner/).getAttribute("rel")).toBe("noopener noreferrer");
     expect(screen.getAllByText(/晴時多雲|午後短暫雨/).length).toBeGreaterThan(1);
   });
@@ -87,12 +87,12 @@ describe("Mini UI", () => {
     expect(screen.queryByText("Demo Data")).toBeNull();
   });
 
-  it("prefers warning information over AQI", async () => {
+  it("keeps warning and AQI as separate signals", async () => {
     api.getTowns.mockResolvedValue(towns);
     api.getForecast.mockResolvedValue(forecast(towns[0], { warnings: [{ title: "大雨特報", severity: "yellow" }] }));
     render(<App />);
     expect(await screen.findByText("⚠ 1 則警特報：大雨特報")).toBeTruthy();
-    expect(screen.queryByText(/AQI 42/)).toBeNull();
+    expect(screen.getByText("AQI 42 · 良好")).toBeTruthy();
   });
 
   it("shows AQI when there are no warnings", async () => {
@@ -124,5 +124,41 @@ describe("Mini UI", () => {
     expect(await screen.findByText("目前沒有可顯示的預報")).toBeTruthy();
     expect(screen.getByText("Retry Live Data")).toBeTruthy();
     expect(screen.getByText("Use Demo Data")).toBeTruthy();
+  });
+
+  it("renders compact mode with its selector inside the card and no seven-day strip", () => {
+    history.replaceState({}, "", "/?view=compact&demo=1");
+    render(<App />);
+    expect(screen.getByLabelText("縣市／鄉鎮").closest(".weather-card")).toBeTruthy();
+    expect(screen.queryByLabelText("未來七日預報")).toBeNull();
+    expect(screen.getByText("UV 7 · 過量級")).toBeTruthy();
+    const cta = screen.getByText(/查看完整天氣預覽/);
+    expect(cta.getAttribute("href")).toBe("/labs/trip-weather/");
+    expect(cta.getAttribute("target")).toBe("_top");
+  });
+
+  it("keeps the full strip outside compact mode", () => {
+    history.replaceState({}, "", "/?demo=1");
+    render(<App />);
+    expect(screen.getByLabelText("未來七日預報")).toBeTruthy();
+  });
+
+  it("shows warning, AQI and UV together in compact mode", async () => {
+    history.replaceState({}, "", "/?view=compact");
+    api.getTowns.mockResolvedValue(towns);
+    api.getForecast.mockResolvedValue(forecast(towns[0], { warnings: [{ title: "大雨特報", severity: "yellow" }], uv: { value: 8, level: "高量級", source_label: "CWA" } }));
+    render(<App />);
+    expect(await screen.findByText("⚠ 1 則警特報：大雨特報")).toBeTruthy();
+    expect(screen.getByText("AQI 42 · 良好")).toBeTruthy();
+    expect(screen.getByText("UV 8 · 高量級")).toBeTruthy();
+  });
+
+  it("omits a null UV signal safely", async () => {
+    history.replaceState({}, "", "/?view=compact");
+    api.getTowns.mockResolvedValue(towns);
+    api.getForecast.mockResolvedValue(forecast(towns[0], { uv: null }));
+    render(<App />);
+    await screen.findByText("AQI 42 · 良好");
+    expect(screen.queryByText(/^UV /)).toBeNull();
   });
 });

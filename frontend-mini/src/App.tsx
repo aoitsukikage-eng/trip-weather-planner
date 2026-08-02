@@ -5,7 +5,7 @@ import { nextDays, taipeiToday, untilNextTaipeiMidnight } from "./lib/date";
 import type { Forecast, Town } from "./lib/domain";
 
 const fullUrl = import.meta.env.VITE_TWP_FULL_PLANNER_URL || "https://twpfe5ce0.z23.web.core.windows.net/";
-const compactUrl = `${import.meta.env.BASE_URL}labs/trip-weather/`.replace(/([^:]\/)\/+/, "$1");
+const compactUrl = import.meta.env.BASE_URL;
 
 function Selector({ town, towns, disabled, onChange }: { town: string; towns: Town[]; disabled: boolean; onChange: (code: string) => void }) {
   return <section className="controls" aria-label="預報選擇"><label htmlFor="town">縣市／鄉鎮</label><select id="town" value={town} disabled={disabled || !towns.length} onChange={event => onChange(event.target.value)}><option value="">選擇鄉鎮</option>{towns.map(item => <option key={item.code} value={item.code}>{item.city} {item.name}</option>)}</select></section>;
