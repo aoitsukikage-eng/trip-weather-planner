@@ -126,25 +126,19 @@ describe("Mini UI", () => {
     expect(screen.getByText("Use Demo Data")).toBeTruthy();
   });
 
-  it("renders compact mode with its compact selector, weather icon and production CTA", () => {
+  it("renders compact mode with AQI and UV stacked in its sidebar and production CTA", () => {
     history.replaceState({}, "", "/?view=compact&demo=1");
     render(<App />);
     expect(screen.getByLabelText("縣市／鄉鎮").closest(".weather-card")).toBeTruthy();
     expect(screen.queryByText("臺北市 · 信義區")).toBeNull();
     expect(screen.queryByLabelText("未來七日預報")).toBeNull();
-    expect(screen.getByText("UV 7 · 過量級")).toBeTruthy();
-    expect(screen.getByTestId("compact-weather-icon").getAttribute("aria-label")).toBe("晴朗天氣圖示");
+    expect(screen.queryByTestId("compact-weather-icon")).toBeNull();
+    const sidebar = screen.getByLabelText("空氣品質與紫外線");
+    expect(sidebar.className).toBe("compact-sidebar");
+    expect(Array.from(sidebar.children).map(item => item.textContent)).toEqual(["AQI 42 · 良好", "UV 7 · 過量級"]);
     const cta = screen.getByText(/查看完整天氣預覽/);
     expect(cta.getAttribute("href")).toBe("https://twpfe5ce0.z23.web.core.windows.net/");
     expect(cta.getAttribute("target")).toBe("_top");
-  });
-
-  it("maps rainy compact weather to the rain icon", async () => {
-    history.replaceState({}, "", "/?view=compact");
-    api.getTowns.mockResolvedValue(towns);
-    api.getForecast.mockResolvedValue(forecast(towns[0], { days: [{ date: "2026-07-31", weather: "午後短暫雨", temp_low_c: 25, temp_high_c: 30, max_pop_percent: 80 }] }));
-    render(<App />);
-    expect((await screen.findByTestId("compact-weather-icon")).getAttribute("aria-label")).toBe("雨天天氣圖示");
   });
 
   it("keeps the full strip, location eyebrow and CTA behavior outside compact mode", () => {
@@ -165,6 +159,9 @@ describe("Mini UI", () => {
     expect(await screen.findByText("⚠ 1 則警特報：大雨特報")).toBeTruthy();
     expect(screen.getByText("AQI 42 · 良好")).toBeTruthy();
     expect(screen.getByText("UV 8 · 高量級")).toBeTruthy();
+    expect(screen.getByText("⚠ 1 則警特報：大雨特報").closest(".compact-copy")).toBeTruthy();
+    expect(screen.getByText("AQI 42 · 良好").parentElement?.className).toBe("compact-sidebar");
+    expect(screen.getByText("UV 8 · 高量級").parentElement?.className).toBe("compact-sidebar");
   });
 
   it("omits a null UV signal safely", async () => {
