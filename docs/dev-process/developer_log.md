@@ -1751,3 +1751,39 @@ management/coding-layer split for this personal project.
 - The stale pre-existing `trip-weather-backend:v1`/`:v2` images and the old
   (now unreferenced) frontend JS/CSS blobs in `$web` were left in place; no
   registry or blob cleanup was performed.
+
+## 2026-08-03: Portfolio Home Mini Compact Card accepted
+
+### Accepted implementation
+
+- The independently verified implementation is
+  `feature/portfolio-mini-home-card` at
+  `60724ba2800ce96fbfad7e729bcb2c1a06b13cba`, based on
+  `f5e5a3346a387a8bee296c30e573921651e72a44`.
+- Its implementation commits are `cc128a3`, `1557df2`, `d8773bb`, and
+  `60724ba`.
+- Only `frontend-mini` implements the Compact Home Card: `view=compact`
+  provides the dual mode, places the location selector inside the weather
+  card, omits the compact seven-day strip, and keeps the full-mode strip.
+- The compact card CTA is `查看完整天氣預覽 →`; it uses the Vite `BASE_URL` and
+  opens the internal destination with `_top`. Warning, AQI, and UV remain
+  separate signals, and the update time is readable in Asia/Taipei time.
+- The Portfolio HUD handoff and the specified desktop/mobile screenshots were
+  included in the accepted feature evidence.
+
+### Independent verification
+
+- The approved report is
+  `/home/esgcenter0/agent-bridge/reports/acceptance/task-20260802-twp-portfolio-mini-home-card-codexvs-verification.md`.
+- Validation passed: frontend-mini 19 tests and build; backend `ruff` and 48
+  tests; full frontend 110 tests and build.
+- Diff and worktree checks were clean, the lockfile hash was unchanged, and
+  temporary symlinks were removed after verification.
+
+### Scope and deployment boundary
+
+- This feature changed no Portfolio repository, backend, full frontend source,
+  CORS, TTL, service, canonical reference, merge, push, or deployment.
+- It remains unmerged, unpushed, and undeployed. The preceding `f502207` Azure
+  public-demo entry is an existing main/frontend deployment and does **not**
+  establish deployment of this Compact Home Card.
