@@ -126,21 +126,35 @@ describe("Mini UI", () => {
     expect(screen.getByText("Use Demo Data")).toBeTruthy();
   });
 
-  it("renders compact mode with its selector inside the card and no seven-day strip", () => {
+  it("renders compact mode with its compact selector, weather icon and production CTA", () => {
     history.replaceState({}, "", "/?view=compact&demo=1");
     render(<App />);
     expect(screen.getByLabelText("縣市／鄉鎮").closest(".weather-card")).toBeTruthy();
+    expect(screen.queryByText("臺北市 · 信義區")).toBeNull();
     expect(screen.queryByLabelText("未來七日預報")).toBeNull();
     expect(screen.getByText("UV 7 · 過量級")).toBeTruthy();
+    expect(screen.getByTestId("compact-weather-icon").getAttribute("aria-label")).toBe("晴朗天氣圖示");
     const cta = screen.getByText(/查看完整天氣預覽/);
-    expect(cta.getAttribute("href")).toBe("/labs/trip-weather/");
+    expect(cta.getAttribute("href")).toBe("https://twpfe5ce0.z23.web.core.windows.net/");
     expect(cta.getAttribute("target")).toBe("_top");
   });
 
-  it("keeps the full strip outside compact mode", () => {
+  it("maps rainy compact weather to the rain icon", async () => {
+    history.replaceState({}, "", "/?view=compact");
+    api.getTowns.mockResolvedValue(towns);
+    api.getForecast.mockResolvedValue(forecast(towns[0], { days: [{ date: "2026-07-31", weather: "午後短暫雨", temp_low_c: 25, temp_high_c: 30, max_pop_percent: 80 }] }));
+    render(<App />);
+    expect((await screen.findByTestId("compact-weather-icon")).getAttribute("aria-label")).toBe("雨天天氣圖示");
+  });
+
+  it("keeps the full strip, location eyebrow and CTA behavior outside compact mode", () => {
     history.replaceState({}, "", "/?demo=1");
     render(<App />);
     expect(screen.getByLabelText("未來七日預報")).toBeTruthy();
+    expect(screen.getByText("臺北市 · 信義區")).toBeTruthy();
+    const cta = screen.getByText(/Open Full Planner/);
+    expect(cta.getAttribute("href")).toBe("https://twpfe5ce0.z23.web.core.windows.net/");
+    expect(cta.getAttribute("target")).toBe("_blank");
   });
 
   it("shows warning, AQI and UV together in compact mode", async () => {

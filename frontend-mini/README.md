@@ -8,4 +8,4 @@ The default CTA remains the Azure v1.0.0 Phase 1 legacy demo. `?demo=1` is deter
 
 ## Portfolio home card
 
-Use `?view=compact` for the Portfolio embed card; `?view=compact&demo=1` is the deterministic capture/review mode. The compact card keeps the town selector inside its panel, renders today only, and exposes separate warning, AQI, and UV signals. Its `查看完整天氣預覽` link uses Vite `BASE_URL` and `target="_top"`, so an iframe exits to `/labs/trip-weather/`. Without `view=compact`, the standalone seven-day Mini and legacy Full Planner CTA remain unchanged.
+Use `?view=compact` for the Portfolio embed card; `?view=compact&demo=1` is the deterministic capture/review mode. The compact card keeps a compact, keyboard-operable town selector inside its panel, renders today only, exposes separate warning, AQI, and UV signals, and pairs the text with a weather icon. Its `查看完整天氣預覽` link uses the production Full Planner URL and `target="_top"`, so an iframe exits directly to the official planner. Without `view=compact`, the standalone seven-day Mini and legacy Full Planner CTA remain unchanged.

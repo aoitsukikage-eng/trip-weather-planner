@@ -8,7 +8,7 @@ The Portfolio iframe loads `?view=compact`; the deterministic review URL is `?vi
 <iframe title="Trip Weather Planner" src="/labs/trip-weather/?view=compact" width="100%" height="420" loading="lazy"></iframe>
 ```
 
-Desktop iframe: 1200 × 520 viewport; card target is 360–420px high (maximum 460px). Mobile iframe: 390 × 620 viewport; height may grow naturally. The in-card selector remains keyboard-operable and has a cyan `:focus-visible` outline; the card itself is not a link.
+Desktop iframe: 1200 × 520 viewport; card target is 360–420px high (maximum 460px). Mobile iframe: 390 × 620 viewport; height may grow naturally. The in-card selector is compact inline label/select on desktop, stacks on narrow screens, remains keyboard-operable, and has a cyan `:focus-visible` outline; the card itself is not a link.
 
 | Token | Value |
 |---|---|
@@ -22,4 +22,6 @@ Desktop iframe: 1200 × 520 viewport; card target is 360–420px high (maximum 4
 | AQI good | `rgba(95,214,148,.16/.42)`, `#c9ffe0` |
 | UV attention | `rgba(255,177,87,.18/.46)`, `#ffd2a8` |
 
-Spacing is 20px desktop / 18px mobile inner padding, 16px control gap, and 8px signal gap. The compact card deliberately has no seven-day rail; advice is visually clamped to two desktop lines while its full text remains in the `title` accessible description.
+Spacing is 20px desktop / 18px mobile inner padding, 8px inline control gap, and 8px signal gap. The compact card deliberately has no seven-day rail; advice is visually clamped to two desktop lines while its full text remains in the `title` accessible description.
+
+The desktop compact card uses a two-column layout: text, weather metrics, signals, advice, and update time remain on the left, while the right column carries the primary weather visual. The icon mapping is dependency-free and based on the current `day.weather` text: weather containing `雨` renders a rain icon; weather containing `晴` but not `雨` renders a sun icon; all other text uses a cloudy fallback icon. The compact card does not repeat the selected city/town eyebrow beneath the selector. Its `查看完整天氣預覽 →` CTA retains `target="_top"` and opens the official Full Planner URL; standalone mode retains its own eyebrow and `_blank` CTA behavior.
