@@ -21,13 +21,26 @@ export default function TripForm({
   onTownCodeChange,
   onSubmit,
 }: Props) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const collation = locale === "en" ? "en" : "zh-Hant";
+
+  const getCityLabel = (cityKey: string): string => {
+    const sample = towns.find((town) => town.city === cityKey);
+    if (locale === "en" && sample?.city_en) return sample.city_en;
+    return sample?.city || cityKey;
+  };
+
+  const getTownLabel = (town: Town): string => {
+    if (locale === "en" && town.name_en) return town.name_en;
+    return town.name;
+  };
+
   const cities = Array.from(new Set(towns.map((town) => town.city))).sort((left, right) =>
-    left.localeCompare(right, "zh-Hant"),
+    getCityLabel(left).localeCompare(getCityLabel(right), collation),
   );
   const filteredTowns = towns
     .filter((town) => town.city === city)
-    .sort((left, right) => left.name.localeCompare(right.name, "zh-Hant"));
+    .sort((left, right) => getTownLabel(left).localeCompare(getTownLabel(right), collation));
 
   // When city changes, auto-correct townCode to a valid town in the new city.
   useEffect(() => {
@@ -53,7 +66,7 @@ export default function TripForm({
         <select value={city} onChange={(event) => onCityChange(event.target.value)}>
           {cities.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {getCityLabel(option)}
             </option>
           ))}
         </select>
@@ -64,7 +77,7 @@ export default function TripForm({
         <select value={townCode} onChange={(event) => onTownCodeChange(event.target.value)}>
           {filteredTowns.map((town) => (
             <option key={town.code} value={town.code}>
-              {town.name}
+              {getTownLabel(town)}
             </option>
           ))}
         </select>

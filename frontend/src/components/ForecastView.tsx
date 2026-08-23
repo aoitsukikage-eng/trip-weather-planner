@@ -33,33 +33,70 @@ function formatHourLabel(isoDateTime: string): string {
   return `${String(current.getHours()).padStart(2, "0")}:00`;
 }
 
-function slotIcon(slot: HourlyForecast): string {
-  const code = slot.weather_code ?? "";
-  if (code.startsWith("01")) return "☀️";
-  if (code.startsWith("02") || code.startsWith("03")) return "🌤️";
-  if (code.startsWith("04") || code.startsWith("05") || code.startsWith("06") || code.startsWith("07")) {
+export function resolveWeatherIcon(
+  code: string | null | undefined,
+  weatherText: string | null | undefined,
+): string {
+  const c = code ? code.padStart(2, "0") : "";
+  if (c.startsWith("01")) return "☀️";
+  if (c.startsWith("02") || c.startsWith("03")) return "🌤️";
+  if (c.startsWith("04") || c.startsWith("05") || c.startsWith("06") || c.startsWith("07")) {
     return "☁️";
   }
-  if (code.startsWith("08") || code.startsWith("09") || code.startsWith("10")) return "🌦️";
-  if (code.startsWith("11") || code.startsWith("12") || code.startsWith("13") || code.startsWith("14")) {
+  if (c.startsWith("08") || c.startsWith("09") || c.startsWith("10")) return "🌦️";
+  if (c.startsWith("11") || c.startsWith("12") || c.startsWith("13") || c.startsWith("14")) {
     return "🌧️";
   }
+  if (
+    c.startsWith("15") ||
+    c.startsWith("16") ||
+    c.startsWith("17") ||
+    c.startsWith("18") ||
+    c.startsWith("19") ||
+    c.startsWith("20") ||
+    c.startsWith("21") ||
+    c.startsWith("22")
+  ) {
+    return "⛈️";
+  }
 
-  const weather = slot.weather ?? "";
-  if (weather.includes("雷")) return "⛈️";
-  if (weather.includes("雨")) return "🌧️";
-  if (weather.includes("晴")) return "☀️";
-  if (weather.includes("雲") || weather.includes("陰")) return "☁️";
+  const weather = weatherText ?? "";
+  if (weather.includes("雷") || weather.toLowerCase().includes("thunder")) return "⛈️";
+  if (
+    weather.includes("雨") ||
+    weather.toLowerCase().includes("rain") ||
+    weather.toLowerCase().includes("shower")
+  ) {
+    return "🌧️";
+  }
+  if (
+    weather.includes("晴") ||
+    weather.toLowerCase().includes("clear") ||
+    weather.toLowerCase().includes("sun")
+  ) {
+    return "☀️";
+  }
+  if (
+    weather.includes("雲") ||
+    weather.includes("陰") ||
+    weather.toLowerCase().includes("cloud") ||
+    weather.toLowerCase().includes("overcast")
+  ) {
+    return "☁️";
+  }
+
   return "·";
 }
 
-function dailyWeatherIcon(weather: string | null): string {
-  if (!weather) return "·";
-  if (weather.includes("雷")) return "⛈️";
-  if (weather.includes("雨")) return "🌧️";
-  if (weather.includes("晴")) return "☀️";
-  if (weather.includes("雲") || weather.includes("陰")) return "☁️";
-  return "·";
+function slotIcon(slot: HourlyForecast): string {
+  return resolveWeatherIcon(slot.weather_code, slot.weather);
+}
+
+function dailyWeatherIcon(
+  code: string | null | undefined,
+  weatherText: string | null | undefined,
+): string {
+  return resolveWeatherIcon(code, weatherText);
 }
 
 function buildLinePath(points: Array<{ x: number; y: number }>): string {
@@ -418,7 +455,7 @@ export default function ForecastView({
                 >
                   <span className="day-strip-head">
                     <span aria-hidden="true" className="day-strip-icon">
-                      {dailyWeatherIcon(day.weather)}
+                      {dailyWeatherIcon(day.weather_code, day.weather)}
                     </span>
                     <span className="day-strip-date">
                       <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
@@ -476,6 +513,7 @@ export default function ForecastView({
             label={uv.source_label}
             value={uv.value}
             level={uv.level}
+            levelCode={uv.level_code}
             maximum={14}
             detail={`${formatUvSourceLabel(uv.source_type, t)}${!showMockBadge && uv.station_name ? ` · ${t.stationPrefix}${uv.station_name}` : ""}`}
           />
@@ -486,6 +524,7 @@ export default function ForecastView({
             label={aqi.source_label}
             value={aqi.value}
             level={aqi.level}
+            levelCode={aqi.level_code}
             maximum={300}
             detail={!showMockBadge && aqi.station_name ? `${t.stationPrefix}${aqi.station_name}` : ""}
           />
