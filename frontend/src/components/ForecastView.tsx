@@ -2,6 +2,8 @@ import { memo, useEffect, useRef } from "react";
 import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyForecast } from "../lib/api";
 import CelestialArc from "./CelestialArc";
 import StatusGauge from "./StatusGauge";
+import { useLocale } from "../lib/locale";
+import type { Dictionary } from "../i18n";
 
 function popColor(pop: number | null): string {
   if (pop === null) return "#cbd5e1";
@@ -10,15 +12,15 @@ function popColor(pop: number | null): string {
   return "#bae6fd";
 }
 
-function formatDateLabel(isoDate: string): string {
+function formatDateLabel(isoDate: string, t: Dictionary): string {
   const current = new Date(`${isoDate}T00:00:00`);
-  const weekday = ["日", "一", "二", "三", "四", "五", "六"][current.getDay()];
-  return `${current.getMonth() + 1}/${current.getDate()}（${weekday}）`;
+  const weekday = t.weekdaysShort[current.getDay()];
+  return t.formatDate(current.getMonth() + 1, current.getDate(), weekday);
 }
 
-function formatWeekdayLabel(isoDate: string): string {
+function formatWeekdayLabel(isoDate: string, t: Dictionary): string {
   const current = new Date(`${isoDate}T00:00:00`);
-  return `週${["日", "一", "二", "三", "四", "五", "六"][current.getDay()]}`;
+  return t.formatWeekday(t.weekdaysShort[current.getDay()]);
 }
 
 function formatDayLabel(isoDateTime: string): string {
@@ -82,6 +84,7 @@ const HourlyForecastChart = memo(function HourlyForecastChart({
   hourly: HourlyForecast[];
   placeLabel: string;
 }) {
+  const { t } = useLocale();
   const width = 960;
   const height = 360;
   const padding = { top: 118, right: 18, bottom: 62, left: 52 };
@@ -137,8 +140,8 @@ const HourlyForecastChart = memo(function HourlyForecastChart({
     <section className="hourly-chart">
       <div className="hourly-chart-header">
         <div className="chart-copy">
-          <h3>72 小時逐 3 小時預報</h3>
-          <p>雙曲線為氣溫與體感溫度，底部藍柱為各時段降雨機率。</p>
+          <h3>{t.hourlyChartTitle}</h3>
+          <p>{t.hourlyChartSubtitle}</p>
         </div>
         <div className="chart-place-wrap">
           <p className="chart-place" data-testid="chart-place">
@@ -148,11 +151,11 @@ const HourlyForecastChart = memo(function HourlyForecastChart({
         <div className="chart-legend">
           <span className="legend-item">
             <i className="legend-swatch legend-swatch-temp" />
-            氣溫
+            {t.legendTemp}
           </span>
           <span className="legend-item">
             <i className="legend-swatch legend-swatch-apparent" />
-            體感溫度
+            {t.legendApparentTemp}
           </span>
         </div>
       </div>
@@ -161,7 +164,7 @@ const HourlyForecastChart = memo(function HourlyForecastChart({
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label="72 小時逐 3 小時溫度與降雨機率圖"
+          aria-label={t.hourlyChartAriaLabel}
         >
           {gridValues.map((value) => (
             <g key={`grid-${value}`}>
@@ -289,35 +292,35 @@ const HourlyForecastChart = memo(function HourlyForecastChart({
       </div>
 
       {apparentPoints.length === 0 && (
-        <p className="chart-note">體感溫度資料不足時會略過紫色曲線，不影響其他時段資訊。</p>
+        <p className="chart-note">{t.hourlyChartNote}</p>
       )}
     </section>
   );
 });
 
-function formatSunriseSourceLabel(sourceDate: string): string {
-  return `參考 ${sourceDate} 天文資料`;
+function formatSunriseSourceLabel(sourceDate: string, t: Dictionary): string {
+  return t.sunAstroRef(sourceDate);
 }
 
-function formatUvSourceLabel(sourceType: string): string {
-  return sourceType === "observation" ? "觀測值" : "預報值";
+function formatUvSourceLabel(sourceType: string, t: Dictionary): string {
+  return sourceType === "observation" ? t.uvObserved : t.uvForecasted;
 }
 
 function hasDailyPop(pop: number | null): pop is number {
   return pop !== null;
 }
 
-function buildDayAriaLabel(day: DailyForecast): string {
+function buildDayAriaLabel(day: DailyForecast, t: Dictionary): string {
   const parts = [
-    formatDateLabel(day.date),
-    day.weather ?? "天氣資料不足",
-    `高溫 ${day.temp_high_c ?? "—"} 度`,
-    `低溫 ${day.temp_low_c ?? "—"} 度`,
+    formatDateLabel(day.date, t),
+    day.weather ?? t.weatherDataUnavailable,
+    t.tempHigh(day.temp_high_c ?? "—"),
+    t.tempLow(day.temp_low_c ?? "—"),
   ];
   if (hasDailyPop(day.max_pop_percent)) {
-    parts.push(`降雨 ${day.max_pop_percent}%`);
+    parts.push(t.precipPop(day.max_pop_percent));
   }
-  if (day.aqi_forecast?.value != null) parts.push(`空氣品質 ${day.aqi_forecast.value}`);
+  if (day.aqi_forecast?.value != null) parts.push(t.aqiLabel(day.aqi_forecast.value));
   return parts.join(" ");
 }
 
@@ -334,6 +337,7 @@ export default function ForecastView({
   loading?: boolean;
   onSelectDate?: (date: string) => void;
 }) {
+  const { t } = useLocale();
   const { forecast, ai_summary } = result;
   const displayedDays = forecast.days.slice(0, 7);
   const chartForecast = chartResult?.forecast ?? forecast;
@@ -359,30 +363,30 @@ export default function ForecastView({
   return (
     <section className="result" data-source-dataset={forecast.source_dataset} data-summary-mode={ai_summary.mode}>
       <h2>
-        {placeLabel} · {formatDateLabel(forecast.target_date)}
+        {placeLabel} · {formatDateLabel(forecast.target_date, t)}
       </h2>
 
       {forecast.date_adjusted && forecast.requested_date && (
         <p className="section-hint" data-testid="adjusted-focus-notice" role="status">
-          {formatDateLabel(forecast.requested_date)} 的預報已結束，已顯示最早可用的 {formatDateLabel(forecast.target_date)} 預報。
+          {t.adjustedNotice(formatDateLabel(forecast.requested_date, t), formatDateLabel(forecast.target_date, t))}
         </p>
       )}
 
       {warnings.length > 0 && (
-        <section className="warning-banner" data-testid="warning-banner" data-severity={warnings[0].severity} aria-label="天氣特報">
+        <section className="warning-banner" data-testid="warning-banner" data-severity={warnings[0].severity} aria-label={t.warningBannerAriaLabel}>
           {warnings.slice(0, 2).map((warning) => <p key={warning.title}><strong>{warning.title}</strong>{warning.description ? `：${warning.description}` : ""}</p>)}
-          {warnings.length > 2 && <details><summary>另有 {warnings.length - 2} 則特報</summary>{warnings.slice(2).map((warning) => <p key={warning.title}>{warning.title}</p>)}</details>}
+          {warnings.length > 2 && <details><summary>{t.moreWarnings(warnings.length - 2)}</summary>{warnings.slice(2).map((warning) => <p key={warning.title}>{warning.title}</p>)}</details>}
         </section>
       )}
 
-      <section className="day-strip-section" aria-label="七天預報選擇列">
+      <section className="day-strip-section" aria-label={t.dayStripAriaLabel}>
         <div className="day-strip-header">
-          <h3 className="section-title">本週預報（共 7 天）</h3>
-          <p className="section-hint">點選任一天，即可查看該日的行前建議與日出日落</p>
+          <h3 className="section-title">{t.weeklyForecastTitle}</h3>
+          <p className="section-hint">{t.weeklyForecastHint}</p>
         </div>
         {daySelectionError && (
           <p aria-live="polite" className="section-hint" role="status">
-            日期切換失敗：{daySelectionError}
+            {t.dateChangeFailed(daySelectionError)}
           </p>
         )}
         <div className="day-strip-scroll" data-testid="day-strip-scroll">
@@ -398,7 +402,7 @@ export default function ForecastView({
                 <button
                   aria-current={isSelected ? "date" : undefined}
                   aria-pressed={isSelected}
-                  aria-label={buildDayAriaLabel(day)}
+                  aria-label={buildDayAriaLabel(day, t)}
                   className={`day-strip-card${isSelected ? " day-strip-card-selected" : ""}`}
                   data-testid={`day-card-${day.date}`}
                   disabled={loading}
@@ -418,17 +422,17 @@ export default function ForecastView({
                     </span>
                     <span className="day-strip-date">
                       <span className="day-strip-date-main">{formatDayLabel(`${day.date}T00:00:00`)}</span>
-                      <span className="day-strip-weekday">{formatWeekdayLabel(day.date)}</span>
+                      <span className="day-strip-weekday">{formatWeekdayLabel(day.date, t)}</span>
                     </span>
                   </span>
-                  <span className="day-strip-weather">{day.weather ?? "天氣資料不足"}</span>
-                  {day.aqi_forecast?.value != null && <span className={`aqi-dot aqi-${day.aqi_forecast.level}`} title={`空氣品質 ${day.aqi_forecast.value} ${day.aqi_forecast.level ?? ""}`} aria-label={`空氣品質 ${day.aqi_forecast.value}`} />}
+                  <span className="day-strip-weather">{day.weather ?? t.weatherDataUnavailable}</span>
+                  {day.aqi_forecast?.value != null && <span className={`aqi-dot aqi-${day.aqi_forecast.level}`} title={`${t.aqiLabel(day.aqi_forecast.value)} ${day.aqi_forecast.level ?? ""}`} aria-label={t.aqiLabel(day.aqi_forecast.value)} />}
                   <span className="day-strip-temp">
-                    <strong>高 {day.temp_high_c ?? "—"}°</strong>
-                    <span>低 {day.temp_low_c ?? "—"}°</span>
+                    <strong>{t.highPrefix}{day.temp_high_c ?? "—"}°</strong>
+                    <span>{t.lowPrefix}{day.temp_low_c ?? "—"}°</span>
                   </span>
                   {hasDailyPop(day.max_pop_percent) && (
-                    <span className="day-strip-pop">降雨 {day.max_pop_percent}%</span>
+                    <span className="day-strip-pop">{t.rainPrefix}{day.max_pop_percent}%</span>
                   )}
                 </button>
               );
@@ -444,8 +448,8 @@ export default function ForecastView({
         data-summary-mode={ai_summary.mode}
       >
         <div className="summary-badges">
-          <span className="badge">行前建議</span>
-          {showMockBadge && <span className="badge badge-muted">示範資料</span>}
+          <span className="badge">{t.badgeAdvice}</span>
+          {showMockBadge && <span className="badge badge-muted">{t.badgeMock}</span>}
         </div>
         <p>{ai_summary.text}</p>
       </div>
@@ -453,7 +457,7 @@ export default function ForecastView({
       <div className="fact-grid">
         {sunrise && (
           <article className="fact-card sun-card atmosphere-card" data-testid="sun-atmosphere-card">
-            <p className="fact-kicker">日出日落</p>
+            <p className="fact-kicker">{t.kickerSun}</p>
             <CelestialArc
               label="sun"
               riseTime={sunrise.sunrise_time}
@@ -461,8 +465,8 @@ export default function ForecastView({
               targetDate={forecast.target_date}
             />
             <small className="celestial-context">
-              {sunrise.county} · {formatDateLabel(sunrise.target_date)}
-              {sunrise.is_approximate ? ` · ${formatSunriseSourceLabel(sunrise.source_date)}` : ""}
+              {sunrise.county} · {formatDateLabel(sunrise.target_date, t)}
+              {sunrise.is_approximate ? ` · ${formatSunriseSourceLabel(sunrise.source_date, t)}` : ""}
             </small>
           </article>
         )}
@@ -473,7 +477,7 @@ export default function ForecastView({
             value={uv.value}
             level={uv.level}
             maximum={14}
-            detail={`${formatUvSourceLabel(uv.source_type)}${!showMockBadge && uv.station_name ? ` · 測站 ${uv.station_name}` : ""}`}
+            detail={`${formatUvSourceLabel(uv.source_type, t)}${!showMockBadge && uv.station_name ? ` · ${t.stationPrefix}${uv.station_name}` : ""}`}
           />
         )}
         {aqi && (
@@ -483,13 +487,13 @@ export default function ForecastView({
             value={aqi.value}
             level={aqi.level}
             maximum={300}
-            detail={!showMockBadge && aqi.station_name ? `測站 ${aqi.station_name}` : ""}
+            detail={!showMockBadge && aqi.station_name ? `${t.stationPrefix}${aqi.station_name}` : ""}
           />
         )}
         {moon && (
           <article className="fact-card moon-card atmosphere-card" data-testid="moon-atmosphere-card">
             <p className="fact-kicker">
-              月出月沒 <span>{moon.phase}</span>
+              {t.kickerMoon} <span>{moon.phase}</span>
             </p>
             <CelestialArc
               label="moon"
@@ -501,7 +505,7 @@ export default function ForecastView({
               phaseName={moon.phase}
               phaseIcon={moon.icon}
             />
-            <small className="celestial-context">{moon.county} · {formatDateLabel(moon.target_date)}</small>
+            <small className="celestial-context">{moon.county} · {formatDateLabel(moon.target_date, t)}</small>
           </article>
         )}
       </div>

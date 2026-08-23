@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Town } from "../lib/api";
 import { MAX_FAVORITES } from "../lib/favoriteTowns";
+import { useLocale } from "../lib/locale";
 
 interface Props {
   towns: Town[];
@@ -29,16 +30,17 @@ export default function FavoriteTowns({
   onMoveBack,
   onToggleDefault,
 }: Props) {
+  const { t } = useLocale();
   const [editing, setEditing] = useState(false);
 
   const canAdd =
     !favorites.includes(currentTownCode) && favorites.length < MAX_FAVORITES && !!currentTownCode;
 
-  const resolveTown = (code: string): Town | undefined => towns.find((t) => t.code === code);
+  const resolveTown = (code: string): Town | undefined => towns.find((item) => item.code === code);
 
   if (editing) {
     return (
-      <section className="fav-section" aria-label="常用地點管理">
+      <section className="fav-section" aria-label={t.favManageAriaLabel}>
         <ul className="fav-edit-list" role="list">
           {favorites.map((code, idx) => {
             const town = resolveTown(code);
@@ -54,13 +56,13 @@ export default function FavoriteTowns({
                       ★
                     </span>
                   )}
-                  {isDefault && <span className="sr-only">（預設）</span>}
+                  {isDefault && <span className="sr-only">{t.favDefaultTag}</span>}
                 </span>
                 <div className="fav-edit-item-controls">
                   <button
                     type="button"
                     className="fav-ctrl-btn"
-                    aria-label={`向前移動 ${town.name}`}
+                    aria-label={t.favMoveUpAria(town.name)}
                     disabled={idx === 0}
                     onClick={() => onMoveForward(code)}
                   >
@@ -69,7 +71,7 @@ export default function FavoriteTowns({
                   <button
                     type="button"
                     className="fav-ctrl-btn"
-                    aria-label={`向後移動 ${town.name}`}
+                    aria-label={t.favMoveDownAria(town.name)}
                     disabled={idx === favorites.length - 1}
                     onClick={() => onMoveBack(code)}
                   >
@@ -79,7 +81,7 @@ export default function FavoriteTowns({
                     type="button"
                     className={`fav-ctrl-btn fav-ctrl-default${isDefault ? " fav-ctrl-default-active" : ""}`}
                     aria-pressed={isDefault}
-                    aria-label={isDefault ? `取消 ${town.name} 預設` : `設 ${town.name} 為預設`}
+                    aria-label={isDefault ? t.favUnsetDefaultAria(town.name) : t.favSetDefaultAria(town.name)}
                     onClick={() => onToggleDefault(code)}
                   >
                     ★
@@ -87,7 +89,7 @@ export default function FavoriteTowns({
                   <button
                     type="button"
                     className="fav-ctrl-btn fav-ctrl-remove"
-                    aria-label={`移除 ${town.name}`}
+                    aria-label={t.favRemoveAria(town.name)}
                     onClick={() => onRemove(code)}
                   >
                     ×
@@ -102,17 +104,17 @@ export default function FavoriteTowns({
           className="fav-done-btn"
           onClick={() => setEditing(false)}
         >
-          完成
+          {t.favDone}
         </button>
       </section>
     );
   }
 
   return (
-    <section className="fav-section" aria-label="常用地點">
+    <section className="fav-section" aria-label={t.favSectionAriaLabel}>
       <div className="fav-bar">
         {favorites.length === 0 && (
-          <span className="fav-empty">尚無常用地點</span>
+          <span className="fav-empty">{t.favEmpty}</span>
         )}
         {favorites.map((code) => {
           const town = resolveTown(code);
@@ -125,7 +127,7 @@ export default function FavoriteTowns({
               type="button"
               className={`fav-chip${isCurrent ? " fav-chip-active" : ""}`}
               aria-pressed={isCurrent}
-              aria-label={`${town.city} ${town.name}${isDefault ? "（預設）" : ""}`}
+              aria-label={`${town.city} ${town.name}${isDefault ? t.favDefaultTag : ""}`}
               disabled={loading}
               onClick={() => onSelect(town)}
             >
@@ -142,10 +144,10 @@ export default function FavoriteTowns({
           <button
             type="button"
             className="fav-add-btn"
-            aria-label="加入目前地點至常用"
+            aria-label={t.favAddCurrentAria}
             onClick={() => onAdd(currentTownCode)}
           >
-            + 加入目前地點
+            {t.favAddCurrentBtn}
           </button>
         )}
         {favorites.length > 0 && (
@@ -154,7 +156,7 @@ export default function FavoriteTowns({
             className="fav-edit-btn"
             onClick={() => setEditing(true)}
           >
-            編輯
+            {t.favEditBtn}
           </button>
         )}
       </div>
