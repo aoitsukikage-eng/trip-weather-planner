@@ -7,6 +7,8 @@ export interface Town {
   code: string;
   name: string;
   city: string;
+  name_en?: string | null;
+  city_en?: string | null;
   lat: number;
   lon: number;
 }
@@ -17,7 +19,9 @@ export interface DailyForecast {
   temp_low_c: number | null;
   max_pop_percent: number | null;
   weather: string | null;
+  weather_code?: string | null;
   advice_hint: string | null;
+  advice_hint_key?: string | null;
   aqi_forecast?: { date: string; value: number | null; level: string | null } | null;
 }
 
@@ -202,9 +206,9 @@ function mockForecast(town: Town, date: string): ForecastResult {
   };
 }
 
-export async function getTowns(): Promise<Town[]> {
+export async function getTowns(lang = "zh"): Promise<Town[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/towns`);
+    const res = await fetch(`${API_BASE}/api/towns?lang=${encodeURIComponent(lang)}`);
     const body: Envelope<Town[]> = await res.json();
     if (body.success && body.data) return body.data;
     throw new Error("bad response");
@@ -213,11 +217,15 @@ export async function getTowns(): Promise<Town[]> {
   }
 }
 
-export async function getForecast(town: Town, date: string): Promise<ForecastResult> {
+export async function getForecast(
+  town: Town,
+  date: string,
+  lang = "zh",
+): Promise<ForecastResult> {
   let res: Response;
   try {
     res = await fetch(
-      `${API_BASE}/api/forecast?town=${encodeURIComponent(town.code)}&date=${date}`,
+      `${API_BASE}/api/forecast?town=${encodeURIComponent(town.code)}&date=${date}&lang=${encodeURIComponent(lang)}`,
       { cache: "no-store" },
     );
   } catch (error) {
