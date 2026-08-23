@@ -4,6 +4,7 @@ import ForecastView from "./components/ForecastView";
 import FavoriteTowns from "./components/FavoriteTowns";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
 import { millisecondsUntilNextTaipeiDay, taipeiIsoDate } from "./lib/localDate";
+import { resolveDaypart } from "./lib/daypart";
 import {
   getFavorites,
   getDefaultTown,
@@ -167,6 +168,18 @@ export default function App() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [result]);
+
+  useEffect(() => {
+    const sunriseSunset = (chartResult ?? result)?.forecast.sunrise_sunset ?? null;
+
+    const applyDaypart = () => {
+      document.documentElement.dataset.daypart = resolveDaypart(sunriseSunset);
+    };
+
+    applyDaypart();
+    const timer = window.setInterval(applyDaypart, 60_000);
+    return () => window.clearInterval(timer);
+  }, [chartResult, result]);
 
   const handleFavoriteAdd = (code: string) => {
     setFavorites(libAddFavorite(code));
