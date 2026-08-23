@@ -443,6 +443,31 @@ describe("ForecastView", () => {
     expect(screen.getByTestId("chart-place").textContent).toBe("新北市 貢寮區");
     expect(container.querySelector(".hourly-chart svg")?.innerHTML).toBe(beforeChart);
   });
+
+  test("(c) ForecastView in en renders real weather emoji for 7-day strip (not '·') and daily/hourly icons agree", () => {
+    const result = buildResult("Taipei City", "Xinyi District");
+    result.forecast.days[0] = {
+      ...result.forecast.days[0],
+      weather: "Clear",
+      weather_code: "01",
+    };
+    result.forecast.days[1] = {
+      ...result.forecast.days[1],
+      weather: "Light Rain",
+      weather_code: "12",
+    };
+
+    const { container } = render(<ForecastView result={result} />);
+
+    const icons = Array.from(container.querySelectorAll(".day-strip-icon"));
+    const firstDayIcon = icons[0]?.textContent;
+    const secondDayIcon = icons[1]?.textContent;
+
+    expect(firstDayIcon).not.toBe("·");
+    expect(firstDayIcon).toBe("☀️");
+    expect(secondDayIcon).not.toBe("·");
+    expect(secondDayIcon).toBe("🌧️");
+  });
 });
 
 describe("getHourlyAnnotationStep", () => {
