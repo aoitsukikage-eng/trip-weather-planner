@@ -21,9 +21,10 @@
 
 | 環境 | 版本 | 說明 |
 |---|---|---|
-| `phase2-dev` branch（本 repo） | **v1.1.0 Release Candidate** | 含 Phase 2 全部功能；合併至 main 並打 tag 後成為正式 v1.1.0 |
+| `main` branch | **v1.1.0**（已發布、已打 tag） | Phase 2 全部功能已合併並發布 |
+| `phase3-tourism` branch（本 repo，開發中） | v1.1.0 之後、尚未發布 | 新增 Portfolio 首頁 Mini 元件（`frontend-mini/`）與 Weather Postcard 主題／日夜切換，尚未合併 main、未打 tag |
 | Azure 公開 demo | **v1.0.0 Phase 1** | 目前已部署的公開 demo 維持 Phase 1 版本，本次不重新部署 |
-| Phase 3（計畫中） | 未排入 v1.1.0 | TDX 旅遊資訊串接保留於 Phase 3，不包含在本次發布 |
+| Phase 3（計畫中） | 未排入 v1.1.0 | TDX 旅遊資訊串接保留於 Phase 3，不包含在本次發布；與分支名稱 `phase3-tourism` 無關，尚未開始 |
 
 ## 架構一覽
 
@@ -38,9 +39,9 @@
 
 後端輸出：368 鄉鎮市區、7 天預報、72h 逐時趨勢、日出日落、月出月沒與月相、UV 日最大值、CWA 天氣警特報、即時 AQI 與 3 日預報、行前建議（規則式產生）。
 
-## Phase 2 新功能（v1.1.0 RC）
+## Phase 2 新功能（v1.1.0）
 
-以下功能已實作並整合至 `phase2-dev`：
+以下功能已實作並整合至 `main`（v1.1.0）：
 
 - **CWA 天氣警特報**：從 `W-C0033-001` 取得並顯示縣市有效特報；有特報時以 warning banner 呈現。
 - **月相與月出月沒**：CWA `A-B0063-001` 月出月沒時刻；月相與照光比例由後端本地計算並顯示圖示。
@@ -124,15 +125,16 @@ cd frontend && npm run build
 ## 目錄
 
 ```
-backend/    FastAPI（adapters / services / routers / schemas / tests）
-frontend/   React + Vite + TypeScript
-infra/      Terraform（前端託管 + 後端服務）
-docs/       設計文件與流程圖
+backend/       FastAPI（adapters / services / routers / schemas / tests）
+frontend/      React + Vite + TypeScript（主要規劃頁）
+frontend-mini/ React + Vite + TypeScript（Portfolio 首頁嵌入用的精簡版天氣卡片，phase3-tourism）
+infra/         Terraform（前端託管 + 後端服務）
+docs/          設計文件與流程圖
 ```
 
 ## 狀態
 
-- ✅ **v1.1.0 RC（phase2-dev）**：
+- ✅ **v1.1.0（main，已發布）**：
   - CWA 天氣警特報（`W-C0033-001`）：有效特報以 warning banner 呈現於預報頁。
   - 月相與月出月沒（`A-B0063-001`）：月出月沒時刻來自 CWA；月相、圖示與照光比例由後端計算。
   - MOENV 即時 AQI（`aqx_p_432`）：最近測站 AQI 顯示於預報主頁。
@@ -142,6 +144,15 @@ docs/       設計文件與流程圖
   - 日期選擇為 today..today+6 的 7 天 chips，預設載入即顯示整週預報。
   - 行前建議固定聚焦使用者選取日，由後端規則式邏輯產生。
   - 72 小時逐時圖表呈現溫度、體感溫度、降雨機率與天氣圖示，點位過密時自動降低標註密度。
+- ✅ **Portfolio 首頁 Mini 元件**（`frontend-mini/`，`phase3-tourism`，尚未發布）：
+  - 獨立子專案，供個人網站首頁嵌入的精簡版天氣卡片。
+  - 支援 compact 模式、AQI／UV 並列訊號、Demo Data 降級顯示。
+- ✅ **Weather Postcard 主題與日夜切換**（`frontend/`，`phase3-tourism`，尚未發布）：
+  - 主要規劃頁改用米白／紙白／海洋藍色系（Weather Postcard 主題），取代原本的科技藍配色。
+  - 依真實日出日落時間（後端已提供的 `sunrise_sunset` 資料）自動切換：白天為暖色主題，夜晚沿用原本的冷色系配色；資料未載入前 fallback 為固定 06:00–18:00。
+- ✅ **兩項查詢正確性修正**（`phase3-tourism`）：
+  - 「今天」判定改以 Asia/Taipei 時區計算，避免跨時區誤判日期。
+  - 強制執行 600 秒天氣快取政策。
 - ✅ **Mock mode** 仍可零憑證 demo，保留既有 22 筆靜態鄉鎮與 deterministic fallback。
 - ✅ **Public-demo deployment readiness**：Docker build、Terraform 範本、deploy workflow skeleton、runbook 已整理完成。
 - ✅ **Azure public demo（v1.0.0 Phase 1）**：前端 Azure Storage 靜態網站，後端 Azure Container Apps，依 `docs/public_demo_runbook.md` 手動部署；本次 Phase 2 功能尚未重新部署。
@@ -153,4 +164,4 @@ docs/       設計文件與流程圖
 - Terraform example：`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton：`.github/workflows/deploy-demo.yml`
 
-目前 repo 的 `phase2-dev` 分支是 **v1.1.0 Release Candidate**。合併至 `main` 並打 tag 後方為正式 v1.1.0；現行 Azure 公開 demo 維持 v1.0.0 Phase 1，本次不重新部署。
+`main` 分支已是正式 **v1.1.0**（已打 tag）。目前開發中的 `phase3-tourism` 分支在此基礎上新增了 Portfolio 首頁 Mini 元件與 Weather Postcard 主題／日夜切換，尚未合併 `main`、未發布。現行 Azure 公開 demo 維持 v1.0.0 Phase 1，本次不重新部署。
