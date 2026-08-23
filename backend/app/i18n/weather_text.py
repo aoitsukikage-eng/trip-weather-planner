@@ -23,16 +23,16 @@ LangType = Literal["zh", "en"]
 # ---------------------------------------------------------------------------
 WX_CODE_TO_TEXT: dict[str, dict[str, str]] = {
     "01": {"zh": "晴天", "en": "Clear"},
-    "02": {"zh": "多雲時晴", "en": "Partly Cloudy"},
-    "03": {"zh": "多雲", "en": "Cloudy"},
-    "04": {"zh": "陰時多雲", "en": "Mostly Cloudy"},
+    "02": {"zh": "晴時多雲", "en": "Partly Cloudy"},
+    "03": {"zh": "多雲時晴", "en": "Partly Cloudy"},
+    "04": {"zh": "多雲", "en": "Cloudy"},
     "05": {"zh": "多雲時陰", "en": "Mostly Cloudy"},
     "06": {"zh": "陰時多雲", "en": "Mostly Cloudy"},
     "07": {"zh": "陰天", "en": "Overcast"},
     "08": {"zh": "短暫陣雨", "en": "Short Shower"},
     "09": {"zh": "短暫陣雨", "en": "Short Shower"},
     "10": {"zh": "短暫陣雨", "en": "Short Shower"},
-    "11": {"zh": "雨", "en": "Rain"},
+    "11": {"zh": "陣雨", "en": "Showers"},
     "12": {"zh": "短暫雨", "en": "Light Rain"},
     "13": {"zh": "陣雨", "en": "Showers"},
     "14": {"zh": "陣雨", "en": "Showers"},
@@ -184,6 +184,22 @@ def get_aqi_level_text(level: str | None, lang: str = "zh") -> str | None:
     return level
 
 
+def get_aqi_level_code(value: int | float | None) -> str | None:
+    if value is None:
+        return None
+    if value <= 50:
+        return "good"
+    if value <= 100:
+        return "moderate"
+    if value <= 150:
+        return "unhealthy_sensitive"
+    if value <= 200:
+        return "unhealthy"
+    if value <= 300:
+        return "very_unhealthy"
+    return "hazardous"
+
+
 def get_aqi_source_label(label: str, lang: str = "zh") -> str:
     if lang == "zh":
         return label
@@ -222,6 +238,20 @@ def get_uv_level_text(level: str | None, lang: str = "zh") -> str | None:
         return level
     entry = UV_LEVEL_MAP.get(level)
     return entry["en"] if entry else level
+
+
+def get_uv_level_code(value: float | None) -> str | None:
+    if value is None:
+        return None
+    if value <= 2:
+        return "low"
+    if value <= 5:
+        return "moderate"
+    if value <= 7:
+        return "high"
+    if value <= 10:
+        return "very_high"
+    return "extreme"
 
 
 def get_uv_source_label(label: str, lang: str = "zh") -> str:

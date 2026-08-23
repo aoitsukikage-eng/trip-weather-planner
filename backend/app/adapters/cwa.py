@@ -20,6 +20,7 @@ from app.i18n.weather_text import (
     get_county_name_text,
     get_moon_phase_text,
     get_town_name_text,
+    get_uv_level_code,
     get_uv_level_text,
     get_uv_source_label,
 )
@@ -561,6 +562,7 @@ class CWAAdapter:
         return UVInfo(
             value=value,
             level=_uv_level(value),
+            level_code=get_uv_level_code(value),
             source_label="目前紫外線",
             source_type="observation",
             observed_at=observed_at,
@@ -871,6 +873,7 @@ def _label_uv_info(info: UVInfo, target_date: date, lang: str = "zh") -> UVInfo:
     return UVInfo(
         value=info.value,
         level=level,
+        level_code=get_uv_level_code(info.value),
         source_label=source_label,
         source_type=info.source_type,
         observed_at=info.observed_at,

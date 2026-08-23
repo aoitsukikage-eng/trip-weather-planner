@@ -11,7 +11,9 @@ import hashlib
 from datetime import date, datetime, timedelta
 
 from app.i18n.weather_text import (
+    WX_CODE_TO_TEXT,
     get_county_name_text,
+    get_uv_level_code,
     get_uv_level_text,
     get_uv_source_label,
 )
@@ -25,13 +27,8 @@ def _stable_unit(*parts: str) -> float:
 
 
 def _weather_text(pop: int) -> str:
-    if pop >= 70:
-        return "陰時多雲短暫雨"
-    if pop >= 40:
-        return "多雲時陰"
-    if pop >= 20:
-        return "多雲"
-    return "晴時多雲"
+    code = _weather_code(pop)
+    return WX_CODE_TO_TEXT[code]["zh"]
 
 
 def mock_time_slices(
@@ -98,6 +95,7 @@ def mock_uv_info(town: Town, target_date: date, lang: str = "zh") -> UVInfo:
     return UVInfo(
         value=value,
         level=level,
+        level_code=get_uv_level_code(value),
         source_label=source_label,
         source_type="observation",
         observed_at=f"{target_date.isoformat()}T12:00:00+08:00",

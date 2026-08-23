@@ -95,6 +95,7 @@ class SunriseSunset(BaseModel):
 class UVInfo(BaseModel):
     value: float | None = None
     level: str | None = None
+    level_code: str | None = None
     source_label: str
     source_type: str
     observed_at: str | None = None
@@ -106,11 +107,13 @@ class AQIForecast(BaseModel):
     date: str
     value: int | None = None
     level: str | None = None
+    level_code: str | None = None
 
 
 class AQIInfo(BaseModel):
     value: int | None = None
     level: str | None = None
+    level_code: str | None = None
     station_name: str | None = None
     observed_at: str | None = None
     source_label: str = "目前空氣品質"

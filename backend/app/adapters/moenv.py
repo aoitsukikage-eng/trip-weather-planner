@@ -11,7 +11,7 @@ import httpx
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
-from app.i18n.weather_text import get_aqi_level_text, get_aqi_source_label
+from app.i18n.weather_text import get_aqi_level_code, get_aqi_level_text, get_aqi_source_label
 from app.schemas.weather import AQIForecast, AQIInfo, Town
 
 DATASET_CURRENT = "aqx_p_432"
@@ -68,7 +68,11 @@ class MOENVAdapter:
             station_name = "Demo Station" if lang == "en" else "示範測站"
             source_label = get_aqi_source_label("目前空氣品質（示範）", lang=lang)
             return AQIInfo(
-                value=42, level=level, station_name=station_name, source_label=source_label
+                value=42,
+                level=level,
+                level_code=get_aqi_level_code(42),
+                station_name=station_name,
+                source_label=source_label,
             )
         rows = await self._request(DATASET_CURRENT)
         nearest: tuple[float, dict[str, Any]] | None = None
@@ -93,6 +97,7 @@ class MOENVAdapter:
         return AQIInfo(
             value=value,
             level=level,
+            level_code=get_aqi_level_code(value),
             station_name=str(row.get("sitename") or ""),
             observed_at=str(row.get("publishtime") or "") or None,
             source_label=source_label,
@@ -117,7 +122,12 @@ class MOENVAdapter:
                 continue
             raw_level = aqi_level(value)
             level = get_aqi_level_text(raw_level, lang=lang)
-            result[day] = AQIForecast(date=day, value=value, level=level)
+            result[day] = AQIForecast(
+                date=day,
+                value=value,
+                level=level,
+                level_code=get_aqi_level_code(value),
+            )
         return result
 
     async def _request(self, dataset: str) -> list[dict[str, Any]]:
