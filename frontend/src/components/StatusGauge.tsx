@@ -1,3 +1,5 @@
+import { useLocale } from "../lib/locale";
+
 export type SeverityTier = "good" | "moderate" | "poor" | "severe" | "hazard";
 
 const UV_SEVERITY: Record<string, SeverityTier> = {
@@ -42,9 +44,10 @@ export default function StatusGauge({
   maximum: number;
   detail: string;
 }) {
+  const { t } = useLocale();
   const severity = getSeverityTier(kind, level);
   const progress = getGaugeProgress(value, maximum);
-  const valueLabel = kind === "uv" ? `指數 ${value ?? "—"}` : `AQI ${value ?? "—"}`;
+  const valueLabel = kind === "uv" ? t.uvIndexLabel(value ?? "—") : t.aqiIndexLabel(value ?? "—");
 
   return (
     <article className={`fact-card status-gauge-card severity-${severity}`} data-severity={severity}>
@@ -53,13 +56,13 @@ export default function StatusGauge({
         className="status-gauge"
         data-testid={`${kind}-gauge`}
         data-progress={progress.toFixed(4)}
-        aria-label={`${label} ${valueLabel} ${level ?? "資料不足"}`}
+        aria-label={`${label} ${valueLabel} ${level ?? t.gaugeDataUnavailable}`}
       >
         <span className="status-gauge-fill" style={{ width: `${progress * 100}%` }} />
         <span className="status-gauge-handle" style={{ left: `${progress * 100}%` }} />
       </div>
       <p className="status-gauge-value">
-        {valueLabel} · <span>{level ?? "資料不足"}</span>
+        {valueLabel} · <span>{level ?? t.gaugeDataUnavailable}</span>
       </p>
       <small>{detail}</small>
     </article>

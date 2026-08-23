@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { Town } from "../lib/api";
+import { useLocale } from "../lib/locale";
 
 interface Props {
   towns: Town[];
@@ -20,6 +21,7 @@ export default function TripForm({
   onTownCodeChange,
   onSubmit,
 }: Props) {
+  const { t } = useLocale();
   const cities = Array.from(new Set(towns.map((town) => town.city))).sort((left, right) =>
     left.localeCompare(right, "zh-Hant"),
   );
@@ -30,7 +32,7 @@ export default function TripForm({
   // When city changes, auto-correct townCode to a valid town in the new city.
   useEffect(() => {
     if (!city || !filteredTowns.length) return;
-    if (!filteredTowns.some((t) => t.code === townCode)) {
+    if (!filteredTowns.some((item) => item.code === townCode)) {
       onTownCodeChange(filteredTowns[0].code);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +49,7 @@ export default function TripForm({
   return (
     <form className="trip-form" onSubmit={handle}>
       <label className="form-field">
-        縣市
+        {t.labelCity}
         <select value={city} onChange={(event) => onCityChange(event.target.value)}>
           {cities.map((option) => (
             <option key={option} value={option}>
@@ -58,7 +60,7 @@ export default function TripForm({
       </label>
 
       <label className="form-field">
-        鄉鎮市區
+        {t.labelTown}
         <select value={townCode} onChange={(event) => onTownCodeChange(event.target.value)}>
           {filteredTowns.map((town) => (
             <option key={town.code} value={town.code}>
@@ -69,7 +71,7 @@ export default function TripForm({
       </label>
 
       <button className="submit-button" type="submit" disabled={loading || !townCode}>
-        {loading ? "查詢中…" : "查詢天氣"}
+        {loading ? t.btnQuerying : t.btnQuery}
       </button>
     </form>
   );
