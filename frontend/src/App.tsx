@@ -248,7 +248,7 @@ function AppMain() {
               cursor: "pointer",
               flexShrink: 0,
             }}
-            aria-label="Switch language"
+            aria-label={t.switchLangAriaLabel}
           >
             {t.switchLangLabel}
           </button>

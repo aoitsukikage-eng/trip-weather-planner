@@ -2,6 +2,7 @@ import type { Dictionary } from "./types";
 
 export const en: Dictionary = {
   switchLangLabel: "中文",
+  switchLangAriaLabel: "Switch language",
   localeNames: {
     zh: "中文",
     en: "English",
