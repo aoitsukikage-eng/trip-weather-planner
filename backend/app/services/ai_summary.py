@@ -16,13 +16,35 @@ from app.core.config import Settings
 from app.schemas.weather import DailyForecast, Town
 from app.services.weather import pick_target_day
 
-_SYSTEM_PROMPT = (
+_SYSTEM_PROMPT_ZH = (
     "你是旅遊行前助理。根據以下公開天氣預報,用繁體中文寫一段 2-3 句、"
     "友善且具體的行前建議,包含穿著或攜帶物品提醒。不要編造預報以外的資訊。"
 )
 
+_SYSTEM_PROMPT_EN = (
+    "You are a trip preparation assistant. Based on the public weather forecast below, "
+    "write a friendly and concise 2-3 sentence travel recommendation in English, "
+    "including tips on clothing or items to bring. Do not invent information beyond the forecast."
+)
 
-def _rule_based_summary(town: Town, day: DailyForecast) -> str:
+
+def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str:
+    if lang == "en":
+        town_name = town.name_en or town.name
+        city_name = town.city_en or town.city
+        parts = [f"The forecast for {town_name}, {city_name} on {_display_date(day.date)} "]
+        if day.weather:
+            parts.append(f'is "{day.weather}", ')
+        if day.temp_low_c is not None and day.temp_high_c is not None:
+            parts.append(
+                f"with temperatures around {day.temp_low_c:.0f}–{day.temp_high_c:.0f}°C "
+            )
+        if day.max_pop_percent is not None:
+            parts.append(f"and a peak precipitation chance of {day.max_pop_percent}%. ")
+        if day.advice_hint:
+            parts.append(day.advice_hint)
+        return "".join(parts).strip()
+
     parts = [f"{town.city}{town.name}在 {_display_date(day.date)} "]
     if day.weather:
         parts.append(f"預報為「{day.weather}」,")
@@ -54,31 +76,49 @@ class AiSummaryService:
         town: Town,
         days: list[DailyForecast],
         target_date: str,
+        lang: str = "zh",
     ) -> tuple[str, str]:
         """Return (summary_text, mode) where mode is 'gemini' or 'rule-based'."""
         if not days:
-            return ("目前沒有可用的預報資料。", "rule-based")
+            no_data_msg = (
+                "No forecast data currently available."
+                if lang == "en"
+                else "目前沒有可用的預報資料。"
+            )
+            return (no_data_msg, "rule-based")
         focused_days = pick_target_day(days, target_date)
         primary = focused_days[0]
         if not self.enabled_real:
-            return (_rule_based_summary(town, primary), "rule-based")
+            return (_rule_based_summary(town, primary, lang=lang), "rule-based")
         try:
-            return (self._gemini_summary(town, focused_days), "gemini")
+            return (self._gemini_summary(town, focused_days, lang=lang), "gemini")
         except Exception:
             # Graceful degrade: never let the AI block the weather result.
-            return (_rule_based_summary(town, primary), "rule-based-fallback")
+            return (_rule_based_summary(town, primary, lang=lang), "rule-based-fallback")
 
-    def _gemini_summary(self, town: Town, days: list[DailyForecast]) -> str:
+    def _gemini_summary(
+        self, town: Town, days: list[DailyForecast], lang: str = "zh"
+    ) -> str:
         from google import genai  # imported lazily; optional dependency
 
         client = genai.Client(api_key=self._settings.gemini_api_key)
+        system_prompt = _SYSTEM_PROMPT_EN if lang == "en" else _SYSTEM_PROMPT_ZH
         facts = "\n".join(
             f"- {d.date}: {d.weather}, {d.temp_low_c}-{d.temp_high_c}°C, "
+            f"chance of rain {d.max_pop_percent}%" if lang == "en"
+            else f"- {d.date}: {d.weather}, {d.temp_low_c}-{d.temp_high_c}°C, "
             f"降雨機率 {d.max_pop_percent}%"
             for d in days
         )
-        prompt = f"{_SYSTEM_PROMPT}\n\n地點:{town.city}{town.name}\n預報:\n{facts}"
+        location_label = (
+            f"Location: {town.name_en or town.name}, {town.city_en or town.city}"
+            if lang == "en"
+            else f"地點:{town.city}{town.name}"
+        )
+        prompt = f"{system_prompt}\n\n{location_label}\nForecast:\n{facts}"
         response = client.models.generate_content(
             model="gemini-2.5-flash", contents=prompt
         )
-        return (response.text or "").strip() or _rule_based_summary(town, days[0])
+        return (response.text or "").strip() or _rule_based_summary(
+            town, days[0], lang=lang
+        )

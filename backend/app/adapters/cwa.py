@@ -15,6 +15,14 @@ from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_u
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
+from app.i18n.weather_text import (
+    format_warning,
+    get_county_name_text,
+    get_moon_phase_text,
+    get_town_name_text,
+    get_uv_level_text,
+    get_uv_source_label,
+)
 from app.schemas.weather import MoonInfo, SunriseSunset, TimeSlice, Town, UVInfo, WeatherWarning
 
 DATASET_NEAR = "F-D0047-093"
@@ -194,14 +202,15 @@ class CWAAdapter:
             source_label=f"{weekly.source_label} + {near_term.source_label}",
         )
 
-    async def fetch_all_towns(self) -> list[Town]:
+    async def fetch_all_towns(self, lang: str = "zh") -> list[Town]:
         if self._settings.use_mock:
             raise UpstreamError(
                 "Mock mode does not provide live town catalog.",
                 error_code="mock_mode",
             )
 
-        cached = self._cache_get(TOWNS_CACHE_KEY)
+        cache_key = f"{TOWNS_CACHE_KEY}:{lang}"
+        cached = self._cache_get(cache_key)
         if cached is not None:
             return cached
 
@@ -209,7 +218,7 @@ class CWAAdapter:
         seen_codes: set[str] = set()
         for dataset in _WEEK_DATASETS_BY_CITY.values():
             payload = await self._request_json(dataset)
-            for town in self._parse_town_payload(payload):
+            for town in self._parse_town_payload(payload, lang=lang):
                 if town.code in seen_codes:
                     continue
                 seen_codes.add(town.code)
@@ -221,21 +230,24 @@ class CWAAdapter:
                 f"Live town catalog was unexpectedly small: {len(towns)} entries.",
                 error_code="town_catalog_incomplete",
             )
-        self._cache_set(TOWNS_CACHE_KEY, towns, TOWNS_CACHE_TTL)
+        self._cache_set(cache_key, towns, TOWNS_CACHE_TTL)
         return towns
 
-    async def fetch_sunrise_sunset(self, town: Town, target_date: date) -> SunriseSunset:
+    async def fetch_sunrise_sunset(
+        self, town: Town, target_date: date, lang: str = "zh"
+    ) -> SunriseSunset:
         if self._settings.use_mock:
-            return mock_sunrise_sunset(town, target_date)
+            return mock_sunrise_sunset(town, target_date, lang=lang)
 
         target_iso = target_date.isoformat()
+        county_raw = town.city_en if lang == "en" and town.city_en else town.city
         payload = await self._request_json(
             DATASET_SUNRISE,
             params={"CountyName": town.city, "Date": target_iso},
             cache_key=self._build_sunrise_cache_key(town.city, target_iso),
             ttl=SUNRISE_CACHE_TTL,
         )
-        result = self._parse_sunrise_payload(payload, town.city, target_date)
+        result = self._parse_sunrise_payload(payload, town.city, target_date, lang=lang)
         if result is not None and not result.is_approximate and result.source_date == target_iso:
             return result
 
@@ -245,17 +257,18 @@ class CWAAdapter:
             cache_key=self._build_sunrise_cache_key(town.city, "fallback"),
             ttl=SUNRISE_CACHE_TTL,
         )
-        result = self._parse_sunrise_payload(fallback_payload, town.city, target_date)
+        result = self._parse_sunrise_payload(fallback_payload, town.city, target_date, lang=lang)
         if result is None:
             raise UpstreamError(
-                f"No sunrise/sunset data for {town.city} on {target_iso}.",
+                f"No sunrise/sunset data for {county_raw} on {target_iso}.",
                 error_code="sunrise_not_found",
             )
         return result
 
-    async def fetch_uv_info(self, town: Town, target_date: date) -> UVInfo:
+    async def fetch_uv_info(self, town: Town, target_date: date, lang: str = "zh") -> UVInfo:
         if self._settings.use_mock:
-            return _label_uv_info(mock_uv_info(town, target_date), target_date)
+            mock = mock_uv_info(town, target_date, lang=lang)
+            return _label_uv_info(mock, target_date, lang=lang)
 
         uv_payload = await self._request_json(
             DATASET_UV,
@@ -273,22 +286,25 @@ class CWAAdapter:
                 f"No UV observation could be resolved for {town.name}.",
                 error_code="uv_not_found",
             )
-        return _label_uv_info(result, target_date)
+        return _label_uv_info(result, target_date, lang=lang)
 
-    async def fetch_warnings(self, town: Town) -> list[WeatherWarning]:
+    async def fetch_warnings(self, town: Town, lang: str = "zh") -> list[WeatherWarning]:
         if self._settings.use_mock:
             return []
         payload = await self._request_json(
             DATASET_WARNINGS, params={"CountyName": town.city}, ttl=WARNINGS_CACHE_TTL
         )
-        return self._parse_warning_payload(payload, town.city)
+        return self._parse_warning_payload(payload, town.city, lang=lang)
 
-    async def fetch_moon(self, town: Town, target_date: date) -> MoonInfo:
+    async def fetch_moon(self, town: Town, target_date: date, lang: str = "zh") -> MoonInfo:
         """Fetch CWA A-B0063-001 moonrise/moonset; phase is computed locally."""
-        phase, icon, illumination_fraction, waxing = _moon_phase(target_date)
+        phase_raw, icon, illumination_fraction, waxing = _moon_phase(target_date)
+        phase = get_moon_phase_text(phase_raw, lang=lang)
+        county_display = get_county_name_text(town.city, lang=lang)
+
         if self._settings.use_mock:
             return MoonInfo(
-                county=town.city,
+                county=county_display,
                 target_date=target_date.isoformat(),
                 source_date=target_date.isoformat(),
                 moonrise_time="18:42",
@@ -326,14 +342,15 @@ class CWAAdapter:
                     previous_payload, town.city, previous_date
                 )
                 if _is_within_moon_window(now, previous_date, previous_rise, previous_set):
-                    phase, icon, illumination_fraction, waxing = _moon_phase(previous_date)
+                    phase_raw, icon, illumination_fraction, waxing = _moon_phase(previous_date)
+                    phase = get_moon_phase_text(phase_raw, lang=lang)
                     rise, set_ = previous_rise, previous_set
                     source_date = previous_date
             except UpstreamError:
                 pass
 
         return MoonInfo(
-            county=town.city,
+            county=county_display,
             target_date=target_date.isoformat(),
             source_date=source_date.isoformat(),
             moonrise_time=rise,
@@ -433,7 +450,7 @@ class CWAAdapter:
         return [by_time[key] for key in sorted(by_time)]
 
     @staticmethod
-    def _parse_town_payload(payload: dict[str, Any]) -> list[Town]:
+    def _parse_town_payload(payload: dict[str, Any], lang: str = "zh") -> list[Town]:
         towns: list[Town] = []
         records = payload.get("records")
         if not isinstance(records, dict):
@@ -451,11 +468,17 @@ class CWAAdapter:
                 lon = _safe_float(location.get("Longitude"))
                 if not city or not name or not geocode or lat is None or lon is None:
                     continue
+                name_en = get_town_name_text(f"cwa-{geocode}", name, lang="en")
+                city_en = get_county_name_text(city, lang="en")
+                display_name = name_en if lang == "en" else name
+                display_city = city_en if lang == "en" else city
                 towns.append(
                     Town(
                         code=f"cwa-{geocode}",
-                        name=name,
-                        city=city,
+                        name=display_name,
+                        city=display_city,
+                        name_en=name_en,
+                        city_en=city_en,
                         lat=lat,
                         lon=lon,
                     )
@@ -467,6 +490,7 @@ class CWAAdapter:
         payload: dict[str, Any],
         county: str,
         target_date: date,
+        lang: str = "zh",
     ) -> SunriseSunset | None:
         records = payload.get("records")
         if not isinstance(records, dict):
@@ -502,8 +526,9 @@ class CWAAdapter:
             if chosen is None:
                 return None
             source_date = _normalize_cwa_date(chosen.get("Date"), target_date.year) or target_iso
+            county_display = get_county_name_text(county, lang=lang)
             return SunriseSunset(
-                county=county,
+                county=county_display,
                 target_date=target_iso,
                 source_date=source_date,
                 sunrise_time=_clean_clock(chosen.get("SunRiseTime")),
@@ -544,7 +569,9 @@ class CWAAdapter:
         )
 
     @staticmethod
-    def _parse_warning_payload(payload: dict[str, Any], county: str) -> list[WeatherWarning]:
+    def _parse_warning_payload(
+        payload: dict[str, Any], county: str, lang: str = "zh"
+    ) -> list[WeatherWarning]:
         text = str(payload.get("records") or "")
         if not text or county not in text:
             return []
@@ -555,11 +582,12 @@ class CWAAdapter:
             ("陸上強風特報", "advisory"),
         ):
             if title in text:
+                title_text, desc_text = format_warning(title, county, lang=lang)
                 warnings.append(
                     WeatherWarning(
-                        title=title,
+                        title=title_text,
                         severity=severity,
-                        description=f"{county}{title}，請留意最新天氣資訊。",
+                        description=desc_text,
                     )
                 )
         return warnings
@@ -836,12 +864,14 @@ def _uv_level(value: float) -> str:
     return "危險"
 
 
-def _label_uv_info(info: UVInfo, target_date: date) -> UVInfo:
+def _label_uv_info(info: UVInfo, target_date: date, lang: str = "zh") -> UVInfo:
     label = "目前紫外線" if target_date == _taipei_today() else "目前紫外線僅供參考"
+    level = get_uv_level_text(info.level, lang=lang)
+    source_label = get_uv_source_label(label, lang=lang)
     return UVInfo(
         value=info.value,
-        level=info.level,
-        source_label=label,
+        level=level,
+        source_label=source_label,
         source_type=info.source_type,
         observed_at=info.observed_at,
         station_id=info.station_id,

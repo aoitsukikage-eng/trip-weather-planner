@@ -11,20 +11,20 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
+from app.i18n.weather_text import (
+    get_advice_hint,
+    get_advice_hint_key,
+    get_weather_text,
+)
 from app.schemas.weather import DailyForecast, HourlyForecast, TimeSlice
 
 
 def _advice_hint(temp_high: float | None, temp_low: float | None, max_pop: int | None) -> str:
-    if max_pop is not None and max_pop >= 70:
-        return "降雨機率高,建議攜傘或準備室內備案。"
-    if temp_high is not None and temp_high >= 33:
-        return "高溫炎熱,注意防曬與補充水分。"
-    if temp_low is not None and temp_low <= 12:
-        return "氣溫偏低,出門記得保暖。"
-    return "天氣大致穩定,適合安排戶外行程。"
+    key = get_advice_hint_key(temp_high, temp_low, max_pop)
+    return get_advice_hint(key, lang="zh")
 
 
-def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
+def normalize_to_daily(slices: list[TimeSlice], lang: str = "zh") -> list[DailyForecast]:
     """Group slices by calendar date and summarize each day."""
     buckets: dict[str, list[TimeSlice]] = defaultdict(list)
     for s in slices:
@@ -40,12 +40,18 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
         temps = [s.temp_c for s in day_slices if s.temp_c is not None]
         pops = [s.pop_percent for s in day_slices if s.pop_percent is not None]
         weathers = [s.weather for s in day_slices if s.weather]
+        weather_codes = [s.weather_code for s in day_slices if s.weather_code]
 
         temp_high = max(highs) if highs else (max(temps) if temps else None)
         temp_low = min(lows) if lows else (min(temps) if temps else None)
         max_pop = max(pops) if pops else None
         # Representative weather = most frequent phenomenon that day.
-        weather = Counter(weathers).most_common(1)[0][0] if weathers else None
+        weather_raw = Counter(weathers).most_common(1)[0][0] if weathers else None
+        weather_code = Counter(weather_codes).most_common(1)[0][0] if weather_codes else None
+
+        weather = get_weather_text(weather_raw, weather_code, lang=lang)
+        advice_key = get_advice_hint_key(temp_high, temp_low, max_pop)
+        advice_hint = get_advice_hint(advice_key, lang=lang)
 
         daily.append(
             DailyForecast(
@@ -54,7 +60,9 @@ def normalize_to_daily(slices: list[TimeSlice]) -> list[DailyForecast]:
                 temp_low_c=temp_low,
                 max_pop_percent=max_pop,
                 weather=weather,
-                advice_hint=_advice_hint(temp_high, temp_low, max_pop),
+                weather_code=weather_code,
+                advice_hint=advice_hint,
+                advice_hint_key=advice_key,
             )
         )
     return daily
@@ -76,7 +84,7 @@ def trim_daily_to_window(
     return trimmed
 
 
-def normalize_to_hourly(slices: list[TimeSlice]) -> list[HourlyForecast]:
+def normalize_to_hourly(slices: list[TimeSlice], lang: str = "zh") -> list[HourlyForecast]:
     """Project upstream near-term slices into a uniform 3-hour chart contract."""
     buckets: dict[str, list[tuple[datetime, TimeSlice]]] = defaultdict(list)
     for slot in slices:
@@ -96,6 +104,7 @@ def normalize_to_hourly(slices: list[TimeSlice]) -> list[HourlyForecast]:
         entries = sorted(buckets[bucket_key], key=lambda item: item[0])
         merged = _merge_hourly_bucket(bucket_key, entries)
         if merged is not None:
+            merged.weather = get_weather_text(merged.weather, merged.weather_code, lang=lang)
             hourly.append(merged)
     return hourly
 
