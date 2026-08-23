@@ -1,9 +1,46 @@
 :root {
+  color: #102a43;
+  background:
+    radial-gradient(circle at 85% 8%, #a8dded 0 8%, transparent 28%),
+    #f8f0dc;
+  font-family: "Noto Sans TC", "PingFang TC", sans-serif;
+
+  /* Weather Postcard foundation tokens — see document/trip-weather-planner-weather-postcard-theme-spec.md §3.1 */
+  --twp-cream-50: #f8f0dc;
+  --twp-sky-200: #a8dded;
+  --twp-paper: #fffdf8;
+  --twp-white: #ffffff;
+  --twp-ink-900: #102a43;
+  --twp-ocean-700: #0a5975;
+  --twp-ocean-600: #176b87;
+  --twp-slate-500: #4a7184;
+  --twp-paper-border: #d6c9b4;
+  --twp-aqua-100: #dceff0;
+  --twp-aqua-150: #d9e8e7;
+  --twp-shadow-card: 0 14px 30px rgba(16, 42, 67, 0.07);
+}
+
+/*
+ * Night daypart: reuses the original cool-blue theme (pre-Postcard) instead of a
+ * new palette. `document.documentElement.dataset.daypart` is set by src/App.tsx
+ * from real sunrise/sunset (see src/lib/daypart.ts), so every rule already
+ * written against --twp-* tokens re-themes automatically.
+ */
+:root[data-daypart="night"] {
   color: #17324d;
   background:
     radial-gradient(circle at top left, rgba(130, 207, 255, 0.28), transparent 28%),
     linear-gradient(180deg, #eef8ff 0%, #f7fbff 45%, #eef3f8 100%);
-  font-family: "Noto Sans TC", "PingFang TC", sans-serif;
+
+  --twp-paper: rgba(255, 255, 255, 0.92);
+  --twp-ink-900: #17324d;
+  --twp-ocean-700: #1167ad;
+  --twp-ocean-600: #4f6b83;
+  --twp-slate-500: #c7d8ea;
+  --twp-paper-border: rgba(124, 162, 197, 0.22);
+  --twp-aqua-100: #e2eff9;
+  --twp-aqua-150: #d3e9f8;
+  --twp-shadow-card: 0 14px 30px rgba(61, 97, 135, 0.12);
 }
 
 * {
@@ -27,7 +64,7 @@ header h1 {
 }
 
 .tagline {
-  color: #4f6b83;
+  color: var(--twp-ocean-600);
   margin-top: 0.4rem;
 }
 
@@ -36,12 +73,11 @@ header h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   align-items: end;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--twp-paper);
   padding: 1.35rem;
-  border: 1px solid rgba(124, 162, 197, 0.22);
+  border: 1px solid var(--twp-paper-border);
   border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(61, 97, 135, 0.12);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--twp-shadow-card);
 }
 
 .form-field {
@@ -54,10 +90,10 @@ header h1 {
 
 .trip-form select {
   padding: 0.7rem 0.8rem;
-  border: 1px solid #c7d8ea;
+  border: 1px solid var(--twp-slate-500);
   border-radius: 12px;
-  background: #fdfefe;
-  color: #17324d;
+  background: var(--twp-white);
+  color: var(--twp-ink-900);
   font-size: 1rem;
 }
 
@@ -66,14 +102,14 @@ header h1 {
   padding: 0.78rem 1.35rem;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #1167ad 0%, #2f9bd7 100%);
+  background: var(--twp-ocean-700);
   color: #fff;
   font-size: 1rem;
   cursor: pointer;
 }
 
 .submit-button:disabled {
-  background: #9db6ca;
+  background: color-mix(in srgb, var(--twp-ocean-700) 35%, var(--twp-paper-border));
   cursor: not-allowed;
 }
 
@@ -107,11 +143,10 @@ header h1 {
 }
 
 .summary-panel {
-  background: linear-gradient(135deg, rgba(218, 242, 255, 0.95), rgba(239, 248, 255, 0.95));
-  border: 1px solid rgba(110, 170, 210, 0.24);
+  background: var(--twp-paper);
+  border: 1px solid var(--twp-paper-border);
   border-radius: 16px;
   padding: 1rem 1.2rem;
-  box-shadow: 0 12px 28px rgba(77, 110, 143, 0.1);
 }
 
 .warning-banner { margin: 0 0 1rem; padding: .8rem 1rem; border-radius: 12px; border-left: 5px solid #d97706; background: #fff7e6; color: #78350f; }
@@ -160,8 +195,8 @@ header h1 {
 }
 
 .fact-card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(124, 162, 197, 0.2);
+  background: var(--twp-paper);
+  border: 1px solid var(--twp-paper-border);
   border-radius: 16px;
   padding: 1rem 1.1rem;
 }
@@ -332,10 +367,10 @@ header h1 {
   padding: 1rem 1rem 1.1rem;
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 248, 255, 0.94)),
-    radial-gradient(circle at top right, rgba(123, 188, 255, 0.22), transparent 28%);
-  border: 1px solid rgba(116, 154, 188, 0.18);
-  box-shadow: 0 18px 42px rgba(73, 106, 136, 0.12);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--twp-sky-200) 35%, transparent), transparent 28%),
+    var(--twp-paper);
+  border: 1px solid var(--twp-paper-border);
+  box-shadow: var(--twp-shadow-card);
 }
 
 .hourly-chart-header {
@@ -454,13 +489,9 @@ header h1 {
   min-width: 0;
   padding: 0.82rem 0.8rem 0.78rem;
   border-radius: 20px;
-  border: 1px solid rgba(123, 153, 180, 0.16);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 252, 0.94)),
-    rgba(255, 255, 255, 0.94);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 12px 24px rgba(69, 100, 130, 0.08);
+  border: 1px solid transparent;
+  background: var(--twp-aqua-100);
+  box-shadow: none;
   cursor: pointer;
   transition:
     transform 150ms ease,
@@ -471,12 +502,12 @@ header h1 {
 
 .day-strip-card:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: rgba(14, 116, 183, 0.45);
-  box-shadow: 0 16px 34px rgba(62, 102, 138, 0.14);
+  border-color: color-mix(in srgb, var(--twp-ocean-700) 45%, transparent);
+  box-shadow: var(--twp-shadow-card);
 }
 
 .day-strip-card:focus-visible {
-  outline: 3px solid rgba(14, 116, 183, 0.28);
+  outline: 3px solid color-mix(in srgb, var(--twp-ocean-700) 45%, transparent);
   outline-offset: 3px;
 }
 
@@ -485,36 +516,30 @@ header h1 {
 }
 
 .day-strip-card-selected {
-  border: 2px solid #085b90;
-  background:
-    linear-gradient(180deg, rgba(211, 233, 248, 0.98), rgba(233, 244, 252, 0.97)),
-    rgba(240, 248, 255, 0.98);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    0 16px 34px rgba(8, 91, 144, 0.22);
+  border: 2px solid var(--twp-ocean-700);
+  background: var(--twp-paper);
+  box-shadow: var(--twp-shadow-card);
 }
 
 .day-strip-card-selected:hover:not(:disabled) {
-  border-color: #074a75;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    0 18px 38px rgba(7, 74, 117, 0.24);
+  border-color: var(--twp-ink-900);
+  box-shadow: var(--twp-shadow-card);
 }
 
 .day-strip-card-selected .day-strip-date-main,
 .day-strip-card-selected .day-strip-temp strong {
-  color: #113a5a;
+  color: var(--twp-ink-900);
 }
 
 .day-strip-card-selected .day-strip-weekday,
 .day-strip-card-selected .day-strip-weather,
 .day-strip-card-selected .day-strip-temp,
 .day-strip-card-selected .day-strip-pop {
-  color: #244c6b;
+  color: var(--twp-ocean-600);
 }
 
 .day-strip-card-selected .day-strip-icon {
-  background: rgba(189, 224, 246, 0.96);
+  background: var(--twp-aqua-150);
 }
 
 .day-strip-head {
@@ -552,7 +577,7 @@ header h1 {
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
-  background: rgba(226, 239, 249, 0.95);
+  background: var(--twp-paper);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   font-size: 1.12rem;
   line-height: 1;
