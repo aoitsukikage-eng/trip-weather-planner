@@ -3,6 +3,7 @@ import { isMockForecast, type DailyForecast, type ForecastResult, type HourlyFor
 import CelestialArc from "./CelestialArc";
 import StatusGauge from "./StatusGauge";
 import { useLocale } from "../lib/locale";
+import { getTownFullLabel } from "../lib/townLabel";
 import type { Dictionary } from "../i18n";
 
 function popColor(pop: number | null): string {
@@ -374,7 +375,7 @@ export default function ForecastView({
   loading?: boolean;
   onSelectDate?: (date: string) => void;
 }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { forecast, ai_summary } = result;
   const displayedDays = forecast.days.slice(0, 7);
   const chartForecast = chartResult?.forecast ?? forecast;
@@ -383,8 +384,8 @@ export default function ForecastView({
   const aqi = forecast.aqi;
   const moon = forecast.moon;
   const warnings = forecast.warnings ?? [];
-  const placeLabel = `${forecast.town.city} ${forecast.town.name}`;
-  const chartPlaceLabel = `${chartForecast.town.city} ${chartForecast.town.name}`;
+  const placeLabel = getTownFullLabel(forecast.town, locale);
+  const chartPlaceLabel = getTownFullLabel(chartForecast.town, locale);
   const showMockBadge = isMockForecast(result);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const pendingFocusDateRef = useRef<string | null>(null);
