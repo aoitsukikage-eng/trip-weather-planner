@@ -12,6 +12,7 @@ township — hence we advertise "attractions near the destination", not
 
 from __future__ import annotations
 
+from app.i18n.weather_text import get_county_name_text, get_town_name_text
 from app.schemas.weather import Town
 
 # code: (name, city, lat, lon)
@@ -41,9 +42,23 @@ _TOWNS: dict[str, tuple[str, str, float, float]] = {
 }
 
 
+def _create_town(code: str, name: str, city: str, lat: float, lon: float) -> Town:
+    name_en = get_town_name_text(code, name, lang="en")
+    city_en = get_county_name_text(city, lang="en")
+    return Town(
+        code=code,
+        name=name,
+        city=city,
+        name_en=name_en,
+        city_en=city_en,
+        lat=lat,
+        lon=lon,
+    )
+
+
 def all_towns() -> list[Town]:
     return [
-        Town(code=code, name=name, city=city, lat=lat, lon=lon)
+        _create_town(code, name, city, lat, lon)
         for code, (name, city, lat, lon) in _TOWNS.items()
     ]
 
@@ -53,4 +68,4 @@ def get_town(code: str) -> Town | None:
     if entry is None:
         return None
     name, city, lat, lon = entry
-    return Town(code=code, name=name, city=city, lat=lat, lon=lon)
+    return _create_town(code, name, city, lat, lon)

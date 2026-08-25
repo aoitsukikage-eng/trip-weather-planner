@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Request
@@ -48,11 +49,16 @@ async def health(request: Request) -> ApiResponse[dict]:
 
 
 @router.get("/towns")
-async def towns(request: Request) -> ApiResponse[list[Town]]:
+async def towns(
+    request: Request,
+    lang: Literal["zh", "en"] = Query("zh", description="Language ('zh' or 'en')"),
+) -> ApiResponse[list[Town]]:
     settings = get_settings()
     cache = request.app.state.cache
     if settings.use_mock:
-        return ApiResponse[list[Town]](data=all_towns(), meta=_meta(request, source="mock"))
+        return ApiResponse[list[Town]](
+            data=all_towns(), meta=_meta(request, source="mock")
+        )
 
     adapter = CWAAdapter(settings, cache)
     try:
@@ -70,6 +76,7 @@ async def forecast(
     request: Request,
     town: str = Query(..., description="Town code, e.g. 'taipei-xinyi'"),
     target_date: str = Query(..., alias="date", description="Target date, YYYY-MM-DD"),
+    lang: Literal["zh", "en"] = Query("zh", description="Language ('zh' or 'en')"),
 ) -> ApiResponse[ForecastResult]:
     settings = get_settings()
     cache = request.app.state.cache
@@ -95,7 +102,7 @@ async def forecast(
             error_code="date_out_of_range",
         )
 
-    cache_key = f"forecast:{town}:{target_date}"
+    cache_key = f"forecast:{town}:{target_date}:{lang}"
     cached = cache.get(cache_key)
     if cached is not None:
         return ApiResponse[ForecastResult](
@@ -105,7 +112,7 @@ async def forecast(
     adapter = CWAAdapter(settings, cache)
     slices = await adapter.fetch_forecast_slices(town_obj)
     # Return the full week plus the near-term 72h chart data in one response.
-    days = trim_daily_to_window(normalize_to_daily(slices.daily), _taipei_today())
+    days = trim_daily_to_window(normalize_to_daily(slices.daily, lang=lang), _taipei_today())
     focused_date = target_date
     date_adjusted = False
     is_missing_today = (
@@ -121,7 +128,7 @@ async def forecast(
             "Date must be within the available forecast horizon.",
             error_code="date_out_of_range",
         )
-    hourly_slots = normalize_to_hourly(slices.hourly)
+    hourly_slots = normalize_to_hourly(slices.hourly, lang=lang)
     hourly = hourly_slots or None
     sunrise_sunset = None
     uv_info = None
@@ -131,31 +138,36 @@ async def forecast(
     aqi_forecasts = {}
     try:
         focused_day = date.fromisoformat(focused_date)
-        sunrise_sunset = await adapter.fetch_sunrise_sunset(town_obj, focused_day)
+        sunrise_sunset = await adapter.fetch_sunrise_sunset(town_obj, focused_day, lang=lang)
     except UpstreamError:
         sunrise_sunset = None
     try:
-        uv_info = await adapter.fetch_uv_info(town_obj, focused_day)
+        uv_info = await adapter.fetch_uv_info(town_obj, focused_day, lang=lang)
     except UpstreamError:
         uv_info = None
     try:
-        moon = await adapter.fetch_moon(town_obj, focused_day)
-        warnings = await adapter.fetch_warnings(town_obj)
+        moon = await adapter.fetch_moon(town_obj, focused_day, lang=lang)
+        warnings = await adapter.fetch_warnings(town_obj, lang=lang)
     except UpstreamError:
         pass
     moenv = MOENVAdapter(settings, cache)
     try:
-        aqi = await moenv.fetch_current(town_obj)
-        aqi_forecasts = await moenv.fetch_forecast(town_obj.city)
+        aqi = await moenv.fetch_current(town_obj, lang=lang)
+        aqi_forecasts = await moenv.fetch_forecast(town_obj.city, lang=lang)
     except UpstreamError:
         pass
     for day in days:
         if day.date in aqi_forecasts:
             day.aqi_forecast = aqi_forecasts[day.date]
             if day.aqi_forecast.level:
-                day.advice_hint = (
-                    f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"
-                )
+                if lang == "en":
+                    day.advice_hint = (
+                        f"{day.advice_hint or ''} Air quality forecast: {day.aqi_forecast.level}."
+                    )
+                else:
+                    day.advice_hint = (
+                        f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"
+                    )
 
     forecast_data = ForecastData(
         town=town_obj,
@@ -174,7 +186,7 @@ async def forecast(
     )
 
     ai = AiSummaryService(settings)
-    summary_text, mode = ai.summarize(town_obj, days, focused_date)
+    summary_text, mode = ai.summarize(town_obj, days, focused_date, lang=lang)
     result = ForecastResult(
         forecast=forecast_data,
         ai_summary=AiSummary(text=summary_text, mode=mode),

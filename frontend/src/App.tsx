@@ -57,8 +57,14 @@ function AppMain() {
   };
 
   useEffect(() => {
-    getTowns().then(setTowns);
-  }, []);
+    getTowns(locale).then(setTowns);
+  }, [locale]);
+
+  useEffect(() => {
+    if (latestSuccessfulTownRef.current && result) {
+      void runForecastQuery(latestSuccessfulTownRef.current, result.forecast.target_date);
+    }
+  }, [locale]);
 
   useEffect(() => {
     if (!towns.length || result) {
@@ -92,7 +98,7 @@ function AppMain() {
     setError(null);
     setDaySelectionError(null);
     try {
-      const nextResult = await getForecast(town, date);
+      const nextResult = await getForecast(town, date, locale);
       if (requestId !== activeRequestRef.current) {
         return;
       }

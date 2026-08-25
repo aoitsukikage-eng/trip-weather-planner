@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Town } from "../lib/api";
 import { MAX_FAVORITES } from "../lib/favoriteTowns";
 import { useLocale } from "../lib/locale";
+import { getTownFullLabel, getTownName } from "../lib/townLabel";
 
 interface Props {
   towns: Town[];
@@ -30,7 +31,7 @@ export default function FavoriteTowns({
   onMoveBack,
   onToggleDefault,
 }: Props) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [editing, setEditing] = useState(false);
 
   const canAdd =
@@ -46,7 +47,8 @@ export default function FavoriteTowns({
             const town = resolveTown(code);
             if (!town) return null;
             const isDefault = code === defaultTown;
-            const label = `${town.city} ${town.name}`;
+            const label = getTownFullLabel(town, locale);
+            const townName = getTownName(town, locale);
             return (
               <li key={code} className="fav-edit-item">
                 <span className="fav-edit-item-name">
@@ -62,7 +64,7 @@ export default function FavoriteTowns({
                   <button
                     type="button"
                     className="fav-ctrl-btn"
-                    aria-label={t.favMoveUpAria(town.name)}
+                    aria-label={t.favMoveUpAria(townName)}
                     disabled={idx === 0}
                     onClick={() => onMoveForward(code)}
                   >
@@ -71,7 +73,7 @@ export default function FavoriteTowns({
                   <button
                     type="button"
                     className="fav-ctrl-btn"
-                    aria-label={t.favMoveDownAria(town.name)}
+                    aria-label={t.favMoveDownAria(townName)}
                     disabled={idx === favorites.length - 1}
                     onClick={() => onMoveBack(code)}
                   >
@@ -81,7 +83,7 @@ export default function FavoriteTowns({
                     type="button"
                     className={`fav-ctrl-btn fav-ctrl-default${isDefault ? " fav-ctrl-default-active" : ""}`}
                     aria-pressed={isDefault}
-                    aria-label={isDefault ? t.favUnsetDefaultAria(town.name) : t.favSetDefaultAria(town.name)}
+                    aria-label={isDefault ? t.favUnsetDefaultAria(townName) : t.favSetDefaultAria(townName)}
                     onClick={() => onToggleDefault(code)}
                   >
                     ★
@@ -89,7 +91,7 @@ export default function FavoriteTowns({
                   <button
                     type="button"
                     className="fav-ctrl-btn fav-ctrl-remove"
-                    aria-label={t.favRemoveAria(town.name)}
+                    aria-label={t.favRemoveAria(townName)}
                     onClick={() => onRemove(code)}
                   >
                     ×
@@ -121,17 +123,18 @@ export default function FavoriteTowns({
           if (!town) return null;
           const isCurrent = code === currentTownCode;
           const isDefault = code === defaultTown;
+          const fullLabel = getTownFullLabel(town, locale);
           return (
             <button
               key={code}
               type="button"
               className={`fav-chip${isCurrent ? " fav-chip-active" : ""}`}
               aria-pressed={isCurrent}
-              aria-label={`${town.city} ${town.name}${isDefault ? t.favDefaultTag : ""}`}
+              aria-label={`${fullLabel}${isDefault ? t.favDefaultTag : ""}`}
               disabled={loading}
               onClick={() => onSelect(town)}
             >
-              {town.city} {town.name}
+              {fullLabel}
               {isDefault && (
                 <span className="fav-default-star" aria-hidden="true">
                   ★
