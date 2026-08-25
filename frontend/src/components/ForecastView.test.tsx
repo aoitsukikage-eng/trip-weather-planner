@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import ForecastView, { getHourlyAnnotationStep } from "./ForecastView";
 import type { ForecastResult, HourlyForecast } from "../lib/api";
+import { LocaleProvider } from "../lib/locale";
 
 function buildHourly(count: number): HourlyForecast[] {
   const start = new Date("2026-07-04T00:00:00+08:00");
@@ -467,6 +468,36 @@ describe("ForecastView", () => {
     expect(firstDayIcon).toBe("☀️");
     expect(secondDayIcon).not.toBe("·");
     expect(secondDayIcon).toBe("🌧️");
+  });
+
+  test("renders English place label when name_en/city_en exist and falls back to Chinese when null under en locale", () => {
+    window.history.replaceState(null, "", "/?lang=en");
+
+    const resultWithEn = buildResult("臺北市", "信義區");
+    resultWithEn.forecast.town.city_en = "Taipei City";
+    resultWithEn.forecast.town.name_en = "Xinyi District";
+
+    const { unmount } = render(
+      <LocaleProvider>
+        <ForecastView result={resultWithEn} />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Taipei City Xinyi District");
+
+    unmount();
+
+    const resultFallback = buildResult("花蓮縣", "卓溪鄉");
+    resultFallback.forecast.town.city_en = "Hualien County";
+    resultFallback.forecast.town.name_en = null;
+
+    render(
+      <LocaleProvider>
+        <ForecastView result={resultFallback} />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Hualien County 卓溪鄉");
   });
 });
 

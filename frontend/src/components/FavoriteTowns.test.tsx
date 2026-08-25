@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import FavoriteTowns from "./FavoriteTowns";
 import type { Town } from "../lib/api";
+import { LocaleProvider } from "../lib/locale";
 
 const TOWNS: Town[] = [
   { code: "taipei-xinyi", name: "信義區", city: "臺北市", lat: 25.03, lon: 121.57 },
@@ -266,5 +267,45 @@ describe("FavoriteTowns — edit mode", () => {
     );
     expect(screen.getByRole("button", { name: /信義區/ })).not.toBeNull();
     expect(screen.queryByText("unknown-code")).toBeNull();
+  });
+});
+
+describe("FavoriteTowns — en locale", () => {
+  const BILINGUAL_TOWNS: Town[] = [
+    {
+      code: "taipei-xinyi",
+      name: "信義區",
+      city: "臺北市",
+      name_en: "Xinyi District",
+      city_en: "Taipei City",
+      lat: 25.03,
+      lon: 121.57,
+    },
+    {
+      code: "unmapped-town",
+      name: "卓溪鄉",
+      city: "花蓮縣",
+      name_en: null,
+      city_en: "Hualien County",
+      lat: 23.3,
+      lon: 121.3,
+    },
+  ];
+
+  test("renders English labels and aria-labels when name_en/city_en are present, and falls back to Chinese when null", () => {
+    window.history.replaceState(null, "", "/?lang=en");
+    render(
+      <LocaleProvider>
+        <FavoriteTowns
+          {...defaultProps}
+          towns={BILINGUAL_TOWNS}
+          favorites={["taipei-xinyi", "unmapped-town"]}
+          currentTownCode="taipei-xinyi"
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: /Taipei City Xinyi District/ })).not.toBeNull();
+    expect(screen.getByRole("button", { name: /Hualien County 卓溪鄉/ })).not.toBeNull();
   });
 });

@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import os
 from datetime import date, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.adapters.cwa import CWAAdapter
-from app.core.config import get_settings
+from app.adapters.cwa import _NEAR_DATASETS_BY_CITY, _WEEK_DATASETS_BY_CITY, CWAAdapter
+from app.adapters.moenv import COUNTY_ZONES
+from app.core.config import Settings, get_settings
+from app.data.towns import all_towns, get_town
 from app.i18n.weather_text import (
     ADVICE_HINT_MAP,
     MOON_PHASE_MAP,
@@ -82,8 +86,8 @@ def test_get_towns_bilingual():
     assert zh_xinyi["name_en"] == "Xinyi District"
     assert zh_xinyi["city_en"] == "Taipei City"
 
-    assert en_xinyi["name"] == "Xinyi District"
-    assert en_xinyi["city"] == "Taipei City"
+    assert en_xinyi["name"] == "信義區"
+    assert en_xinyi["city"] == "臺北市"
     assert en_xinyi["name_en"] == "Xinyi District"
     assert en_xinyi["city_en"] == "Taipei City"
 
@@ -99,8 +103,8 @@ def test_forecast_english_domains():
     ai_summary = body["data"]["ai_summary"]
 
     # Domain 7 & 8: County & Town names in Town object
-    assert forecast["town"]["city"] == "Taipei City"
-    assert forecast["town"]["name"] == "Xinyi District"
+    assert forecast["town"]["city"] == "臺北市"
+    assert forecast["town"]["name"] == "信義區"
     assert forecast["town"]["city_en"] == "Taipei City"
     assert forecast["town"]["name_en"] == "Xinyi District"
 
@@ -197,15 +201,17 @@ def test_forecast_cache_isolated_by_lang():
     assert zh_second["meta"]["cached"] is True
     assert zh_second["data"]["forecast"]["town"]["name"] == "信義區"
 
-    # Call with lang=en must NOT hit the zh cache and must return English
+    # Call with lang=en must NOT hit the zh cache and must return English forecast values
     en_first = client.get(en_url).json()
     assert en_first["meta"]["cached"] is False
-    assert en_first["data"]["forecast"]["town"]["name"] == "Xinyi District"
+    assert en_first["data"]["forecast"]["town"]["name"] == "信義區"
+    assert en_first["data"]["forecast"]["town"]["name_en"] == "Xinyi District"
 
     # Second call with lang=en should hit en cache
     en_second = client.get(en_url).json()
     assert en_second["meta"]["cached"] is True
-    assert en_second["data"]["forecast"]["town"]["name"] == "Xinyi District"
+    assert en_second["data"]["forecast"]["town"]["name"] == "信義區"
+    assert en_second["data"]["forecast"]["town"]["name_en"] == "Xinyi District"
 
 
 # ---------------------------------------------------------------------------
@@ -248,3 +254,149 @@ def test_advice_hint_keys_and_values():
 
     assert get_advice_hint("heavy_rain", lang="en").startswith("High chance of rain.")
     assert get_advice_hint("stable", lang="en").startswith("Weather is generally stable")
+
+
+# ---------------------------------------------------------------------------
+# 5. Requirement 4, 5, 6: Invariant & Live Path Tests for Town Identifiers
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_cwa_live_path_request_params_are_language_independent(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """TEST-CRITICAL requirement:
+    Exercises live path with httpx mocked out.
+    Asserts outgoing CWA LocationName == '信義區' and dataset == 'F-D0047-063' for both languages.
+    """
+    settings = Settings(cwa_api_key="test_live_key")
+    assert settings.use_mock is False
+    adapter = CWAAdapter(settings)
+
+    captured_requests: list[dict[str, Any]] = []
+
+    class DummyResponse:
+        def __init__(self, json_data: dict[str, Any]) -> None:
+            self._json_data = json_data
+            self.status_code = 200
+
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict[str, Any]:
+            return self._json_data
+
+    dummy_payload = {
+        "records": {
+            "Locations": [
+                {
+                    "Location": [
+                        {
+                            "LocationName": "信義區",
+                            "WeatherElement": [
+                                {
+                                    "ElementName": "Wx",
+                                    "Time": [
+                                        {
+                                            "StartTime": "2026-08-25 12:00:00",
+                                            "EndTime": "2026-08-25 18:00:00",
+                                            "ElementValue": [
+                                                {"value": "晴時多雲", "measures": "天氣現象"}
+                                            ],
+                                        }
+                                    ],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    async def fake_get(
+        self, url: str, params: dict[str, str] | None = None, **kwargs: Any
+    ) -> DummyResponse:
+        dataset_id = url.rsplit("/", 1)[-1]
+        captured_requests.append({"url": url, "dataset": dataset_id, "params": params})
+        return DummyResponse(dummy_payload)
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
+
+    town_obj = get_town("taipei-xinyi")
+    assert town_obj is not None
+
+    # Test for lang='zh' and lang='en'
+    captured_requests.clear()
+    await adapter.fetch_forecast_slices(town_obj)
+    requests_zh = list(captured_requests)
+
+    captured_requests.clear()
+    await adapter.fetch_forecast_slices(town_obj)
+    requests_en = list(captured_requests)
+
+    weekly_zh = next(r for r in requests_zh if r["dataset"] == "F-D0047-063")
+    weekly_en = next(r for r in requests_en if r["dataset"] == "F-D0047-063")
+
+    assert weekly_zh["params"]["LocationName"] == "信義區"
+    assert weekly_en["params"]["LocationName"] == "信義區"
+    assert weekly_zh["dataset"] == "F-D0047-063"
+    assert weekly_en["dataset"] == "F-D0047-063"
+
+
+def test_town_construction_invariants():
+    """TEST-INVARIANT requirement:
+    Assert get_town() and all_towns() return Chinese name/city, while name_en/city_en are populated.
+    Assert _parse_town_payload() produces Chinese name/city and populated name_en/city_en.
+    """
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    assert town.name == "信義區"
+    assert town.city == "臺北市"
+    assert town.name_en == "Xinyi District"
+    assert town.city_en == "Taipei City"
+
+    towns = all_towns()
+    assert len(towns) >= 22
+    for t in towns:
+        assert isinstance(t.name, str) and len(t.name) > 0
+        assert isinstance(t.city, str) and len(t.city) > 0
+        assert not t.name.isascii()
+        assert not t.city.isascii()
+
+    fake_cwa_payload = {
+        "records": {
+            "Locations": [
+                {
+                    "LocationsName": "臺北市",
+                    "Location": [
+                        {
+                            "LocationName": "信義區",
+                            "Geocode": "63000020",
+                            "Latitude": 25.033,
+                            "Longitude": 121.565,
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    parsed = CWAAdapter._parse_town_payload(fake_cwa_payload)
+    assert len(parsed) == 1
+    p_town = parsed[0]
+    assert p_town.name == "信義區"
+    assert p_town.city == "臺北市"
+    assert p_town.name_en == "Xinyi District"
+    assert p_town.city_en == "Taipei City"
+
+
+def test_dataset_and_county_zone_vocabularies_resolvable_from_all_towns():
+    """TEST-INVARIANT-2 requirement:
+    Assert every key of _NEAR_DATASETS_BY_CITY, _WEEK_DATASETS_BY_CITY, and COUNTY_ZONES
+    is resolvable from the Town.city values produced by all_towns().
+    """
+    town_cities = {town.city for town in all_towns()}
+    for city in _NEAR_DATASETS_BY_CITY:
+        assert city in town_cities, f"_NEAR_DATASETS_BY_CITY key '{city}' not in all_towns() cities"
+    for city in _WEEK_DATASETS_BY_CITY:
+        assert city in town_cities, f"_WEEK_DATASETS_BY_CITY key '{city}' not in all_towns() cities"
+    for city in COUNTY_ZONES:
+        assert city in town_cities, f"COUNTY_ZONES key '{city}' not in all_towns() cities"
