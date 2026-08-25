@@ -203,14 +203,14 @@ class CWAAdapter:
             source_label=f"{weekly.source_label} + {near_term.source_label}",
         )
 
-    async def fetch_all_towns(self, lang: str = "zh") -> list[Town]:
+    async def fetch_all_towns(self) -> list[Town]:
         if self._settings.use_mock:
             raise UpstreamError(
                 "Mock mode does not provide live town catalog.",
                 error_code="mock_mode",
             )
 
-        cache_key = f"{TOWNS_CACHE_KEY}:{lang}"
+        cache_key = TOWNS_CACHE_KEY
         cached = self._cache_get(cache_key)
         if cached is not None:
             return cached
@@ -219,7 +219,7 @@ class CWAAdapter:
         seen_codes: set[str] = set()
         for dataset in _WEEK_DATASETS_BY_CITY.values():
             payload = await self._request_json(dataset)
-            for town in self._parse_town_payload(payload, lang=lang):
+            for town in self._parse_town_payload(payload):
                 if town.code in seen_codes:
                     continue
                 seen_codes.add(town.code)
@@ -451,7 +451,7 @@ class CWAAdapter:
         return [by_time[key] for key in sorted(by_time)]
 
     @staticmethod
-    def _parse_town_payload(payload: dict[str, Any], lang: str = "zh") -> list[Town]:
+    def _parse_town_payload(payload: dict[str, Any]) -> list[Town]:
         towns: list[Town] = []
         records = payload.get("records")
         if not isinstance(records, dict):
@@ -471,13 +471,11 @@ class CWAAdapter:
                     continue
                 name_en = get_town_name_text(f"cwa-{geocode}", name, lang="en")
                 city_en = get_county_name_text(city, lang="en")
-                display_name = name_en if lang == "en" else name
-                display_city = city_en if lang == "en" else city
                 towns.append(
                     Town(
                         code=f"cwa-{geocode}",
-                        name=display_name,
-                        city=display_city,
+                        name=name,
+                        city=city,
                         name_en=name_en,
                         city_en=city_en,
                         lat=lat,

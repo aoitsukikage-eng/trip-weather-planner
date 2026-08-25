@@ -42,17 +42,13 @@ _TOWNS: dict[str, tuple[str, str, float, float]] = {
 }
 
 
-def _create_town(
-    code: str, name: str, city: str, lat: float, lon: float, lang: str = "zh"
-) -> Town:
+def _create_town(code: str, name: str, city: str, lat: float, lon: float) -> Town:
     name_en = get_town_name_text(code, name, lang="en")
     city_en = get_county_name_text(city, lang="en")
-    display_name = name_en if lang == "en" else name
-    display_city = city_en if lang == "en" else city
     return Town(
         code=code,
-        name=display_name,
-        city=display_city,
+        name=name,
+        city=city,
         name_en=name_en,
         city_en=city_en,
         lat=lat,
@@ -60,16 +56,16 @@ def _create_town(
     )
 
 
-def all_towns(lang: str = "zh") -> list[Town]:
+def all_towns() -> list[Town]:
     return [
-        _create_town(code, name, city, lat, lon, lang)
+        _create_town(code, name, city, lat, lon)
         for code, (name, city, lat, lon) in _TOWNS.items()
     ]
 
 
-def get_town(code: str, lang: str = "zh") -> Town | None:
+def get_town(code: str) -> Town | None:
     entry = _TOWNS.get(code)
     if entry is None:
         return None
     name, city, lat, lon = entry
-    return _create_town(code, name, city, lat, lon, lang)
+    return _create_town(code, name, city, lat, lon)

@@ -57,20 +57,16 @@ async def towns(
     cache = request.app.state.cache
     if settings.use_mock:
         return ApiResponse[list[Town]](
-            data=all_towns(lang=lang), meta=_meta(request, source="mock")
+            data=all_towns(), meta=_meta(request, source="mock")
         )
 
     adapter = CWAAdapter(settings, cache)
     try:
-        town_list = (
-            await adapter.fetch_all_towns()
-            if lang == "zh"
-            else await adapter.fetch_all_towns(lang=lang)
-        )
+        town_list = await adapter.fetch_all_towns()
         return ApiResponse[list[Town]](data=town_list, meta=_meta(request, source="cwa-live"))
     except UpstreamError:
         return ApiResponse[list[Town]](
-            data=all_towns(lang=lang),
+            data=all_towns(),
             meta=_meta(request, source="static-fallback"),
         )
 
@@ -85,15 +81,11 @@ async def forecast(
     settings = get_settings()
     cache = request.app.state.cache
 
-    town_obj = get_town(town, lang=lang)
+    town_obj = get_town(town)
     if town_obj is None and not settings.use_mock:
         adapter = CWAAdapter(settings, cache)
         try:
-            live_towns = (
-                await adapter.fetch_all_towns()
-                if lang == "zh"
-                else await adapter.fetch_all_towns(lang=lang)
-            )
+            live_towns = await adapter.fetch_all_towns()
             town_obj = next((item for item in live_towns if item.code == town), None)
         except UpstreamError:
             town_obj = None
