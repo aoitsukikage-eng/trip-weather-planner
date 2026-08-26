@@ -92,6 +92,11 @@ def mock_uv_info(town: Town, target_date: date, lang: str = "zh") -> UVInfo:
     raw_level = _uv_level(value)
     level = get_uv_level_text(raw_level, lang=lang)
     source_label = get_uv_source_label("目前紫外線", lang=lang)
+    station_name = (
+        f"{town.name_en or town.name} Mock Station"
+        if lang == "en"
+        else f"{town.name} mock station"
+    )
     return UVInfo(
         value=value,
         level=level,
@@ -100,7 +105,7 @@ def mock_uv_info(town: Town, target_date: date, lang: str = "zh") -> UVInfo:
         source_type="observation",
         observed_at=f"{target_date.isoformat()}T12:00:00+08:00",
         station_id=f"mock-{town.code}",
-        station_name=f"{town.name} mock station",
+        station_name=station_name,
     )
 
 

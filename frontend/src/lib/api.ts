@@ -99,9 +99,9 @@ export class ApiError extends Error {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 const MOCK_TOWNS: Town[] = [
-  { code: "taipei-xinyi", name: "信義區", city: "臺北市", lat: 25.03, lon: 121.57 },
-  { code: "hualien-hualien", name: "花蓮市", city: "花蓮縣", lat: 23.98, lon: 121.6 },
-  { code: "tainan-west-central", name: "中西區", city: "臺南市", lat: 22.99, lon: 120.2 },
+  { code: "taipei-xinyi", name: "信義區", city: "臺北市", name_en: "Xinyi District", city_en: "Taipei City", lat: 25.03, lon: 121.57 },
+  { code: "hualien-hualien", name: "花蓮市", city: "花蓮縣", name_en: "Hualien City", city_en: "Hualien County", lat: 23.98, lon: 121.6 },
+  { code: "tainan-west-central", name: "中西區", city: "臺南市", name_en: "West Central District", city_en: "Tainan City", lat: 22.99, lon: 120.2 },
 ];
 
 function displayDate(isoDate: string): string {
