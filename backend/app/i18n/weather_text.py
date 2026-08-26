@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
+
 LangType = Literal["zh", "en"]
 
 # ---------------------------------------------------------------------------
@@ -408,6 +410,10 @@ TOWN_BY_NAME_MAP: dict[str, str] = {
 def get_town_name_text(town_code: str, name_zh: str, lang: str = "zh") -> str:
     if lang == "zh":
         return name_zh
+    if town_code.startswith("cwa-"):
+        geocode = town_code[4:]
+        if geocode in TOWN_NAME_EN_BY_GEOCODE:
+            return TOWN_NAME_EN_BY_GEOCODE[geocode]
     if town_code in TOWN_NAME_MAP:
         return TOWN_NAME_MAP[town_code]["en"]
     if name_zh in TOWN_BY_NAME_MAP:
