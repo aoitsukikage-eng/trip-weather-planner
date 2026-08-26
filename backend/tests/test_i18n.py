@@ -15,9 +15,11 @@ from app.adapters.cwa import _NEAR_DATASETS_BY_CITY, _WEEK_DATASETS_BY_CITY, CWA
 from app.adapters.moenv import COUNTY_ZONES
 from app.core.config import Settings, get_settings
 from app.data.towns import all_towns, get_town
+from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 from app.i18n.weather_text import (
     ADVICE_HINT_MAP,
     MOON_PHASE_MAP,
+    TOWN_NAME_MAP,
     UV_LEVEL_MAP,
     WX_CODE_TO_TEXT,
     format_warning,
@@ -400,3 +402,54 @@ def test_dataset_and_county_zone_vocabularies_resolvable_from_all_towns():
         assert city in town_cities, f"_WEEK_DATASETS_BY_CITY key '{city}' not in all_towns() cities"
     for city in COUNTY_ZONES:
         assert city in town_cities, f"COUNTY_ZONES key '{city}' not in all_towns() cities"
+
+
+def test_official_town_names_table_and_cwa_integration():
+    """AC4: Verify official town names table and CWA adapter integration."""
+    # (a) Table length == 368
+    assert len(TOWN_NAME_EN_BY_GEOCODE) == 368
+
+    # (b) All values isascii() and non-empty
+    for geocode, name_en in TOWN_NAME_EN_BY_GEOCODE.items():
+        assert isinstance(name_en, str) and len(name_en) > 0, f"Empty value for {geocode}"
+        assert name_en.isascii(), f"Non-ASCII value for {geocode}: {name_en}"
+
+    # (c) All values end with one of {'District', 'Township', 'City'}
+    allowed_suffixes = {"District", "Township", "City"}
+    for geocode, name_en in TOWN_NAME_EN_BY_GEOCODE.items():
+        suffix = name_en.strip().split()[-1]
+        assert (
+            suffix in allowed_suffixes
+        ), f"Unexpected suffix '{suffix}' for {geocode}: {name_en}"
+
+    # (d) Fake CWA payload with all 368 items -> CwaAdapter._parse_town_payload()
+    locations = [
+        {
+            "LocationName": f"Town-{geocode}",
+            "Geocode": geocode,
+            "Latitude": 24.0,
+            "Longitude": 121.0,
+        }
+        for geocode in TOWN_NAME_EN_BY_GEOCODE
+    ]
+    fake_payload = {
+        "records": {
+            "Locations": [
+                {
+                    "LocationsName": "臺北市",
+                    "Location": locations,
+                }
+            ]
+        }
+    }
+    parsed_towns = CWAAdapter._parse_town_payload(fake_payload)
+    assert len(parsed_towns) == 368
+    for t in parsed_towns:
+        assert t.name_en is not None and len(t.name_en) > 0
+        assert t.name_en.isascii()
+
+    # (e) Existing 22 static slugs still parseable
+    for slug, entry in TOWN_NAME_MAP.items():
+        translated = get_town_name_text(slug, entry["zh"], lang="en")
+        assert translated == entry["en"]
+
