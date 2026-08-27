@@ -34,9 +34,9 @@ on:
         default: "twpfe5ce0"
         type: string
       frontend_origin:
-        description: "Public frontend origin used for backend CORS"
+        description: "Public frontend origins used for backend CORS (supports comma-separated multiple origins)"
         required: true
-        default: "https://twpfe5ce0.z23.web.core.windows.net"
+        default: "https://twpfe5ce0.z23.web.core.windows.net,https://aoitsukikage-eng.github.io"
         type: string
 
 permissions:
@@ -118,7 +118,7 @@ jobs:
           az containerapp secret set \
             --name "$CONTAINER_APP_NAME" \
             --resource-group "$RESOURCE_GROUP_NAME" \
-            --secrets cwa-api-key=${{ secrets.CWA_API_KEY }}
+            --secrets cwa-api-key=${{ secrets.CWA_API_KEY }} moenv-api-key=${{ secrets.MOENV_API_KEY }}
 
       - name: Update backend Container App
         run: |
@@ -135,7 +135,8 @@ jobs:
               CACHE_TTL_SECONDS=600 \
               CORS_ORIGINS="$FRONTEND_ORIGIN" \
               UPSTREAM_TIMEOUT_SECONDS=10 \
-              CWA_API_KEY=secretref:cwa-api-key
+              CWA_API_KEY=secretref:cwa-api-key \
+              MOENV_API_KEY=secretref:moenv-api-key
 
       - name: Capture backend URL
         id: backend-url
