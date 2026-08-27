@@ -12,9 +12,15 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.adapters.cwa import _NEAR_DATASETS_BY_CITY, _WEEK_DATASETS_BY_CITY, CWAAdapter
-from app.adapters.moenv import COUNTY_ZONES
+from app.adapters.moenv import COUNTY_ZONES, MOENVAdapter
 from app.core.config import Settings, get_settings
 from app.data.towns import all_towns, get_town
+from app.i18n.station_names import (
+    AQI_STATION_NAME_EN_BY_ID,
+    UV_STATION_NAME_EN_BY_ID,
+    get_aqi_station_name_text,
+    get_uv_station_name_text,
+)
 from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 from app.i18n.weather_text import (
     ADVICE_HINT_MAP,
@@ -452,3 +458,115 @@ def test_official_town_names_table_and_cwa_integration():
     for slug, entry in TOWN_NAME_MAP.items():
         translated = get_town_name_text(slug, entry["zh"], lang="en")
         assert translated == entry["en"]
+
+
+def test_station_names_table_and_getters():
+    """AC4: Verify station names table counts, ASCII validity, AC3 rules, and fallback."""
+    # (a) Record count and ASCII / non-empty checks
+    assert len(AQI_STATION_NAME_EN_BY_ID) == 84
+    assert len(UV_STATION_NAME_EN_BY_ID) >= 30
+
+    for siteid, en_name in AQI_STATION_NAME_EN_BY_ID.items():
+        assert isinstance(en_name, str) and len(en_name) > 0, f"Empty AQI name for {siteid}"
+        assert en_name.isascii(), f"Non-ASCII AQI name for {siteid}: {en_name}"
+        assert en_name == en_name.strip(), f"Whitespace padding in AQI name for {siteid}: {en_name}"
+
+    for st_id, en_name in UV_STATION_NAME_EN_BY_ID.items():
+        assert isinstance(en_name, str) and len(en_name) > 0, f"Empty UV name for {st_id}"
+        assert en_name.isascii(), f"Non-ASCII UV name for {st_id}: {en_name}"
+        assert en_name == en_name.strip(), f"Whitespace padding in UV name for {st_id}: {en_name}"
+
+    # (b) AC3 specific assertions
+    assert get_uv_station_name_text("466920", "臺北", lang="en") == "Taipei"
+    assert get_uv_station_name_text("467280", "後龍", lang="en") == "Houlong"
+    assert get_uv_station_name_text("467650", "日月潭", lang="en") == "Sun Moon Lake"
+    assert get_aqi_station_name_text("84", "富貴角", lang="en") == "FugueiCape"
+    assert (
+        get_aqi_station_name_text("203", "南投（鹿谷）", lang="en") == "Nantou (Lugu Township)"
+    )
+    assert (
+        get_aqi_station_name_text("311", "新北（樹林）", lang="en")
+        == "New Taipei (Shulin District)"
+    )
+    assert (
+        get_aqi_station_name_text("204", "屏東（琉球）", lang="en")
+        == "Pingtung (Liuqiu Township)"
+    )
+    assert (
+        get_aqi_station_name_text("313", "屏東（枋山）", lang="en")
+        == "Pingtung (Fangshan Township)"
+    )
+
+    # (c) lang='zh' returns name_zh verbatim
+    assert get_uv_station_name_text("466920", "臺北", lang="zh") == "臺北"
+    assert get_aqi_station_name_text("84", "富貴角", lang="zh") == "富貴角"
+    assert get_aqi_station_name_text("203", "南投（鹿谷）", lang="zh") == "南投（鹿谷）"
+
+    # (d) Unknown / missing ID returns fallback name_zh without raising exception or returning empty
+    assert get_uv_station_name_text("unknown-uv-id", "未知測站", lang="en") == "未知測站"
+    assert get_uv_station_name_text(None, "未知測站", lang="en") == "未知測站"
+    assert get_aqi_station_name_text("99999", "未知空品站", lang="en") == "未知空品站"
+    assert get_aqi_station_name_text(None, "未知空品站", lang="en") == "未知空品站"
+
+
+@pytest.mark.asyncio
+async def test_adapter_station_name_wiring(monkeypatch: pytest.MonkeyPatch):
+    """AC5: Verify CWA and MOENV adapter station_name wiring in lang='en' vs lang='zh'."""
+    # 1. MOENVAdapter live path mock test
+    settings = Settings(moenv_api_key="test-key")
+    assert settings.use_moenv_mock is False
+    moenv_adapter = MOENVAdapter(settings)
+
+    fake_aqi_payload = [
+        {
+            "siteid": "84",
+            "sitename": "富貴角",
+            "latitude": "25.29",
+            "longitude": "121.53",
+            "aqi": "35",
+            "status": "良好",
+            "publishtime": "2026-08-27 12:00:00",
+        }
+    ]
+
+    async def fake_request(dataset: str):  # noqa: ARG001
+        return fake_aqi_payload
+
+    monkeypatch.setattr(moenv_adapter, "_request", fake_request)
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
+
+    # lang='en' -> station_name should be 'FugueiCape' (no Chinese characters)
+    aqi_en = await moenv_adapter.fetch_current(town, lang="en")
+    assert aqi_en is not None
+    assert aqi_en.station_name == "FugueiCape"
+    assert aqi_en.station_name.isascii()
+
+    # lang='zh' -> station_name should be '富貴角' verbatim
+    aqi_zh = await moenv_adapter.fetch_current(town, lang="zh")
+    assert aqi_zh is not None
+    assert aqi_zh.station_name == "富貴角"
+
+    # 2. CWAAdapter UV path _label_uv_info test
+    from app.adapters.cwa import _label_uv_info
+    from app.schemas.weather import UVInfo
+
+    uv_raw = UVInfo(
+        value=5.0,
+        level="中",
+        level_code="moderate",
+        source_label="目前紫外線",
+        source_type="observation",
+        observed_at="2026-08-27T12:00:00+08:00",
+        station_id="466920",
+        station_name="臺北",
+    )
+
+    today = _today_taipei()
+    uv_labeled_en = _label_uv_info(uv_raw, today, lang="en")
+    assert uv_labeled_en.station_name == "Taipei"
+    assert uv_labeled_en.station_name.isascii()
+
+    uv_labeled_zh = _label_uv_info(uv_raw, today, lang="zh")
+    assert uv_labeled_zh.station_name == "臺北"
