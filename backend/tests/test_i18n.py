@@ -24,9 +24,12 @@ from app.i18n.station_names import (
 from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 from app.i18n.weather_text import (
     ADVICE_HINT_MAP,
+    AQI_LEVEL_MAP,
     MOON_PHASE_MAP,
     TOWN_NAME_MAP,
+    UV_LABEL_MAP,
     UV_LEVEL_MAP,
+    WARNING_TITLE_MAP,
     WX_CODE_TO_TEXT,
     format_warning,
     get_advice_hint,
@@ -582,3 +585,28 @@ async def test_adapter_station_name_wiring(monkeypatch: pytest.MonkeyPatch):
 
     uv_labeled_zh = _label_uv_info(uv_raw, today, lang="zh")
     assert uv_labeled_zh.station_name == "臺北"
+
+
+def test_ja_lookup_tables_and_fallback_chain():
+    """AC2 & AC3: Verify 7 lookup tables have ja entries (75 total) and
+    fallback chain assertions."""
+    # AC2: Table counts and ja presence
+    assert len([k for k, v in WX_CODE_TO_TEXT.items() if "ja" in v]) == 42
+    assert len([k for k, v in AQI_LEVEL_MAP.items() if "ja" in v]) == 10
+    assert len([k for k, v in MOON_PHASE_MAP.items() if "ja" in v]) == 8
+    assert len([k for k, v in UV_LEVEL_MAP.items() if "ja" in v]) == 5
+    assert len([k for k, v in WARNING_TITLE_MAP.items() if "ja" in v]) == 4
+    assert len([k for k, v in ADVICE_HINT_MAP.items() if "ja" in v]) == 4
+    assert len([k for k, v in UV_LABEL_MAP.items() if "ja" in v]) == 2
+
+    # JMA terms verification for AC2 examples
+    assert WX_CODE_TO_TEXT["01"]["ja"] == "晴れ"
+    assert WX_CODE_TO_TEXT["04"]["ja"] == "曇り"
+    assert WX_CODE_TO_TEXT["11"]["ja"] == "にわか雨"
+
+    # AC3: Specific required assertions
+    assert get_weather_text(None, "01", lang="ja") == "晴れ"
+    assert get_county_name_text("臺北市", lang="ja") == "臺北市"
+    assert get_town_name_text("cwa-63000010", "松山區", lang="ja") == "松山區"
+    assert get_uv_station_name_text("466920", "臺北", lang="ja") == "臺北"
+    assert get_aqi_station_name_text("84", "松山", lang="ja") == "松山"
