@@ -34,9 +34,9 @@ on:
         default: "twpfe5ce0"
         type: string
       frontend_origin:
-        description: "Public frontend origin used for backend CORS"
+        description: "Public frontend origins used for backend CORS (supports comma-separated multiple origins)"
         required: true
-        default: "https://twpfe5ce0.z23.web.core.windows.net"
+        default: "https://twpfe5ce0.z23.web.core.windows.net,https://aoitsukikage-eng.github.io"
         type: string
 
 permissions:
