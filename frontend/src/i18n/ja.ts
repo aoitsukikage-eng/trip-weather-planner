@@ -1,13 +1,7 @@
 import type { Dictionary } from "./types";
 
 export const ja: Dictionary = {
-  switchLangLabel: "日本語",
   switchLangAriaLabel: "言語切り替え",
-  localeNames: {
-    zh: "中文",
-    en: "English",
-    ja: "日本語",
-  },
 
   appTitle: "旅行お天気プランナー",
   appTagline: "目的地を選択すると、週間天気、72時間推移、旅行前のアドバイスを確認できます。",

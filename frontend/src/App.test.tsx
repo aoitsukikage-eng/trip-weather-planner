@@ -750,4 +750,32 @@ describe("App — date intent and lastTown write (AC1)", () => {
     await screen.findByRole("alert");
     expect(localStorage.getItem("trip-weather-planner:last-town:v1")).toBeNull();
   });
+
+  test("renders segmented control language switcher and switches language (AC3)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/api/towns")) return Promise.resolve(jsonResponse(townsBody));
+      return Promise.resolve(jsonResponse(liveForecastBody));
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    const group = await screen.findByRole("group", { name: "切換語言" });
+    expect(group).not.toBeNull();
+
+    const zhBtn = screen.getByRole("button", { name: "中文" });
+    const enBtn = screen.getByRole("button", { name: "English" });
+    const jaBtn = screen.getByRole("button", { name: "日本語" });
+
+    expect(zhBtn.getAttribute("aria-pressed")).toBe("true");
+    expect(enBtn.getAttribute("aria-pressed")).toBe("false");
+    expect(jaBtn.getAttribute("aria-pressed")).toBe("false");
+
+    await user.click(jaBtn);
+
+    expect(zhBtn.getAttribute("aria-pressed")).toBe("false");
+    expect(jaBtn.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("旅行お天気プランナー")).not.toBeNull();
+  });
 });

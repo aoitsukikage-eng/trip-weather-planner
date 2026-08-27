@@ -1,19 +1,20 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { getDictionary, SUPPORTED_LOCALES } from "../i18n";
+import { getDictionary, LOCALE_NAMES, SUPPORTED_LOCALES } from "../i18n";
 import { LocaleProvider, useLocale } from "./locale";
 
 function TestConsumer() {
   const { locale, setLocale, t } = useLocale();
-  const nextLocale = SUPPORTED_LOCALES[(SUPPORTED_LOCALES.indexOf(locale) + 1) % SUPPORTED_LOCALES.length];
   return (
     <div>
       <span data-testid="current-locale">{locale}</span>
       <span data-testid="app-title">{t.appTitle}</span>
-      <button type="button" onClick={() => setLocale(nextLocale)}>
-        {t.switchLangLabel}
-      </button>
+      {SUPPORTED_LOCALES.map((loc) => (
+        <button key={loc} type="button" onClick={() => setLocale(loc)}>
+          {LOCALE_NAMES[loc]}
+        </button>
+      ))}
     </div>
   );
 }
@@ -84,7 +85,7 @@ describe("locale context & provider", () => {
 
     expect(screen.getByTestId("current-locale").textContent).toBe("zh");
 
-    await user.click(screen.getByRole("button", { name: "EN" }));
+    await user.click(screen.getByRole("button", { name: "English" }));
 
     expect(screen.getByTestId("current-locale").textContent).toBe("en");
     expect(screen.getByTestId("app-title").textContent).toBe("Trip Weather Planner");

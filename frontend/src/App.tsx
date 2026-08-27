@@ -6,7 +6,7 @@ import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api
 import { millisecondsUntilNextTaipeiDay, taipeiIsoDate } from "./lib/localDate";
 import { resolveDaypart } from "./lib/daypart";
 import { LocaleProvider, useLocale } from "./lib/locale";
-import { SUPPORTED_LOCALES } from "./i18n";
+import { LOCALE_NAMES, SUPPORTED_LOCALES } from "./i18n";
 import {
   getFavorites,
   getDefaultTown,
@@ -49,12 +49,6 @@ function AppMain() {
   const todayAnchorRef = useRef(todayIsoDate());
   const autoRefreshDateRef = useRef<string | null>(null);
   const inFlightRef = useRef(false);
-
-  const handleToggleLocale = () => {
-    const currentIndex = SUPPORTED_LOCALES.indexOf(locale);
-    const nextIndex = (currentIndex + 1) % SUPPORTED_LOCALES.length;
-    setLocale(SUPPORTED_LOCALES[nextIndex]);
-  };
 
   useEffect(() => {
     getTowns(locale).then(setTowns);
@@ -239,25 +233,34 @@ function AppMain() {
             <h1>{t.appTitle}</h1>
             <p className="tagline">{t.appTagline}</p>
           </div>
-          <button
-            type="button"
-            className="lang-switch-btn"
-            onClick={handleToggleLocale}
-            style={{
-              padding: "0.4rem 0.85rem",
-              borderRadius: "999px",
-              border: "1px solid var(--twp-paper-border, #d6c9b4)",
-              background: "var(--twp-paper, #fffdf8)",
-              color: "var(--twp-ocean-700, #0a5975)",
-              fontWeight: 650,
-              fontSize: "0.88rem",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
+          <div
+            role="group"
             aria-label={t.switchLangAriaLabel}
+            className="lang-switch-group"
+            style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}
           >
-            {t.switchLangLabel}
-          </button>
+            {SUPPORTED_LOCALES.map((loc) => (
+              <button
+                key={loc}
+                type="button"
+                className={`lang-switch-btn ${locale === loc ? "active" : ""}`}
+                aria-pressed={locale === loc}
+                onClick={() => setLocale(loc)}
+                style={{
+                  padding: "0.4rem 0.85rem",
+                  borderRadius: "999px",
+                  border: "1px solid var(--twp-paper-border, #d6c9b4)",
+                  background: locale === loc ? "var(--twp-ocean-700, #0a5975)" : "var(--twp-paper, #fffdf8)",
+                  color: locale === loc ? "#ffffff" : "var(--twp-ocean-700, #0a5975)",
+                  fontWeight: locale === loc ? 700 : 500,
+                  fontSize: "0.88rem",
+                  cursor: "pointer",
+                }}
+              >
+                {LOCALE_NAMES[loc]}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
