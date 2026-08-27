@@ -290,6 +290,9 @@ def format_warning(
         desc_text = (
             f"{title_text} for {county_en}. Please stay tuned for the latest weather updates."
         )
+    elif lang == "ja":
+        title_text = title_entry.get("ja") if title_entry else title
+        desc_text = f"{county}に{title_text}が発表されています。最新の気象情報にご注意ください。"
     else:
         title_text = title_entry["zh"] if title_entry else title
         desc_text = f"{county}{title_text}，請留意最新天氣資訊。"

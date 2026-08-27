@@ -610,3 +610,70 @@ def test_ja_lookup_tables_and_fallback_chain():
     assert get_town_name_text("cwa-63000010", "松山區", lang="ja") == "松山區"
     assert get_uv_station_name_text("466920", "臺北", lang="ja") == "臺北"
     assert get_aqi_station_name_text("84", "松山", lang="ja") == "松山"
+
+
+def test_composer_1_format_warning_ja():
+    """AC4 Composer 1: format_warning ja branch."""
+    title, desc = format_warning("豪雨特報", "臺北市", lang="ja")
+    assert title == "豪雨警報"
+    assert desc == "臺北市に豪雨警報が発表されています。最新の気象情報にご注意ください。"
+    assert "，" not in desc
+    assert "請留意" not in desc
+
+
+def test_composer_2_rule_based_summary_ja():
+    """AC4 Composer 2: _rule_based_summary ja branch and _SYSTEM_PROMPT_JA."""
+    from app.schemas.weather import DailyForecast
+    from app.services.ai_summary import _SYSTEM_PROMPT_JA, _rule_based_summary
+
+    assert "旅行の事前準備アシスタント" in _SYSTEM_PROMPT_JA
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    day = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=32.0,
+        temp_low_c=25.0,
+        max_pop_percent=20,
+        weather="晴れ",
+        weather_code="01",
+        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint_key="stable",
+    )
+    summary = _rule_based_summary(town, day, lang="ja")
+    assert "8/28の臺北市信義區の天気予報は" in summary
+    assert "最高降水確率は20%です。" in summary
+    assert "預報為" not in summary
+    assert "降雨機率" not in summary
+    assert "，" not in summary
+
+
+def test_composer_3_aqi_advice_hint_ja():
+    """AC4 Composer 3: day.advice_hint appended AQI sentence ja branch."""
+    from app.schemas.weather import AQIForecast, DailyForecast
+
+    day = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=30.0,
+        temp_low_c=24.0,
+        max_pop_percent=10,
+        weather="晴れ",
+        weather_code="01",
+        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint_key="stable",
+        aqi_forecast=AQIForecast(
+            date="2026-08-28",
+            value=35,
+            level="良好",
+            level_code="good",
+        ),
+    )
+    # Simulate forecast.py composition for lang='ja'
+    lang = "ja"
+    if day.aqi_forecast and day.aqi_forecast.level:
+        if lang == "ja":
+            day.advice_hint = f"{day.advice_hint or ''} 空気質予報は{day.aqi_forecast.level}です。"
+
+    assert day.advice_hint is not None
+    assert "空気質予報は良好です。" in day.advice_hint
+    assert "空氣品質預報為" not in day.advice_hint

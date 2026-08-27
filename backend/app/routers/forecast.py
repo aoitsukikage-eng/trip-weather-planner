@@ -164,6 +164,10 @@ async def forecast(
                     day.advice_hint = (
                         f"{day.advice_hint or ''} Air quality forecast: {day.aqi_forecast.level}."
                     )
+                elif lang == "ja":
+                    day.advice_hint = (
+                        f"{day.advice_hint or ''} 空気質予報は{day.aqi_forecast.level}です。"
+                    )
                 else:
                     day.advice_hint = (
                         f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"

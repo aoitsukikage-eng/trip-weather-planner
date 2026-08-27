@@ -27,6 +27,12 @@ _SYSTEM_PROMPT_EN = (
     "including tips on clothing or items to bring. Do not invent information beyond the forecast."
 )
 
+_SYSTEM_PROMPT_JA = (
+    "あなたは旅行の事前準備アシスタントです。以下の公開天気予報に基づき、"
+    "服装や持参品のアドバイスを含む、親切で具体的な旅行のアドバイスを日本語で2〜3文で作成してください。"
+    "予報以外の情報を捏造しないでください。"
+)
+
 
 def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str:
     if lang == "en":
@@ -41,6 +47,20 @@ def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str
             )
         if day.max_pop_percent is not None:
             parts.append(f"and a peak precipitation chance of {day.max_pop_percent}%. ")
+        if day.advice_hint:
+            parts.append(day.advice_hint)
+        return "".join(parts).strip()
+
+    if lang == "ja":
+        parts = [f"{_display_date(day.date)}の{town.city}{town.name}の天気予報は"]
+        if day.weather:
+            parts.append(f"「{day.weather}」で、")
+        if day.temp_low_c is not None and day.temp_high_c is not None:
+            parts.append(
+                f"気温は約{day.temp_low_c:.0f}〜{day.temp_high_c:.0f}℃、"
+            )
+        if day.max_pop_percent is not None:
+            parts.append(f"最高降水確率は{day.max_pop_percent}%です。")
         if day.advice_hint:
             parts.append(day.advice_hint)
         return "".join(parts).strip()
@@ -83,6 +103,8 @@ class AiSummaryService:
             no_data_msg = (
                 "No forecast data currently available."
                 if lang == "en"
+                else "現在利用可能な予報データがありません。"
+                if lang == "ja"
                 else "目前沒有可用的預報資料。"
             )
             return (no_data_msg, "rule-based")
@@ -102,10 +124,18 @@ class AiSummaryService:
         from google import genai  # imported lazily; optional dependency
 
         client = genai.Client(api_key=self._settings.gemini_api_key)
-        system_prompt = _SYSTEM_PROMPT_EN if lang == "en" else _SYSTEM_PROMPT_ZH
+        system_prompt = (
+            _SYSTEM_PROMPT_EN
+            if lang == "en"
+            else _SYSTEM_PROMPT_JA
+            if lang == "ja"
+            else _SYSTEM_PROMPT_ZH
+        )
         facts = "\n".join(
             f"- {d.date}: {d.weather}, {d.temp_low_c}-{d.temp_high_c}°C, "
             f"chance of rain {d.max_pop_percent}%" if lang == "en"
+            else f"- {d.date}: {d.weather}, {d.temp_low_c}-{d.temp_high_c}°C, "
+            f"降水確率 {d.max_pop_percent}%" if lang == "ja"
             else f"- {d.date}: {d.weather}, {d.temp_low_c}-{d.temp_high_c}°C, "
             f"降雨機率 {d.max_pop_percent}%"
             for d in days
@@ -113,6 +143,7 @@ class AiSummaryService:
         location_label = (
             f"Location: {town.name_en or town.name}, {town.city_en or town.city}"
             if lang == "en"
+            else f"場所:{town.city}{town.name}" if lang == "ja"
             else f"地點:{town.city}{town.name}"
         )
         prompt = f"{system_prompt}\n\n{location_label}\nForecast:\n{facts}"
