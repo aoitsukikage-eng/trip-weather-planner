@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { SUPPORTED_LOCALES } from "../i18n";
+import { getDictionary, SUPPORTED_LOCALES } from "../i18n";
 import { LocaleProvider, useLocale } from "./locale";
 
 function TestConsumer() {
@@ -90,5 +90,12 @@ describe("locale context & provider", () => {
     expect(screen.getByTestId("app-title").textContent).toBe("Trip Weather Planner");
     expect(localStorage.getItem("twp:locale")).toBe("en");
     expect(window.location.search).toContain("lang=en");
+  });
+
+  test("formats dates and weekdays in Japanese (AC2)", () => {
+    const jaDict = getDictionary("ja");
+    expect(jaDict.weekdaysShort).toEqual(["日", "月", "火", "水", "木", "金", "土"]);
+    expect(jaDict.formatWeekday("月")).toBe("月曜日");
+    expect(jaDict.formatDate(8, 28, "月曜日")).toBe("8/28（月曜日）");
   });
 });
