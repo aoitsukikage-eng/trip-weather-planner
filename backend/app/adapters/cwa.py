@@ -15,6 +15,7 @@ from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_u
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
+from app.i18n.station_names import get_uv_station_name_text
 from app.i18n.weather_text import (
     format_warning,
     get_county_name_text,
@@ -868,6 +869,7 @@ def _label_uv_info(info: UVInfo, target_date: date, lang: str = "zh") -> UVInfo:
     label = "目前紫外線" if target_date == _taipei_today() else "目前紫外線僅供參考"
     level = get_uv_level_text(info.level, lang=lang)
     source_label = get_uv_source_label(label, lang=lang)
+    station_name = get_uv_station_name_text(info.station_id, info.station_name, lang=lang)
     return UVInfo(
         value=info.value,
         level=level,
@@ -876,7 +878,7 @@ def _label_uv_info(info: UVInfo, target_date: date, lang: str = "zh") -> UVInfo:
         source_type=info.source_type,
         observed_at=info.observed_at,
         station_id=info.station_id,
-        station_name=info.station_name,
+        station_name=station_name,
     )
 
 

@@ -11,6 +11,7 @@ import httpx
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
+from app.i18n.station_names import get_aqi_station_name_text
 from app.i18n.weather_text import get_aqi_level_code, get_aqi_level_text, get_aqi_source_label
 from app.schemas.weather import AQIForecast, AQIInfo, Town
 
@@ -94,11 +95,14 @@ class MOENVAdapter:
         raw_status = str(row.get("status") or aqi_level(value) or "資料不足")
         level = get_aqi_level_text(raw_status, lang=lang)
         source_label = get_aqi_source_label("目前空氣品質", lang=lang)
+        site_id = str(row.get("siteid") or "") if row.get("siteid") is not None else None
+        site_name_zh = str(row.get("sitename") or "")
+        station_name = get_aqi_station_name_text(site_id, site_name_zh, lang=lang)
         return AQIInfo(
             value=value,
             level=level,
             level_code=get_aqi_level_code(value),
-            station_name=str(row.get("sitename") or ""),
+            station_name=station_name,
             observed_at=str(row.get("publishtime") or "") or None,
             source_label=source_label,
         )
