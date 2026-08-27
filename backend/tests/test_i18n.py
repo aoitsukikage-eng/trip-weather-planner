@@ -677,3 +677,25 @@ def test_composer_3_aqi_advice_hint_ja():
     assert day.advice_hint is not None
     assert "空気質予報は良好です。" in day.advice_hint
     assert "空氣品質預報為" not in day.advice_hint
+
+
+@pytest.mark.asyncio
+async def test_adapters_ja_outputs():
+    """AC5: Verify adapter mock/demo strings produce explicit Japanese outputs."""
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    today = _today_taipei()
+
+    # 1. MOENVAdapter mock demo station ja name
+    moenv_mock = MOENVAdapter(Settings(cwa_api_key="", moenv_api_key=""))
+    aqi_mock = await moenv_mock.fetch_current(town, lang="ja")
+    assert aqi_mock is not None
+    assert aqi_mock.station_name == "デモ観測局"
+    assert aqi_mock.source_label == "現在の空気質（デモ）"
+    assert aqi_mock.level == "良好"
+
+    # 2. mock_data.py mock_uv_info ja station_name
+    from app.adapters.mock_data import mock_uv_info
+    uv_ja = mock_uv_info(town, today, lang="ja")
+    assert uv_ja.station_name == "信義區モック観測局"
+    assert uv_ja.source_label == "現在の紫外線インデックス"

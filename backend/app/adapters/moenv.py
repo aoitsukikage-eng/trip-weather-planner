@@ -66,7 +66,9 @@ class MOENVAdapter:
     async def fetch_current(self, town: Town, lang: str = "zh") -> AQIInfo | None:
         if self._settings.use_moenv_mock:
             level = get_aqi_level_text("良好", lang=lang)
-            station_name = "Demo Station" if lang == "en" else "示範測站"
+            station_name = (
+                "Demo Station" if lang == "en" else "デモ観測局" if lang == "ja" else "示範測站"
+            )
             source_label = get_aqi_source_label("目前空氣品質（示範）", lang=lang)
             return AQIInfo(
                 value=42,
