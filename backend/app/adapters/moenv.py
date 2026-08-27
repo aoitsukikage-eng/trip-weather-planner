@@ -11,6 +11,8 @@ import httpx
 from app.core.cache import TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
+from app.i18n.station_names import get_aqi_station_name_text
+from app.i18n.weather_text import get_aqi_level_code, get_aqi_level_text, get_aqi_source_label
 from app.schemas.weather import AQIForecast, AQIInfo, Town
 
 DATASET_CURRENT = "aqx_p_432"
@@ -61,10 +63,17 @@ class MOENVAdapter:
     def __init__(self, settings: Settings, cache: TTLCache | None = None) -> None:
         self._settings, self._cache = settings, cache
 
-    async def fetch_current(self, town: Town) -> AQIInfo | None:
+    async def fetch_current(self, town: Town, lang: str = "zh") -> AQIInfo | None:
         if self._settings.use_moenv_mock:
+            level = get_aqi_level_text("良好", lang=lang)
+            station_name = "Demo Station" if lang == "en" else "示範測站"
+            source_label = get_aqi_source_label("目前空氣品質（示範）", lang=lang)
             return AQIInfo(
-                value=42, level="良好", station_name="示範測站", source_label="目前空氣品質（示範）"
+                value=42,
+                level=level,
+                level_code=get_aqi_level_code(42),
+                station_name=station_name,
+                source_label=source_label,
             )
         rows = await self._request(DATASET_CURRENT)
         nearest: tuple[float, dict[str, Any]] | None = None
@@ -83,14 +92,22 @@ class MOENVAdapter:
             return None
         row = nearest[1]
         value = _int(row.get("aqi"))
+        raw_status = str(row.get("status") or aqi_level(value) or "資料不足")
+        level = get_aqi_level_text(raw_status, lang=lang)
+        source_label = get_aqi_source_label("目前空氣品質", lang=lang)
+        site_id = str(row.get("siteid") or "") if row.get("siteid") is not None else None
+        site_name_zh = str(row.get("sitename") or "")
+        station_name = get_aqi_station_name_text(site_id, site_name_zh, lang=lang)
         return AQIInfo(
             value=value,
-            level=str(row.get("status") or aqi_level(value) or "資料不足"),
-            station_name=str(row.get("sitename") or ""),
+            level=level,
+            level_code=get_aqi_level_code(value),
+            station_name=station_name,
             observed_at=str(row.get("publishtime") or "") or None,
+            source_label=source_label,
         )
 
-    async def fetch_forecast(self, county: str) -> dict[str, AQIForecast]:
+    async def fetch_forecast(self, county: str, lang: str = "zh") -> dict[str, AQIForecast]:
         zone = COUNTY_ZONES.get(county)
         if not zone:
             return {}
@@ -107,7 +124,14 @@ class MOENVAdapter:
                 day = date.fromisoformat(raw_date).isoformat()
             except ValueError:
                 continue
-            result[day] = AQIForecast(date=day, value=value, level=aqi_level(value))
+            raw_level = aqi_level(value)
+            level = get_aqi_level_text(raw_level, lang=lang)
+            result[day] = AQIForecast(
+                date=day,
+                value=value,
+                level=level,
+                level_code=get_aqi_level_code(value),
+            )
         return result
 
     async def _request(self, dataset: str) -> list[dict[str, Any]]:

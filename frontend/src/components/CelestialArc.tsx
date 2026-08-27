@@ -1,3 +1,5 @@
+import { useLocale } from "../lib/locale";
+
 export interface CelestialArcProps {
   riseTime: string | null;
   setTime: string | null;
@@ -54,6 +56,7 @@ export default function CelestialArc({
   phaseName,
   phaseIcon,
 }: CelestialArcProps) {
+  const { t } = useLocale();
   const progress = getArcProgress(riseTime, setTime, targetDate, now);
   const markerX = progress === null ? null : 10 + 180 * progress;
   const markerY = progress === null ? null : 84 - 144 * progress * (1 - progress);
@@ -69,7 +72,7 @@ export default function CelestialArc({
     : `M ${markerX} ${markerY - 12} A 12 12 0 0 ${sweep} ${markerX} ${markerY + 12} A ${terminatorRadius} 12 0 0 ${sweep} ${markerX} ${markerY - 12} Z`;
 
   return (
-    <svg className={`celestial-arc celestial-arc-${label}`} data-testid={`${label}-arc`} viewBox="0 0 200 108" role="img" aria-label={`${label}升落弧線`}>
+    <svg className={`celestial-arc celestial-arc-${label}`} data-testid={`${label}-arc`} viewBox="0 0 200 108" role="img" aria-label={t.celestialArcAriaLabel(label)}>
       {hasPhaseMarker && (
         <defs>
           <linearGradient data-testid="moon-phase-gradient" id={gradientId} x1={gradientStart} x2={gradientEnd} y1="50%" y2="50%">
@@ -101,7 +104,7 @@ export default function CelestialArc({
             data-testid={`${label}-arc-marker`}
             data-illumination={illumination.toFixed(3)}
             data-waxing={String(waxing)}
-            aria-label={`${phaseName ?? "月相"}${phaseIcon ? ` ${phaseIcon}` : ""}`}
+            aria-label={`${phaseName ?? t.moonPhaseDefault}${phaseIcon ? ` ${phaseIcon}` : ""}`}
           >
             <circle className="celestial-marker-glow" data-testid={`${label}-arc-glow`} cx={markerX} cy={markerY} r="18" />
             <circle className="celestial-moon-shadow" cx={markerX} cy={markerY} r="12" />

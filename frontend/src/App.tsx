@@ -5,6 +5,8 @@ import FavoriteTowns from "./components/FavoriteTowns";
 import { getForecast, getTowns, type ForecastResult, type Town } from "./lib/api";
 import { millisecondsUntilNextTaipeiDay, taipeiIsoDate } from "./lib/localDate";
 import { resolveDaypart } from "./lib/daypart";
+import { LocaleProvider, useLocale } from "./lib/locale";
+import { SUPPORTED_LOCALES } from "./i18n";
 import {
   getFavorites,
   getDefaultTown,
@@ -23,6 +25,15 @@ function todayIsoDate(): string {
 }
 
 export default function App() {
+  return (
+    <LocaleProvider>
+      <AppMain />
+    </LocaleProvider>
+  );
+}
+
+function AppMain() {
+  const { locale, setLocale, t } = useLocale();
   const [towns, setTowns] = useState<Town[]>([]);
   const [result, setResult] = useState<ForecastResult | null>(null);
   const [chartResult, setChartResult] = useState<ForecastResult | null>(null);
@@ -39,9 +50,21 @@ export default function App() {
   const autoRefreshDateRef = useRef<string | null>(null);
   const inFlightRef = useRef(false);
 
+  const handleToggleLocale = () => {
+    const currentIndex = SUPPORTED_LOCALES.indexOf(locale);
+    const nextIndex = (currentIndex + 1) % SUPPORTED_LOCALES.length;
+    setLocale(SUPPORTED_LOCALES[nextIndex]);
+  };
+
   useEffect(() => {
-    getTowns().then(setTowns);
-  }, []);
+    getTowns(locale).then(setTowns);
+  }, [locale]);
+
+  useEffect(() => {
+    if (latestSuccessfulTownRef.current && result) {
+      void runForecastQuery(latestSuccessfulTownRef.current, result.forecast.target_date);
+    }
+  }, [locale]);
 
   useEffect(() => {
     if (!towns.length || result) {
@@ -75,7 +98,7 @@ export default function App() {
     setError(null);
     setDaySelectionError(null);
     try {
-      const nextResult = await getForecast(town, date);
+      const nextResult = await getForecast(town, date, locale);
       if (requestId !== activeRequestRef.current) {
         return;
       }
@@ -90,7 +113,7 @@ export default function App() {
         return;
       }
       const message =
-        caughtError instanceof Error ? caughtError.message : "查詢失敗，請稍後再試。";
+        caughtError instanceof Error ? caughtError.message : t.queryFailedDefault;
       if (options?.preserveCurrentViewOnError) {
         setDaySelectionError(message);
       } else {
@@ -210,9 +233,32 @@ export default function App() {
 
   return (
     <main className="app">
-      <header>
-        <h1>旅遊行前天氣規劃</h1>
-        <p className="tagline">選擇目的地後即可查看一週天氣、未來 72 小時趨勢與行前提醒。</p>
+      <header style={{ position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+          <div>
+            <h1>{t.appTitle}</h1>
+            <p className="tagline">{t.appTagline}</p>
+          </div>
+          <button
+            type="button"
+            className="lang-switch-btn"
+            onClick={handleToggleLocale}
+            style={{
+              padding: "0.4rem 0.85rem",
+              borderRadius: "999px",
+              border: "1px solid var(--twp-paper-border, #d6c9b4)",
+              background: "var(--twp-paper, #fffdf8)",
+              color: "var(--twp-ocean-700, #0a5975)",
+              fontWeight: 650,
+              fontSize: "0.88rem",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+            aria-label={t.switchLangAriaLabel}
+          >
+            {t.switchLangLabel}
+          </button>
+        </div>
       </header>
 
       {towns.length > 0 ? (
@@ -241,12 +287,12 @@ export default function App() {
           />
         </>
       ) : (
-        <p>載入鄉鎮清單中…</p>
+        <p>{t.loadingTowns}</p>
       )}
 
       {error && (
         <section className="error-panel" role="alert">
-          <strong>查詢失敗</strong>
+          <strong>{t.queryFailed}</strong>
           <p>{error}</p>
         </section>
       )}
@@ -262,7 +308,7 @@ export default function App() {
       )}
 
       <footer>
-        <small>出發前先看一眼天氣與日照資訊，行程安排更從容。</small>
+        <small>{t.footerNote}</small>
       </footer>
     </main>
   );

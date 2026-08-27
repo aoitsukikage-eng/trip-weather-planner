@@ -10,6 +10,13 @@ from __future__ import annotations
 import hashlib
 from datetime import date, datetime, timedelta
 
+from app.i18n.weather_text import (
+    WX_CODE_TO_TEXT,
+    get_county_name_text,
+    get_uv_level_code,
+    get_uv_level_text,
+    get_uv_source_label,
+)
 from app.schemas.weather import SunriseSunset, TimeSlice, Town, UVInfo
 
 
@@ -20,13 +27,8 @@ def _stable_unit(*parts: str) -> float:
 
 
 def _weather_text(pop: int) -> str:
-    if pop >= 70:
-        return "陰時多雲短暫雨"
-    if pop >= 40:
-        return "多雲時陰"
-    if pop >= 20:
-        return "多雲"
-    return "晴時多雲"
+    code = _weather_code(pop)
+    return WX_CODE_TO_TEXT[code]["zh"]
 
 
 def mock_time_slices(
@@ -64,14 +66,17 @@ def mock_time_slices(
     return slices
 
 
-def mock_sunrise_sunset(town: Town, target_date: date) -> SunriseSunset:
+def mock_sunrise_sunset(
+    town: Town, target_date: date, lang: str = "zh"
+) -> SunriseSunset:
     day_of_year = target_date.timetuple().tm_yday
     seasonal_shift = int(18 * (1 - abs(182 - day_of_year) / 182))
     latitude_shift = int((town.lat - 23.5) * 2)
     sunrise_minutes = 360 - seasonal_shift + latitude_shift
     sunset_minutes = 1080 + seasonal_shift - latitude_shift
+    county = get_county_name_text(town.city, lang=lang)
     return SunriseSunset(
-        county=town.city,
+        county=county,
         target_date=target_date.isoformat(),
         source_date=target_date.isoformat(),
         sunrise_time=_format_minutes(sunrise_minutes),
@@ -80,18 +85,27 @@ def mock_sunrise_sunset(town: Town, target_date: date) -> SunriseSunset:
     )
 
 
-def mock_uv_info(town: Town, target_date: date) -> UVInfo:
+def mock_uv_info(town: Town, target_date: date, lang: str = "zh") -> UVInfo:
     base = 6 + int((24.5 - town.lat) * 0.7)
     seasonal = 1 if 4 <= target_date.month <= 9 else -1
     value = float(max(1, min(12, base + seasonal)))
+    raw_level = _uv_level(value)
+    level = get_uv_level_text(raw_level, lang=lang)
+    source_label = get_uv_source_label("目前紫外線", lang=lang)
+    station_name = (
+        f"{town.name_en or town.name} Mock Station"
+        if lang == "en"
+        else f"{town.name} mock station"
+    )
     return UVInfo(
         value=value,
-        level=_uv_level(value),
-        source_label="目前紫外線",
+        level=level,
+        level_code=get_uv_level_code(value),
+        source_label=source_label,
         source_type="observation",
         observed_at=f"{target_date.isoformat()}T12:00:00+08:00",
         station_id=f"mock-{town.code}",
-        station_name=f"{town.name} mock station",
+        station_name=station_name,
     )
 
 

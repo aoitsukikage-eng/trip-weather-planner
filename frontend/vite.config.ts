@@ -9,6 +9,11 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:8080",
     },
+    // Permit Cloudflare Tunnel hostnames so the dev server can be exposed
+    // publicly for a demo. Vite otherwise rejects unrecognised Host headers
+    // as DNS-rebinding protection. Dev server only; the production build is
+    // unaffected and still targets VITE_API_BASE.
+    allowedHosts: [".trycloudflare.com"],
   },
   test: {
     environment: "jsdom",

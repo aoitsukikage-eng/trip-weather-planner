@@ -1,25 +1,49 @@
-export type SeverityTier = "good" | "moderate" | "poor" | "severe" | "hazard";
+import { useLocale } from "../lib/locale";
 
-const UV_SEVERITY: Record<string, SeverityTier> = {
-  低: "good",
-  中: "moderate",
-  高: "poor",
-  過量: "severe",
-  危險: "hazard",
+export type SeverityTier = "good" | "moderate" | "poor" | "severe" | "hazard" | "unknown";
+
+const UV_CODE_SEVERITY: Record<string, SeverityTier> = {
+  low: "good",
+  moderate: "moderate",
+  high: "poor",
+  very_high: "severe",
+  extreme: "hazard",
 };
 
-const AQI_SEVERITY: Record<string, SeverityTier> = {
-  良好: "good",
-  普通: "moderate",
-  對敏感族群不健康: "poor",
-  對所有族群不健康: "severe",
-  非常不健康: "hazard",
-  危害: "hazard",
+const AQI_CODE_SEVERITY: Record<string, SeverityTier> = {
+  good: "good",
+  moderate: "moderate",
+  unhealthy_sensitive: "poor",
+  unhealthy: "severe",
+  very_unhealthy: "hazard",
+  hazardous: "hazard",
 };
 
-export function getSeverityTier(kind: "uv" | "aqi", level: string | null): SeverityTier {
-  if (!level) return "good";
-  return (kind === "uv" ? UV_SEVERITY : AQI_SEVERITY)[level] ?? "good";
+export function getSeverityTier(
+  kind: "uv" | "aqi",
+  levelCode: string | null | undefined,
+  value?: number | null,
+): SeverityTier {
+  let code = levelCode;
+  if (!code && value != null && Number.isFinite(value)) {
+    if (kind === "uv") {
+      if (value <= 2) code = "low";
+      else if (value <= 5) code = "moderate";
+      else if (value <= 7) code = "high";
+      else if (value <= 10) code = "very_high";
+      else code = "extreme";
+    } else {
+      if (value <= 50) code = "good";
+      else if (value <= 100) code = "moderate";
+      else if (value <= 150) code = "unhealthy_sensitive";
+      else if (value <= 200) code = "unhealthy";
+      else if (value <= 300) code = "very_unhealthy";
+      else code = "hazardous";
+    }
+  }
+
+  if (!code) return "unknown";
+  return (kind === "uv" ? UV_CODE_SEVERITY : AQI_CODE_SEVERITY)[code] ?? "unknown";
 }
 
 export function getGaugeProgress(value: number | null, maximum: number): number {
@@ -32,6 +56,7 @@ export default function StatusGauge({
   label,
   value,
   level,
+  levelCode,
   maximum,
   detail,
 }: {
@@ -39,12 +64,14 @@ export default function StatusGauge({
   label: string;
   value: number | null;
   level: string | null;
+  levelCode?: string | null;
   maximum: number;
   detail: string;
 }) {
-  const severity = getSeverityTier(kind, level);
+  const { t } = useLocale();
+  const severity = getSeverityTier(kind, levelCode ?? null, value);
   const progress = getGaugeProgress(value, maximum);
-  const valueLabel = kind === "uv" ? `指數 ${value ?? "—"}` : `AQI ${value ?? "—"}`;
+  const valueLabel = kind === "uv" ? t.uvIndexLabel(value ?? "—") : t.aqiIndexLabel(value ?? "—");
 
   return (
     <article className={`fact-card status-gauge-card severity-${severity}`} data-severity={severity}>
@@ -53,13 +80,13 @@ export default function StatusGauge({
         className="status-gauge"
         data-testid={`${kind}-gauge`}
         data-progress={progress.toFixed(4)}
-        aria-label={`${label} ${valueLabel} ${level ?? "資料不足"}`}
+        aria-label={`${label} ${valueLabel} ${level ?? t.gaugeDataUnavailable}`}
       >
         <span className="status-gauge-fill" style={{ width: `${progress * 100}%` }} />
         <span className="status-gauge-handle" style={{ left: `${progress * 100}%` }} />
       </div>
       <p className="status-gauge-value">
-        {valueLabel} · <span>{level ?? "資料不足"}</span>
+        {valueLabel} · <span>{level ?? t.gaugeDataUnavailable}</span>
       </p>
       <small>{detail}</small>
     </article>

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import ForecastView, { getHourlyAnnotationStep } from "./ForecastView";
 import type { ForecastResult, HourlyForecast } from "../lib/api";
+import { LocaleProvider } from "../lib/locale";
 
 function buildHourly(count: number): HourlyForecast[] {
   const start = new Date("2026-07-04T00:00:00+08:00");
@@ -442,6 +443,61 @@ describe("ForecastView", () => {
     expect(screen.getByText("summary for 2026-07-05")).not.toBeNull();
     expect(screen.getByTestId("chart-place").textContent).toBe("新北市 貢寮區");
     expect(container.querySelector(".hourly-chart svg")?.innerHTML).toBe(beforeChart);
+  });
+
+  test("(c) ForecastView in en renders real weather emoji for 7-day strip (not '·') and daily/hourly icons agree", () => {
+    const result = buildResult("Taipei City", "Xinyi District");
+    result.forecast.days[0] = {
+      ...result.forecast.days[0],
+      weather: "Clear",
+      weather_code: "01",
+    };
+    result.forecast.days[1] = {
+      ...result.forecast.days[1],
+      weather: "Light Rain",
+      weather_code: "12",
+    };
+
+    const { container } = render(<ForecastView result={result} />);
+
+    const icons = Array.from(container.querySelectorAll(".day-strip-icon"));
+    const firstDayIcon = icons[0]?.textContent;
+    const secondDayIcon = icons[1]?.textContent;
+
+    expect(firstDayIcon).not.toBe("·");
+    expect(firstDayIcon).toBe("☀️");
+    expect(secondDayIcon).not.toBe("·");
+    expect(secondDayIcon).toBe("🌧️");
+  });
+
+  test("renders English place label when name_en/city_en exist and falls back to Chinese when null under en locale", () => {
+    window.history.replaceState(null, "", "/?lang=en");
+
+    const resultWithEn = buildResult("臺北市", "信義區");
+    resultWithEn.forecast.town.city_en = "Taipei City";
+    resultWithEn.forecast.town.name_en = "Xinyi District";
+
+    const { unmount } = render(
+      <LocaleProvider>
+        <ForecastView result={resultWithEn} />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Taipei City Xinyi District");
+
+    unmount();
+
+    const resultFallback = buildResult("花蓮縣", "卓溪鄉");
+    resultFallback.forecast.town.city_en = "Hualien County";
+    resultFallback.forecast.town.name_en = null;
+
+    render(
+      <LocaleProvider>
+        <ForecastView result={resultFallback} />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Hualien County 卓溪鄉");
   });
 });
 

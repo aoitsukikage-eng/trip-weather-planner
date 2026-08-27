@@ -16,6 +16,12 @@ class Town(BaseModel):
     code: str = Field(..., description="Stable identifier, e.g. 'taipei-xinyi'")
     name: str = Field(..., description="Township name, e.g. '中正區'")
     city: str = Field(..., description="Parent city/county, e.g. '臺北市'")
+    name_en: str | None = Field(
+        None, description="Township English name, e.g. 'Xinyi District'"
+    )
+    city_en: str | None = Field(
+        None, description="Parent city/county English name, e.g. 'Taipei City'"
+    )
     lat: float
     lon: float
 
@@ -53,7 +59,9 @@ class DailyForecast(BaseModel):
     temp_low_c: float | None = None
     max_pop_percent: int | None = None
     weather: str | None = None  # representative phenomenon for the day
+    weather_code: str | None = None
     advice_hint: str | None = None  # short rule-based hint (rain/heat/cold)
+    advice_hint_key: str | None = None
     aqi_forecast: AQIForecast | None = None
 
 
@@ -87,6 +95,7 @@ class SunriseSunset(BaseModel):
 class UVInfo(BaseModel):
     value: float | None = None
     level: str | None = None
+    level_code: str | None = None
     source_label: str
     source_type: str
     observed_at: str | None = None
@@ -98,11 +107,13 @@ class AQIForecast(BaseModel):
     date: str
     value: int | None = None
     level: str | None = None
+    level_code: str | None = None
 
 
 class AQIInfo(BaseModel):
     value: int | None = None
     level: str | None = None
+    level_code: str | None = None
     station_name: str | None = None
     observed_at: str | None = None
     source_label: str = "目前空氣品質"
