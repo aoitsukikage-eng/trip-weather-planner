@@ -452,4 +452,3 @@ def test_official_town_names_table_and_cwa_integration():
     for slug, entry in TOWN_NAME_MAP.items():
         translated = get_town_name_text(slug, entry["zh"], lang="en")
         assert translated == entry["en"]
-
