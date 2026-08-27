@@ -18,7 +18,7 @@ from typing import Literal
 
 from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 
-LangType = Literal["zh", "en"]
+LangType = Literal["zh", "en", "ja"]
 
 # ---------------------------------------------------------------------------
 # Domain 1: Weather Phenomena Codes (WxCode) - CWA Official Standard

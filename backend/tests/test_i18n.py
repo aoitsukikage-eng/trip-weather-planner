@@ -100,6 +100,18 @@ def test_get_towns_bilingual():
     assert en_xinyi["city_en"] == "Taipei City"
 
 
+def test_api_accepts_lang_ja():
+    """AC1: GET /api/towns?lang=ja and /api/forecast?...&lang=ja return 200 (not 422)."""
+    towns_res = client.get("/api/towns?lang=ja")
+    assert towns_res.status_code == 200
+    assert towns_res.json()["success"] is True
+
+    target = _future(1)
+    forecast_res = client.get(f"/api/forecast?town=taipei-xinyi&date={target}&lang=ja")
+    assert forecast_res.status_code == 200
+    assert forecast_res.json()["success"] is True
+
+
 # ---------------------------------------------------------------------------
 # 2. API Integration Tests: /api/forecast?lang=en covering all 8 domains
 # ---------------------------------------------------------------------------
