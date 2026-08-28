@@ -47,4 +47,10 @@ describe("townLabel helpers", () => {
     expect(getTownFullLabel(townWithEn, "zh")).toBe("臺北市 信義區");
     expect(getTownFullLabel(townWithoutEn, "en")).toBe("Hualien County 卓溪鄉");
   });
+
+  test("getTownName and getCityName return Traditional Chinese name/city for ja locale (AC4 passthrough)", () => {
+    expect(getTownName(townWithEn, "ja")).toBe("信義區");
+    expect(getCityName(townWithEn, "ja")).toBe("臺北市");
+    expect(getTownFullLabel(townWithEn, "ja")).toBe("臺北市 信義區");
+  });
 });

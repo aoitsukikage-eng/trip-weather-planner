@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { useState } from "react";
 import TripForm from "./TripForm";
@@ -35,6 +35,7 @@ function ControlledTripForm({
 
 describe("TripForm", () => {
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -100,5 +101,50 @@ describe("TripForm", () => {
     const optionTexts = townOptions.map((opt) => opt.textContent);
 
     expect(optionTexts).toEqual(["Apple Town", "Banana Town"]);
+  });
+
+  test("TripForm in ja renders Traditional Chinese town/city names and uses zh-Hant collation (AC4)", () => {
+    const townsWithEn: Town[] = [
+      {
+        code: "town-b",
+        name: "乙鎮",
+        city: "甲市",
+        name_en: "Banana Town",
+        city_en: "Apple City",
+        lat: 25.0,
+        lon: 121.5,
+      },
+      {
+        code: "town-a",
+        name: "甲鎮",
+        city: "甲市",
+        name_en: "Apple Town",
+        city_en: "Apple City",
+        lat: 25.0,
+        lon: 121.5,
+      },
+    ];
+
+    render(
+      <LocaleContext.Provider value={{ locale: "ja", setLocale: vi.fn(), t: getDictionary("ja") }}>
+        <TripForm
+          towns={townsWithEn}
+          loading={false}
+          city="甲市"
+          townCode="town-b"
+          onCityChange={vi.fn()}
+          onTownCodeChange={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </LocaleContext.Provider>,
+    );
+
+    const cityOption = screen.getByRole("option", { name: "甲市" });
+    expect(cityOption).not.toBeNull();
+
+    const townOptions = screen.getAllByRole("option").filter((opt) => (opt as HTMLOptionElement).value.startsWith("town-"));
+    const optionTexts = townOptions.map((opt) => opt.textContent);
+
+    expect(optionTexts).toEqual(["乙鎮", "甲鎮"]);
   });
 });
