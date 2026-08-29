@@ -499,6 +499,21 @@ describe("ForecastView", () => {
 
     expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Hualien County 卓溪鄉");
   });
+
+  test("renders ja hourlyChartSubtitle with line break under ja locale (AC4)", () => {
+    window.history.replaceState(null, "", "/?lang=ja");
+    const result = buildResult("臺北市", "信義區");
+    render(
+      <LocaleProvider>
+        <ForecastView result={result} />
+      </LocaleProvider>,
+    );
+
+    const subtitleElement = screen.getByText((content) =>
+      content.includes("折れ線は気温と体感温度、") && content.includes("下の青い棒は降水確率を示します。")
+    );
+    expect(subtitleElement.textContent).toBe("折れ線は気温と体感温度、\n下の青い棒は降水確率を示します。");
+  });
 });
 
 describe("getHourlyAnnotationStep", () => {

@@ -601,7 +601,7 @@ def test_ja_lookup_tables_and_fallback_chain():
 
     # JMA terms verification for AC2 examples
     assert WX_CODE_TO_TEXT["01"]["ja"] == "晴れ"
-    assert WX_CODE_TO_TEXT["04"]["ja"] == "曇り"
+    assert WX_CODE_TO_TEXT["04"]["ja"] == "くもり"
     assert WX_CODE_TO_TEXT["11"]["ja"] == "にわか雨"
 
     # AC3: Specific required assertions
@@ -615,10 +615,51 @@ def test_ja_lookup_tables_and_fallback_chain():
 def test_composer_1_format_warning_ja():
     """AC4 Composer 1: format_warning ja branch."""
     title, desc = format_warning("豪雨特報", "臺北市", lang="ja")
-    assert title == "豪雨警報"
-    assert desc == "臺北市に豪雨警報が発表されています。最新の気象情報にご注意ください。"
+    assert title == "大雨警報"
+    assert desc == "臺北市に大雨警報が発表されています。最新の気象情報にご注意ください。"
     assert "，" not in desc
     assert "請留意" not in desc
+
+
+def test_ja_terminology_jma_fix():
+    """AC6: Test JMA terminology updates for AC1 & AC3 and check no 曇り, 薄曇り,
+    豪雨 in any ja values.
+    """
+    # AC1 specific mappings (at least 3)
+    assert WX_CODE_TO_TEXT["02"]["ja"] == "晴れ時々くもり"
+    assert WX_CODE_TO_TEXT["03"]["ja"] == "晴れ時々くもり"
+    assert WX_CODE_TO_TEXT["04"]["ja"] == "くもり"
+    assert WX_CODE_TO_TEXT["05"]["ja"] == "くもり時々晴れ"
+    assert WX_CODE_TO_TEXT["06"]["ja"] == "くもり時々晴れ"
+    assert WX_CODE_TO_TEXT["07"]["ja"] == "くもり"
+    assert WX_CODE_TO_TEXT["34"]["ja"] == "やや強い風"
+    assert WX_CODE_TO_TEXT["36"]["ja"] == "強風"
+    assert WX_CODE_TO_TEXT["38"]["ja"] == "地吹雪"
+    assert WX_CODE_TO_TEXT["40"]["ja"] == "非常に激しい雨"
+
+    # AC3 specific mappings (at least 3)
+    assert WARNING_TITLE_MAP["大雨特報"]["ja"] == "大雨注意報"
+    assert WARNING_TITLE_MAP["豪雨特報"]["ja"] == "大雨警報"
+    assert WARNING_TITLE_MAP["陸上強風特報"]["ja"] == "強風注意報"
+    assert WARNING_TITLE_MAP["颱風警報"]["ja"] == "台風警報"
+
+    # Whole file ja values check: no '曇り', '薄曇り', '豪雨'
+    all_maps = [
+        WX_CODE_TO_TEXT,
+        WARNING_TITLE_MAP,
+        ADVICE_HINT_MAP,
+        AQI_LEVEL_MAP,
+        UV_LEVEL_MAP,
+        UV_LABEL_MAP,
+        MOON_PHASE_MAP,
+    ]
+    for m in all_maps:
+        for entry in m.values():
+            if "ja" in entry:
+                ja_val = entry["ja"]
+                assert "曇り" not in ja_val, f"Found '曇り' in ja value: {ja_val}"
+                assert "薄曇り" not in ja_val, f"Found '薄曇り' in ja value: {ja_val}"
+                assert "豪雨" not in ja_val, f"Found '豪雨' in ja value: {ja_val}"
 
 
 def test_composer_2_rule_based_summary_ja():
