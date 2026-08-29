@@ -662,6 +662,30 @@ def test_ja_terminology_jma_fix():
                 assert "豪雨" not in ja_val, f"Found '豪雨' in ja value: {ja_val}"
 
 
+def test_ja_compound_terms_cwa_fix():
+    """AC5: Verify CWA compound terms Japanese fixes (AC1-AC3) and code 19 vs 20 inequality."""
+    # AC1: 16, 17, 18, 21, 22 should be "にわか雨か雷雨" and 16 == 21
+    assert WX_CODE_TO_TEXT["16"]["ja"] == "にわか雨か雷雨"
+    assert WX_CODE_TO_TEXT["21"]["ja"] == "にわか雨か雷雨"
+    assert WX_CODE_TO_TEXT["16"]["ja"] == WX_CODE_TO_TEXT["21"]["ja"]
+    assert WX_CODE_TO_TEXT["17"]["ja"] == WX_CODE_TO_TEXT["16"]["ja"]
+    assert WX_CODE_TO_TEXT["18"]["ja"] == WX_CODE_TO_TEXT["16"]["ja"]
+    assert WX_CODE_TO_TEXT["22"]["ja"] == WX_CODE_TO_TEXT["21"]["ja"]
+
+    # AC2: 24 should be "晴れ、霧を伴う"
+    assert WX_CODE_TO_TEXT["24"]["ja"] == "晴れ、霧を伴う"
+
+    # AC3: 25 and 26 should be "くもり、霧を伴う" and equal
+    assert WX_CODE_TO_TEXT["25"]["ja"] == "くもり、霧を伴う"
+    assert WX_CODE_TO_TEXT["26"]["ja"] == "くもり、霧を伴う"
+    assert WX_CODE_TO_TEXT["25"]["ja"] == WX_CODE_TO_TEXT["26"]["ja"]
+
+    # AC4 / AC5: 19 ("晴れ午後一時雷雨") and 20 ("くもり午後一時雷雨") MUST NOT be equal
+    assert WX_CODE_TO_TEXT["19"]["ja"] == "晴れ午後一時雷雨"
+    assert WX_CODE_TO_TEXT["20"]["ja"] == "くもり午後一時雷雨"
+    assert WX_CODE_TO_TEXT["19"]["ja"] != WX_CODE_TO_TEXT["20"]["ja"]
+
+
 def test_composer_2_rule_based_summary_ja():
     """AC4 Composer 2: _rule_based_summary ja branch and _SYSTEM_PROMPT_JA."""
     from app.schemas.weather import DailyForecast
