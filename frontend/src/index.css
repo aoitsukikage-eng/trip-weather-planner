@@ -181,6 +181,11 @@ header h1 {
   line-height: 1.65;
 }
 
+:lang(ja) .summary-panel p,
+:lang(ja) .hourly-chart-header p {
+  word-break: auto-phrase;
+}
+
 .summary-panel small,
 .fact-card small {
   color: #56738f;
