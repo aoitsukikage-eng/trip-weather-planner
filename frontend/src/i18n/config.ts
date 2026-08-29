@@ -9,6 +9,12 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   ja: "日本語",
 };
 
+export const HTML_LANG_CODES: Record<Locale, string> = {
+  zh: "zh-Hant",
+  en: "en",
+  ja: "ja",
+};
+
 export function isSupportedLocale(locale: string | null | undefined): locale is Locale {
   return typeof locale === "string" && (SUPPORTED_LOCALES as readonly string[]).includes(locale);
 }
