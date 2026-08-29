@@ -142,4 +142,24 @@ describe("locale context & provider", () => {
     expect(localStorage.getItem("twp:locale")).toBe("ja");
     expect(window.location.search).toContain("lang=ja");
   });
+
+  test("updates document.documentElement.lang on locale change (AC4)", async () => {
+    const user = userEvent.setup();
+    render(
+      <LocaleProvider>
+        <TestConsumer />
+      </LocaleProvider>,
+    );
+
+    expect(document.documentElement.lang).toBe("zh-Hant");
+
+    await user.click(screen.getByRole("button", { name: "English" }));
+    expect(document.documentElement.lang).toBe("en");
+
+    await user.click(screen.getByRole("button", { name: "日本語" }));
+    expect(document.documentElement.lang).toBe("ja");
+
+    await user.click(screen.getByRole("button", { name: "中文" }));
+    expect(document.documentElement.lang).toBe("zh-Hant");
+  });
 });
