@@ -272,9 +272,9 @@ def get_uv_source_label(label: str, lang: str = "zh") -> str:
 # Domain 5: Weather Warning Title & Description Template
 # ---------------------------------------------------------------------------
 WARNING_TITLE_MAP: dict[str, dict[str, str]] = {
-    "豪雨特報": {"zh": "豪雨特報", "en": "Extremely Heavy Rain Advisory", "ja": "豪雨警報"},
-    "大雨特報": {"zh": "大雨特報", "en": "Heavy Rain Advisory", "ja": "大雨警報"},
-    "陸上強風特報": {"zh": "陸上強風特報", "en": "Land Strong Wind Warning", "ja": "強風警報"},
+    "豪雨特報": {"zh": "豪雨特報", "en": "Extremely Heavy Rain Advisory", "ja": "大雨警報"},
+    "大雨特報": {"zh": "大雨特報", "en": "Heavy Rain Advisory", "ja": "大雨注意報"},
+    "陸上強風特報": {"zh": "陸上強風特報", "en": "Land Strong Wind Warning", "ja": "強風注意報"},
     "颱風警報": {"zh": "颱風警報", "en": "Typhoon Warning", "ja": "台風警報"},
 }
 
