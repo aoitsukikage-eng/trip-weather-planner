@@ -16,7 +16,7 @@ export const ja: Dictionary = {
   btnQuery: "天気を検索",
 
   hourlyChartTitle: "72時間（3時間ごと）の予報",
-  hourlyChartSubtitle: "折れ線は気温と体感温度、下の青い棒は降水確率を示します。",
+  hourlyChartSubtitle: "折れ線は気温と体感温度、\n下の青い棒は降水確率を示します。",
   legendTemp: "気温",
   legendApparentTemp: "体感温度",
   hourlyChartAriaLabel: "72時間（3時間ごと）の気温・降水確率グラフ",

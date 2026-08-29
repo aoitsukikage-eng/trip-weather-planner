@@ -410,6 +410,7 @@ header h1 {
   color: #4a647d;
   line-height: 1.5;
   font-size: 0.92rem;
+  white-space: pre-line;
 }
 
 .chart-legend {
