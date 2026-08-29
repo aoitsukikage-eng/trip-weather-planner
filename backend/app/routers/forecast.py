@@ -160,18 +160,15 @@ async def forecast(
         if day.date in aqi_forecasts:
             day.aqi_forecast = aqi_forecasts[day.date]
             if day.aqi_forecast.level:
+                prefix = day.advice_hint or ""
+                sep = " " if (lang == "en" and prefix) else ""
                 if lang == "en":
-                    day.advice_hint = (
-                        f"{day.advice_hint or ''} Air quality forecast: {day.aqi_forecast.level}."
-                    )
+                    aqi_text = f"Air quality forecast: {day.aqi_forecast.level}."
                 elif lang == "ja":
-                    day.advice_hint = (
-                        f"{day.advice_hint or ''} 空気質予報は{day.aqi_forecast.level}です。"
-                    )
+                    aqi_text = f"空気質予報は{day.aqi_forecast.level}です。"
                 else:
-                    day.advice_hint = (
-                        f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"
-                    )
+                    aqi_text = f"空氣品質預報為{day.aqi_forecast.level}。"
+                day.advice_hint = f"{prefix}{sep}{aqi_text}"
 
     forecast_data = ForecastData(
         town=town_obj,
