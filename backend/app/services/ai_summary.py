@@ -47,9 +47,8 @@ def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str
             )
         if day.max_pop_percent is not None:
             parts.append(f"and a peak precipitation chance of {day.max_pop_percent}%. ")
-        if day.advice_hint:
-            parts.append(day.advice_hint)
-        return "".join(parts).strip()
+        head = "".join(parts).strip()
+        return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
     if lang == "ja":
         parts = [f"{_display_date(day.date)}の{town.city}{town.name}の天気予報は"]
@@ -61,9 +60,8 @@ def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str
             )
         if day.max_pop_percent is not None:
             parts.append(f"最高降水確率は{day.max_pop_percent}%です。")
-        if day.advice_hint:
-            parts.append(day.advice_hint)
-        return "".join(parts).strip()
+        head = "".join(parts).strip()
+        return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
     parts = [f"{town.city}{town.name}在 {_display_date(day.date)} "]
     if day.weather:
@@ -72,8 +70,8 @@ def _rule_based_summary(town: Town, day: DailyForecast, lang: str = "zh") -> str
         parts.append(f"氣溫約 {day.temp_low_c:.0f}–{day.temp_high_c:.0f}°C,")
     if day.max_pop_percent is not None:
         parts.append(f"降雨機率最高 {day.max_pop_percent}%。")
-    parts.append(day.advice_hint or "")
-    return "".join(parts).strip()
+    head = "".join(parts).strip()
+    return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
 
 def _display_date(value: str) -> str:
