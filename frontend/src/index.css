@@ -179,6 +179,7 @@ header h1 {
 .summary-panel p {
   margin: 0.25rem 0;
   line-height: 1.65;
+  white-space: pre-line;
 }
 
 :lang(ja) .summary-panel p,
