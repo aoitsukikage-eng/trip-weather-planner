@@ -161,7 +161,7 @@ async def forecast(
             day.aqi_forecast = aqi_forecasts[day.date]
             if day.aqi_forecast.level:
                 prefix = day.advice_hint or ""
-                sep = " " if (lang == "en" and prefix) else ""
+                sep = "\n" if prefix else ""
                 if lang == "en":
                     aqi_text = f"Air quality forecast: {day.aqi_forecast.level}."
                 elif lang == "ja":
