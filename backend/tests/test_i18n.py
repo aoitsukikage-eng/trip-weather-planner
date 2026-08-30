@@ -857,7 +857,10 @@ def test_advice_hint_linebreak_and_empty_prefix_all_languages():
         # First line: weather data sentence
         assert not lines[0].endswith(" ")
         # Second line: action advice hint
-        assert lines[1] == days[0]["advice_hint"]
+        target_date = body["data"]["forecast"]["target_date"]
+        focused = next((d for d in days if d["date"] == target_date), None)
+        assert focused is not None
+        assert lines[1] == focused["advice_hint"]
         # No AQI text anywhere in summary
         assert not any(key in ai_text for key in aqi_keywords)
 
