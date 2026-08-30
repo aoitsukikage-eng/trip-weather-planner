@@ -741,7 +741,7 @@ def test_composer_3_aqi_advice_hint_ja():
 
 
 def test_advice_hint_spacing_per_language():
-    """AC4: ja, zh, and en advice_hint contains no newline or AQI text, while rule-based summary has 1 newline."""
+    """AC4: ja/zh/en advice_hint has no newline/AQI text, summary has 1 newline."""
     from app.schemas.weather import AQIForecast, DailyForecast
     from app.services.ai_summary import _rule_based_summary
 
@@ -811,7 +811,7 @@ def test_advice_hint_spacing_per_language():
 
 
 def test_advice_hint_linebreak_and_empty_prefix_all_languages():
-    """AC4: Assert advice_hint has no newline/AQI text, ai_summary.text has 1 newline in zh/en/ja, and no newline when advice_hint is empty."""
+    """AC4: Assert advice_hint/summary formatting across languages."""
     from app.schemas.weather import AQIForecast, DailyForecast
     from app.services.ai_summary import _rule_based_summary
 
