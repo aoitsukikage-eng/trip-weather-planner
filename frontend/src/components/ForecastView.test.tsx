@@ -514,6 +514,19 @@ describe("ForecastView", () => {
     );
     expect(subtitleElement.textContent).toBe("折れ線は気温と体感温度、\n下の青い棒は降水確率を示します。");
   });
+
+  test("renders summary-panel paragraph with multiline text containing newline separator (AC4)", () => {
+    const result = buildResult("臺北市", "信義區");
+    result.ai_summary.text = "7/4 臺北市信義區天氣穩定，適合戶外活動。\n空氣品質預報為普通。";
+    const { container } = render(<ForecastView result={result} />);
+
+    const summaryParagraph = container.querySelector(".summary-panel p");
+    expect(summaryParagraph).not.toBeNull();
+    expect(summaryParagraph?.textContent).toBe(
+      "7/4 臺北市信義區天氣穩定，適合戶外活動。\n空氣品質預報為普通。"
+    );
+    expect(summaryParagraph?.textContent).toContain("\n");
+  });
 });
 
 describe("getHourlyAnnotationStep", () => {
