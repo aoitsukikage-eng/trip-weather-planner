@@ -714,7 +714,7 @@ def test_composer_2_rule_based_summary_ja():
 
 
 def test_composer_3_aqi_advice_hint_ja():
-    """AC4 Composer 3: day.advice_hint appended AQI sentence ja branch."""
+    """AC4 Composer 3: day.advice_hint does not contain AQI sentence or newline in ja."""
     from app.schemas.weather import AQIForecast, DailyForecast
 
     day = DailyForecast(
@@ -733,29 +733,20 @@ def test_composer_3_aqi_advice_hint_ja():
             level_code="good",
         ),
     )
-    # Simulate forecast.py composition for lang='ja'
-    lang = "ja"
-    if day.aqi_forecast and day.aqi_forecast.level:
-        prefix = day.advice_hint or ""
-        sep = "\n" if prefix else ""
-        if lang == "ja":
-            aqi_text = f"空気質予報は{day.aqi_forecast.level}です。"
-        day.advice_hint = f"{prefix}{sep}{aqi_text}"
-
     assert day.advice_hint is not None
-    assert "空気質予報は良好です。" in day.advice_hint
+    assert "\n" not in day.advice_hint
+    assert "空気質予報は" not in day.advice_hint
     assert "空氣品質預報為" not in day.advice_hint
-    assert day.advice_hint.count("\n") == 1
-    expected = (
-        "天気が安定しているため、屋外のアクティビティに適しています。\n"
-        "空気質予報は良好です。"
-    )
-    assert day.advice_hint == expected
+    assert day.advice_hint == "天気が安定しているため、屋外のアクティビティに適しています。"
 
 
 def test_advice_hint_spacing_per_language():
-    """AC3: ja, zh, and en advice_hint composition uses newline separator before AQI sentence."""
+    """AC4: ja, zh, and en advice_hint contains no newline or AQI text, while rule-based summary has 1 newline."""
     from app.schemas.weather import AQIForecast, DailyForecast
+    from app.services.ai_summary import _rule_based_summary
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
 
     # 1. Chinese (zh)
     day_zh = DailyForecast(
@@ -768,13 +759,14 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="普通", level_code="moderate"
         ),
     )
-    prefix_zh = day_zh.advice_hint or ""
-    sep_zh = "\n" if prefix_zh else ""
-    aqi_text_zh = f"空氣品質預報為{day_zh.aqi_forecast.level}。"
-    day_zh.advice_hint = f"{prefix_zh}{sep_zh}{aqi_text_zh}"
-
-    assert day_zh.advice_hint.count("\n") == 1
-    assert day_zh.advice_hint == "天氣穩定，適合戶外活動。\n空氣品質預報為普通。"
+    assert "\n" not in day_zh.advice_hint
+    assert "空氣品質預報為" not in day_zh.advice_hint
+    summary_zh = _rule_based_summary(town, day_zh, lang="zh")
+    assert summary_zh.count("\n") == 1
+    lines_zh = summary_zh.split("\n")
+    assert len(lines_zh) == 2
+    assert lines_zh[0].startswith("臺北市信義區在 8/28 ")
+    assert lines_zh[1] == "天氣穩定，適合戶外活動。"
 
     # 2. Japanese (ja)
     day_ja = DailyForecast(
@@ -787,17 +779,14 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="普通", level_code="moderate"
         ),
     )
-    prefix_ja = day_ja.advice_hint or ""
-    sep_ja = "\n" if prefix_ja else ""
-    aqi_text_ja = f"空気質予報は{day_ja.aqi_forecast.level}です。"
-    day_ja.advice_hint = f"{prefix_ja}{sep_ja}{aqi_text_ja}"
-
-    assert day_ja.advice_hint.count("\n") == 1
-    expected_ja = (
-        "天気が安定しているため、屋外のアクティビティに適しています。\n"
-        "空気質予報は普通です。"
-    )
-    assert day_ja.advice_hint == expected_ja
+    assert "\n" not in day_ja.advice_hint
+    assert "空気質予報は" not in day_ja.advice_hint
+    summary_ja = _rule_based_summary(town, day_ja, lang="ja")
+    assert summary_ja.count("\n") == 1
+    lines_ja = summary_ja.split("\n")
+    assert len(lines_ja) == 2
+    assert lines_ja[0].startswith("8/28の臺北市信義區の天気予報は")
+    assert lines_ja[1] == "天気が安定しているため、屋外のアクティビティに適しています。"
 
     # 3. English (en)
     day_en = DailyForecast(
@@ -810,69 +799,67 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="Moderate", level_code="moderate"
         ),
     )
-    prefix_en = day_en.advice_hint or ""
-    sep_en = "\n" if prefix_en else ""
-    aqi_text_en = f"Air quality forecast: {day_en.aqi_forecast.level}."
-    day_en.advice_hint = f"{prefix_en}{sep_en}{aqi_text_en}"
-
-    assert day_en.advice_hint.count("\n") == 1
-    expected_en = (
-        "Weather is generally stable, ideal for outdoor activities.\n"
-        "Air quality forecast: Moderate."
-    )
-    assert day_en.advice_hint == expected_en
+    assert "\n" not in day_en.advice_hint
+    assert "Air quality forecast:" not in day_en.advice_hint
+    summary_en = _rule_based_summary(town, day_en, lang="en")
+    assert summary_en.count("\n") == 1
+    lines_en = summary_en.split("\n")
+    assert len(lines_en) == 2
+    assert lines_en[0].startswith("The forecast for Xinyi District, Taipei City on 8/28 ")
+    assert not lines_en[0].endswith(" ")
+    assert lines_en[1] == "Weather is generally stable, ideal for outdoor activities."
 
 
 def test_advice_hint_linebreak_and_empty_prefix_all_languages():
-    """AC3: Assert advice_hint has single '\\n' before AQI and no leading '\\n' if prefix empty."""
+    """AC4: Assert advice_hint has no newline/AQI text, ai_summary.text has 1 newline in zh/en/ja, and no newline when advice_hint is empty."""
     from app.schemas.weather import AQIForecast, DailyForecast
+    from app.services.ai_summary import _rule_based_summary
 
-    # Test empty prefix scenario for zh, ja, en
-    empty_prefix_cases = [
-        ("zh", "空氣品質預報為普通。", "普通"),
-        ("ja", "空気質予報は普通です。", "普通"),
-        ("en", "Air quality forecast: Moderate.", "Moderate"),
-    ]
-    for _lang, aqi_text, level in empty_prefix_cases:
-        day = DailyForecast(
+    town = get_town("taipei-xinyi")
+    assert town is not None
+
+    # Test empty advice_hint scenario for zh, ja, en (no newline, no trailing newline)
+    for lang in ["zh", "ja", "en"]:
+        day_no_hint = DailyForecast(
             date="2026-08-28",
             temp_high_c=30.0,
             temp_low_c=24.0,
             weather="Clear",
             advice_hint="",
             aqi_forecast=AQIForecast(
-                date="2026-08-28", value=35, level=level, level_code="moderate"
+                date="2026-08-28", value=35, level="Moderate", level_code="moderate"
             ),
         )
-        prefix = day.advice_hint or ""
-        sep = "\n" if prefix else ""
-        day.advice_hint = f"{prefix}{sep}{aqi_text}"
+        summary_no_hint = _rule_based_summary(town, day_no_hint, lang=lang)
+        assert "\n" not in summary_no_hint
+        assert not summary_no_hint.endswith("\n")
 
-        assert not day.advice_hint.startswith("\n")
-        assert day.advice_hint.count("\n") == 0
-        assert day.advice_hint == aqi_text
-
-    # Integration test via API for zh, ja, en
+    # Integration test via API for zh, en, ja
     target = _future(1)
+    aqi_keywords = ["空氣品質預報為", "Air quality forecast:", "空気質予報は"]
     for lang in ["zh", "en", "ja"]:
         res = client.get(f"/api/forecast?town=taipei-xinyi&date={target}&lang={lang}")
         assert res.status_code == 200
         body = res.json()
         assert body["success"] is True
+
         days = body["data"]["forecast"]["days"]
         for day in days:
-            if day.get("aqi_forecast") and day["aqi_forecast"].get("level"):
-                hint = day.get("advice_hint")
-                if hint:
-                    aqi_keywords = ["空氣品質預報為", "Air quality forecast:", "空気質予報は"]
-                    if any(key in hint for key in aqi_keywords):
-                        assert not hint.startswith("\n")
-                        assert hint.count("\n") == 1
-                        lines = hint.split("\n")
-                        assert len(lines) == 2
-                        assert any(
-                            lines[1].startswith(prefix_text) for prefix_text in aqi_keywords
-                        )
+            hint = day.get("advice_hint")
+            if hint:
+                assert "\n" not in hint
+                assert not any(key in hint for key in aqi_keywords)
+
+        ai_text = body["data"]["ai_summary"]["text"]
+        assert ai_text.count("\n") == 1
+        lines = ai_text.split("\n")
+        assert len(lines) == 2
+        # First line: weather data sentence
+        assert not lines[0].endswith(" ")
+        # Second line: action advice hint
+        assert lines[1] == days[0]["advice_hint"]
+        # No AQI text anywhere in summary
+        assert not any(key in ai_text for key in aqi_keywords)
 
 
 
