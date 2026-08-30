@@ -737,7 +737,7 @@ def test_composer_3_aqi_advice_hint_ja():
     lang = "ja"
     if day.aqi_forecast and day.aqi_forecast.level:
         prefix = day.advice_hint or ""
-        sep = " " if (lang == "en" and prefix) else ""
+        sep = "\n" if prefix else ""
         if lang == "ja":
             aqi_text = f"空気質予報は{day.aqi_forecast.level}です。"
         day.advice_hint = f"{prefix}{sep}{aqi_text}"
@@ -745,11 +745,16 @@ def test_composer_3_aqi_advice_hint_ja():
     assert day.advice_hint is not None
     assert "空気質予報は良好です。" in day.advice_hint
     assert "空氣品質預報為" not in day.advice_hint
-    assert "。 " not in day.advice_hint
+    assert day.advice_hint.count("\n") == 1
+    expected = (
+        "天気が安定しているため、屋外のアクティビティに適しています。\n"
+        "空気質予報は良好です。"
+    )
+    assert day.advice_hint == expected
 
 
 def test_advice_hint_spacing_per_language():
-    """AC5: ja and zh advice_hint composition must not contain '。 '; en preserves space."""
+    """AC3: ja, zh, and en advice_hint composition uses newline separator before AQI sentence."""
     from app.schemas.weather import AQIForecast, DailyForecast
 
     # 1. Chinese (zh)
@@ -763,14 +768,13 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="普通", level_code="moderate"
         ),
     )
-    lang_zh = "zh"
     prefix_zh = day_zh.advice_hint or ""
-    sep_zh = " " if (lang_zh == "en" and prefix_zh) else ""
+    sep_zh = "\n" if prefix_zh else ""
     aqi_text_zh = f"空氣品質預報為{day_zh.aqi_forecast.level}。"
     day_zh.advice_hint = f"{prefix_zh}{sep_zh}{aqi_text_zh}"
 
-    assert "。 " not in day_zh.advice_hint
-    assert day_zh.advice_hint == "天氣穩定，適合戶外活動。空氣品質預報為普通。"
+    assert day_zh.advice_hint.count("\n") == 1
+    assert day_zh.advice_hint == "天氣穩定，適合戶外活動。\n空氣品質預報為普通。"
 
     # 2. Japanese (ja)
     day_ja = DailyForecast(
@@ -783,16 +787,14 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="普通", level_code="moderate"
         ),
     )
-    lang_ja = "ja"
     prefix_ja = day_ja.advice_hint or ""
-    sep_ja = " " if (lang_ja == "en" and prefix_ja) else ""
+    sep_ja = "\n" if prefix_ja else ""
     aqi_text_ja = f"空気質予報は{day_ja.aqi_forecast.level}です。"
     day_ja.advice_hint = f"{prefix_ja}{sep_ja}{aqi_text_ja}"
 
-    assert "。 " not in day_ja.advice_hint
+    assert day_ja.advice_hint.count("\n") == 1
     expected_ja = (
-        "天気が安定しているため、"
-        "屋外のアクティビティに適しています。"
+        "天気が安定しているため、屋外のアクティビティに適しています。\n"
         "空気質予報は普通です。"
     )
     assert day_ja.advice_hint == expected_ja
@@ -808,18 +810,70 @@ def test_advice_hint_spacing_per_language():
             date="2026-08-28", value=35, level="Moderate", level_code="moderate"
         ),
     )
-    lang_en = "en"
     prefix_en = day_en.advice_hint or ""
-    sep_en = " " if (lang_en == "en" and prefix_en) else ""
+    sep_en = "\n" if prefix_en else ""
     aqi_text_en = f"Air quality forecast: {day_en.aqi_forecast.level}."
     day_en.advice_hint = f"{prefix_en}{sep_en}{aqi_text_en}"
 
-    assert ". " in day_en.advice_hint
+    assert day_en.advice_hint.count("\n") == 1
     expected_en = (
-        "Weather is generally stable, ideal for outdoor activities. "
+        "Weather is generally stable, ideal for outdoor activities.\n"
         "Air quality forecast: Moderate."
     )
     assert day_en.advice_hint == expected_en
+
+
+def test_advice_hint_linebreak_and_empty_prefix_all_languages():
+    """AC3: Assert advice_hint has single '\\n' before AQI and no leading '\\n' if prefix empty."""
+    from app.schemas.weather import AQIForecast, DailyForecast
+
+    # Test empty prefix scenario for zh, ja, en
+    empty_prefix_cases = [
+        ("zh", "空氣品質預報為普通。", "普通"),
+        ("ja", "空気質予報は普通です。", "普通"),
+        ("en", "Air quality forecast: Moderate.", "Moderate"),
+    ]
+    for _lang, aqi_text, level in empty_prefix_cases:
+        day = DailyForecast(
+            date="2026-08-28",
+            temp_high_c=30.0,
+            temp_low_c=24.0,
+            weather="Clear",
+            advice_hint="",
+            aqi_forecast=AQIForecast(
+                date="2026-08-28", value=35, level=level, level_code="moderate"
+            ),
+        )
+        prefix = day.advice_hint or ""
+        sep = "\n" if prefix else ""
+        day.advice_hint = f"{prefix}{sep}{aqi_text}"
+
+        assert not day.advice_hint.startswith("\n")
+        assert day.advice_hint.count("\n") == 0
+        assert day.advice_hint == aqi_text
+
+    # Integration test via API for zh, ja, en
+    target = _future(1)
+    for lang in ["zh", "en", "ja"]:
+        res = client.get(f"/api/forecast?town=taipei-xinyi&date={target}&lang={lang}")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["success"] is True
+        days = body["data"]["forecast"]["days"]
+        for day in days:
+            if day.get("aqi_forecast") and day["aqi_forecast"].get("level"):
+                hint = day.get("advice_hint")
+                if hint:
+                    aqi_keywords = ["空氣品質預報為", "Air quality forecast:", "空気質予報は"]
+                    if any(key in hint for key in aqi_keywords):
+                        assert not hint.startswith("\n")
+                        assert hint.count("\n") == 1
+                        lines = hint.split("\n")
+                        assert len(lines) == 2
+                        assert any(
+                            lines[1].startswith(prefix_text) for prefix_text in aqi_keywords
+                        )
+
 
 
 @pytest.mark.asyncio
