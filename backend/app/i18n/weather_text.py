@@ -18,54 +18,54 @@ from typing import Literal
 
 from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 
-LangType = Literal["zh", "en"]
+LangType = Literal["zh", "en", "ja"]
 
 # ---------------------------------------------------------------------------
 # Domain 1: Weather Phenomena Codes (WxCode) - CWA Official Standard
 # ---------------------------------------------------------------------------
 WX_CODE_TO_TEXT: dict[str, dict[str, str]] = {
-    "01": {"zh": "晴天", "en": "Clear"},
-    "02": {"zh": "晴時多雲", "en": "Partly Cloudy"},
-    "03": {"zh": "多雲時晴", "en": "Partly Cloudy"},
-    "04": {"zh": "多雲", "en": "Cloudy"},
-    "05": {"zh": "多雲時陰", "en": "Mostly Cloudy"},
-    "06": {"zh": "陰時多雲", "en": "Mostly Cloudy"},
-    "07": {"zh": "陰天", "en": "Overcast"},
-    "08": {"zh": "短暫陣雨", "en": "Short Shower"},
-    "09": {"zh": "短暫陣雨", "en": "Short Shower"},
-    "10": {"zh": "短暫陣雨", "en": "Short Shower"},
-    "11": {"zh": "陣雨", "en": "Showers"},
-    "12": {"zh": "短暫雨", "en": "Light Rain"},
-    "13": {"zh": "陣雨", "en": "Showers"},
-    "14": {"zh": "陣雨", "en": "Showers"},
-    "15": {"zh": "短暫陣雨或雷雨", "en": "Short Shower or Thunderstorm"},
-    "16": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm"},
-    "17": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm"},
-    "18": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm"},
-    "19": {"zh": "晴午後短暫雷陣雨", "en": "Afternoon Thunderstorms"},
-    "20": {"zh": "多雲午後短暫雷陣雨", "en": "Afternoon Thunderstorms"},
-    "21": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorms"},
-    "22": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorms"},
-    "23": {"zh": "雨或雪", "en": "Rain or Snow"},
-    "24": {"zh": "晴有霧", "en": "Clear with Fog"},
-    "25": {"zh": "多雲有霧", "en": "Cloudy with Fog"},
-    "26": {"zh": "陰有霧", "en": "Overcast with Fog"},
-    "27": {"zh": "霧", "en": "Fog"},
-    "28": {"zh": "霧", "en": "Fog"},
-    "29": {"zh": "局霧", "en": "Local Fog"},
-    "30": {"zh": "局霧", "en": "Local Fog"},
-    "31": {"zh": "霾", "en": "Haze"},
-    "32": {"zh": "霾", "en": "Haze"},
-    "33": {"zh": "霾", "en": "Haze"},
-    "34": {"zh": "颳風", "en": "Windy"},
-    "35": {"zh": "強風", "en": "Gale"},
-    "36": {"zh": "烈風", "en": "Gale"},
-    "37": {"zh": "暴風", "en": "Storm"},
-    "38": {"zh": "吹雪", "en": "Blowing Snow"},
-    "39": {"zh": "豪雨", "en": "Heavy Rain"},
-    "40": {"zh": "大豪雨", "en": "Torrential Rain"},
-    "41": {"zh": "超大豪雨", "en": "Extreme Heavy Rain"},
-    "42": {"zh": "積雪", "en": "Snow Cover"},
+    "01": {"zh": "晴天", "en": "Clear", "ja": "晴れ"},
+    "02": {"zh": "晴時多雲", "en": "Partly Cloudy", "ja": "晴れ時々くもり"},
+    "03": {"zh": "多雲時晴", "en": "Partly Cloudy", "ja": "晴れ時々くもり"},
+    "04": {"zh": "多雲", "en": "Cloudy", "ja": "くもり"},
+    "05": {"zh": "多雲時陰", "en": "Mostly Cloudy", "ja": "くもり時々晴れ"},
+    "06": {"zh": "陰時多雲", "en": "Mostly Cloudy", "ja": "くもり時々晴れ"},
+    "07": {"zh": "陰天", "en": "Overcast", "ja": "くもり"},
+    "08": {"zh": "短暫陣雨", "en": "Short Shower", "ja": "一時雨"},
+    "09": {"zh": "短暫陣雨", "en": "Short Shower", "ja": "一時雨"},
+    "10": {"zh": "短暫陣雨", "en": "Short Shower", "ja": "一時雨"},
+    "11": {"zh": "陣雨", "en": "Showers", "ja": "にわか雨"},
+    "12": {"zh": "短暫雨", "en": "Light Rain", "ja": "小雨"},
+    "13": {"zh": "陣雨", "en": "Showers", "ja": "にわか雨"},
+    "14": {"zh": "陣雨", "en": "Showers", "ja": "にわか雨"},
+    "15": {"zh": "短暫陣雨或雷雨", "en": "Short Shower or Thunderstorm", "ja": "一時雨か雷雨"},
+    "16": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm", "ja": "にわか雨か雷雨"},
+    "17": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm", "ja": "にわか雨か雷雨"},
+    "18": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorm", "ja": "にわか雨か雷雨"},
+    "19": {"zh": "晴午後短暫雷陣雨", "en": "Afternoon Thunderstorms", "ja": "晴れ午後一時雷雨"},
+    "20": {"zh": "多雲午後短暫雷陣雨", "en": "Afternoon Thunderstorms", "ja": "くもり午後一時雷雨"},
+    "21": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorms", "ja": "にわか雨か雷雨"},
+    "22": {"zh": "陣雨或雷雨", "en": "Showers or Thunderstorms", "ja": "にわか雨か雷雨"},
+    "23": {"zh": "雨或雪", "en": "Rain or Snow", "ja": "雨か雪"},
+    "24": {"zh": "晴有霧", "en": "Clear with Fog", "ja": "晴れ、霧を伴う"},
+    "25": {"zh": "多雲有霧", "en": "Cloudy with Fog", "ja": "くもり、霧を伴う"},
+    "26": {"zh": "陰有霧", "en": "Overcast with Fog", "ja": "くもり、霧を伴う"},
+    "27": {"zh": "霧", "en": "Fog", "ja": "霧"},
+    "28": {"zh": "霧", "en": "Fog", "ja": "霧"},
+    "29": {"zh": "局霧", "en": "Local Fog", "ja": "所により霧"},
+    "30": {"zh": "局霧", "en": "Local Fog", "ja": "所により霧"},
+    "31": {"zh": "霾", "en": "Haze", "ja": "煙霧"},
+    "32": {"zh": "霾", "en": "Haze", "ja": "煙霧"},
+    "33": {"zh": "霾", "en": "Haze", "ja": "煙霧"},
+    "34": {"zh": "颳風", "en": "Windy", "ja": "やや強い風"},
+    "35": {"zh": "強風", "en": "Gale", "ja": "強風"},
+    "36": {"zh": "烈風", "en": "Gale", "ja": "強風"},
+    "37": {"zh": "暴風", "en": "Storm", "ja": "暴風"},
+    "38": {"zh": "吹雪", "en": "Blowing Snow", "ja": "地吹雪"},
+    "39": {"zh": "豪雨", "en": "Heavy Rain", "ja": "大雨"},
+    "40": {"zh": "大豪雨", "en": "Torrential Rain", "ja": "非常に激しい雨"},
+    "41": {"zh": "超大豪雨", "en": "Extreme Heavy Rain", "ja": "猛烈な雨"},
+    "42": {"zh": "積雪", "en": "Snow Cover", "ja": "積雪"},
 }
 
 # Fallback text mappings if code is missing or unmapped
@@ -96,13 +96,13 @@ def get_weather_text(weather: str | None, weather_code: str | None, lang: str = 
                 return WX_CODE_TO_TEXT[code_str]["zh"]
         return weather
 
-    # lang == "en"
     if weather_code:
         code_str = weather_code.zfill(2)
         if code_str in WX_CODE_TO_TEXT:
-            return WX_CODE_TO_TEXT[code_str]["en"]
+            entry = WX_CODE_TO_TEXT[code_str]
+            return entry.get(lang) or entry["zh"]
 
-    if weather and weather in WEATHER_TEXT_FALLBACK_EN:
+    if lang == "en" and weather and weather in WEATHER_TEXT_FALLBACK_EN:
         return WEATHER_TEXT_FALLBACK_EN[weather]
 
     return weather
@@ -118,18 +118,22 @@ ADVICE_HINT_MAP: dict[str, dict[str, str]] = {
             "High chance of rain. Bringing an umbrella or having "
             "indoor backup plans is recommended."
         ),
+        "ja": "降水確率が高いため、雨具の持参や室内プランへの変更をおすすめします。",
     },
     "hot": {
         "zh": "高溫炎熱,注意防曬與補充水分。",
         "en": "Hot weather. Remember to protect yourself from the sun and stay hydrated.",
+        "ja": "気温が高いため、熱中症対策とこまめな水分補給を心がけてください。",
     },
     "cold": {
         "zh": "氣溫偏低,出門記得保暖。",
         "en": "Low temperatures. Remember to keep warm when going out.",
+        "ja": "気温が低いため、防寒対策をしてお出かけください。",
     },
     "stable": {
         "zh": "天氣大致穩定,適合安排戶外行程。",
         "en": "Weather is generally stable, great for outdoor activities.",
+        "ja": "天気が安定しているため、屋外のアクティビティに適しています。",
     },
 }
 
@@ -148,42 +152,40 @@ def get_advice_hint_key(
 
 def get_advice_hint(key: str, lang: str = "zh") -> str:
     entry = ADVICE_HINT_MAP.get(key, ADVICE_HINT_MAP["stable"])
-    return entry["en"] if lang == "en" else entry["zh"]
+    return entry.get(lang) or entry["zh"]
 
 
 # ---------------------------------------------------------------------------
 # Domain 3: Air Quality Index (AQI) Categories
 # ---------------------------------------------------------------------------
 AQI_LEVEL_MAP: dict[str, dict[str, str]] = {
-    "良好": {"zh": "良好", "en": "Good"},
-    "普通": {"zh": "普通", "en": "Moderate"},
+    "良好": {"zh": "良好", "en": "Good", "ja": "良好"},
+    "普通": {"zh": "普通", "en": "Moderate", "ja": "普通"},
     "對敏感族群不健康": {
         "zh": "對敏感族群不健康",
         "en": "Unhealthy for Sensitive Groups",
+        "ja": "敏感なグループには健康に有害",
     },
-    "對所有族群不健康": {"zh": "對所有族群不健康", "en": "Unhealthy"},
-    "非常不健康": {"zh": "非常不健康", "en": "Very Unhealthy"},
-    "危害": {"zh": "危害", "en": "Hazardous"},
+    "對所有族群不健康": {"zh": "對所有族群不健康", "en": "Unhealthy", "ja": "健康に有害"},
+    "非常不健康": {"zh": "非常不健康", "en": "Very Unhealthy", "ja": "極めて健康に有害"},
+    "危害": {"zh": "危害", "en": "Hazardous", "ja": "危険"},
     # Fallback / demo strings from MOENV API & mock data
-    "資料不足": {"zh": "資料不足", "en": "Insufficient Data"},
-    "示範測站": {"zh": "示範測站", "en": "Demo Station"},
+    "資料不足": {"zh": "資料不足", "en": "Insufficient Data", "ja": "データ不足"},
+    "示範測站": {"zh": "示範測站", "en": "Demo Station", "ja": "デモ観測局"},
     "目前空氣品質（示範）": {
         "zh": "目前空氣品質（示範）",
         "en": "Current Air Quality (Demo)",
+        "ja": "現在の空気質（デモ）",
     },
-    "目前空氣品質": {"zh": "目前空氣品質", "en": "Current Air Quality"},
+    "目前空氣品質": {"zh": "目前空氣品質", "en": "Current Air Quality", "ja": "現在の空気質"},
 }
 
 
 def get_aqi_level_text(level: str | None, lang: str = "zh") -> str | None:
     if level is None:
         return None
-    if lang == "zh":
-        return level
     entry = AQI_LEVEL_MAP.get(level)
-    if entry:
-        return entry["en"]
-    return level
+    return (entry.get(lang) or entry["zh"]) if entry else level
 
 
 def get_aqi_level_code(value: int | float | None) -> str | None:
@@ -203,32 +205,39 @@ def get_aqi_level_code(value: int | float | None) -> str | None:
 
 
 def get_aqi_source_label(label: str, lang: str = "zh") -> str:
-    if lang == "zh":
-        return label
     entry = AQI_LEVEL_MAP.get(label)
     if entry:
-        return entry["en"]
+        return entry.get(lang) or entry["zh"]
     if "示範" in label:
-        return "Current Air Quality (Demo)"
-    return "Current Air Quality"
+        if lang == "en":
+            return "Current Air Quality (Demo)"
+        if lang == "ja":
+            return "現在の空気質（デモ）"
+        return "目前空氣品質（示範）"
+    if lang == "en":
+        return "Current Air Quality"
+    if lang == "ja":
+        return "現在の空気質"
+    return "目前空氣品質"
 
 
 # ---------------------------------------------------------------------------
 # Domain 4: UV Index Level
 # ---------------------------------------------------------------------------
 UV_LEVEL_MAP: dict[str, dict[str, str]] = {
-    "低": {"zh": "低", "en": "Low"},
-    "中": {"zh": "中", "en": "Moderate"},
-    "高": {"zh": "高", "en": "High"},
-    "過量": {"zh": "過量", "en": "Very High"},
-    "危險": {"zh": "危險", "en": "Extreme"},
+    "低": {"zh": "低", "en": "Low", "ja": "弱い"},
+    "中": {"zh": "中", "en": "Moderate", "ja": "中程度"},
+    "高": {"zh": "高", "en": "High", "ja": "強い"},
+    "過量": {"zh": "過量", "en": "Very High", "ja": "非常に強い"},
+    "危險": {"zh": "危險", "en": "Extreme", "ja": "極めて強い"},
 }
 
 UV_LABEL_MAP: dict[str, dict[str, str]] = {
-    "目前紫外線": {"zh": "目前紫外線", "en": "Current UV Index"},
+    "目前紫外線": {"zh": "目前紫外線", "en": "Current UV Index", "ja": "現在の紫外線インデックス"},
     "目前紫外線僅供參考": {
         "zh": "目前紫外線僅供參考",
         "en": "Current UV Index (for reference only)",
+        "ja": "現在の紫外線インデックス（参考値）",
     },
 }
 
@@ -236,10 +245,8 @@ UV_LABEL_MAP: dict[str, dict[str, str]] = {
 def get_uv_level_text(level: str | None, lang: str = "zh") -> str | None:
     if level is None:
         return None
-    if lang == "zh":
-        return level
     entry = UV_LEVEL_MAP.get(level)
-    return entry["en"] if entry else level
+    return (entry.get(lang) or entry["zh"]) if entry else level
 
 
 def get_uv_level_code(value: float | None) -> str | None:
@@ -257,19 +264,18 @@ def get_uv_level_code(value: float | None) -> str | None:
 
 
 def get_uv_source_label(label: str, lang: str = "zh") -> str:
-    if lang == "zh":
-        return label
     entry = UV_LABEL_MAP.get(label)
-    return entry["en"] if entry else label
+    return (entry.get(lang) or entry["zh"]) if entry else label
 
 
 # ---------------------------------------------------------------------------
 # Domain 5: Weather Warning Title & Description Template
 # ---------------------------------------------------------------------------
 WARNING_TITLE_MAP: dict[str, dict[str, str]] = {
-    "豪雨特報": {"zh": "豪雨特報", "en": "Extremely Heavy Rain Advisory"},
-    "大雨特報": {"zh": "大雨特報", "en": "Heavy Rain Advisory"},
-    "陸上強風特報": {"zh": "陸上強風特報", "en": "Land Strong Wind Warning"},
+    "豪雨特報": {"zh": "豪雨特報", "en": "Extremely Heavy Rain Advisory", "ja": "大雨警報"},
+    "大雨特報": {"zh": "大雨特報", "en": "Heavy Rain Advisory", "ja": "大雨注意報"},
+    "陸上強風特報": {"zh": "陸上強風特報", "en": "Land Strong Wind Warning", "ja": "強風注意報"},
+    "颱風警報": {"zh": "颱風警報", "en": "Typhoon Warning", "ja": "台風警報"},
 }
 
 
@@ -284,6 +290,9 @@ def format_warning(
         desc_text = (
             f"{title_text} for {county_en}. Please stay tuned for the latest weather updates."
         )
+    elif lang == "ja":
+        title_text = title_entry.get("ja") if title_entry else title
+        desc_text = f"{county}に{title_text}が発表されています。最新の気象情報にご注意ください。"
     else:
         title_text = title_entry["zh"] if title_entry else title
         desc_text = f"{county}{title_text}，請留意最新天氣資訊。"
@@ -294,22 +303,20 @@ def format_warning(
 # Domain 6: Moon Phase Names
 # ---------------------------------------------------------------------------
 MOON_PHASE_MAP: dict[str, dict[str, str]] = {
-    "新月": {"zh": "新月", "en": "New Moon"},
-    "眉月": {"zh": "眉月", "en": "Waxing Crescent"},
-    "上弦月": {"zh": "上弦月", "en": "First Quarter"},
-    "盈凸月": {"zh": "盈凸月", "en": "Waxing Gibbous"},
-    "滿月": {"zh": "滿月", "en": "Full Moon"},
-    "虧凸月": {"zh": "虧凸月", "en": "Waning Gibbous"},
-    "下弦月": {"zh": "下弦月", "en": "Last Quarter"},
-    "殘月": {"zh": "殘月", "en": "Waning Crescent"},
+    "新月": {"zh": "新月", "en": "New Moon", "ja": "新月"},
+    "眉月": {"zh": "眉月", "en": "Waxing Crescent", "ja": "三日月"},
+    "上弦月": {"zh": "上弦月", "en": "First Quarter", "ja": "上弦の月"},
+    "盈凸月": {"zh": "盈凸月", "en": "Waxing Gibbous", "ja": "十三夜月"},
+    "滿月": {"zh": "滿月", "en": "Full Moon", "ja": "満月"},
+    "虧凸月": {"zh": "虧凸月", "en": "Waning Gibbous", "ja": "寝待月"},
+    "下弦月": {"zh": "下弦月", "en": "Last Quarter", "ja": "下弦の月"},
+    "殘月": {"zh": "殘月", "en": "Waning Crescent", "ja": "有明の月"},
 }
 
 
 def get_moon_phase_text(phase: str, lang: str = "zh") -> str:
-    if lang == "zh":
-        return phase
     entry = MOON_PHASE_MAP.get(phase)
-    return entry["en"] if entry else phase
+    return (entry.get(lang) or entry["zh"]) if entry else phase
 
 
 # ---------------------------------------------------------------------------
@@ -346,10 +353,8 @@ COUNTY_NAME_MAP: dict[str, dict[str, str]] = {
 
 
 def get_county_name_text(county: str, lang: str = "zh") -> str:
-    if lang == "zh":
-        return county
     entry = COUNTY_NAME_MAP.get(county)
-    return entry["en"] if entry else county
+    return (entry.get(lang) or entry["zh"]) if entry else county
 
 
 # ---------------------------------------------------------------------------
@@ -408,14 +413,13 @@ TOWN_BY_NAME_MAP: dict[str, str] = {
 
 
 def get_town_name_text(town_code: str, name_zh: str, lang: str = "zh") -> str:
-    if lang == "zh":
-        return name_zh
-    if town_code.startswith("cwa-"):
-        geocode = town_code[4:]
-        if geocode in TOWN_NAME_EN_BY_GEOCODE:
-            return TOWN_NAME_EN_BY_GEOCODE[geocode]
-    if town_code in TOWN_NAME_MAP:
-        return TOWN_NAME_MAP[town_code]["en"]
-    if name_zh in TOWN_BY_NAME_MAP:
-        return TOWN_BY_NAME_MAP[name_zh]
+    if lang == "en":
+        if town_code.startswith("cwa-"):
+            geocode = town_code[4:]
+            if geocode in TOWN_NAME_EN_BY_GEOCODE:
+                return TOWN_NAME_EN_BY_GEOCODE[geocode]
+        if town_code in TOWN_NAME_MAP:
+            return TOWN_NAME_MAP[town_code]["en"]
+        if name_zh in TOWN_BY_NAME_MAP:
+            return TOWN_BY_NAME_MAP[name_zh]
     return name_zh

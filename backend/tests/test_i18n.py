@@ -24,9 +24,12 @@ from app.i18n.station_names import (
 from app.i18n.town_names import TOWN_NAME_EN_BY_GEOCODE
 from app.i18n.weather_text import (
     ADVICE_HINT_MAP,
+    AQI_LEVEL_MAP,
     MOON_PHASE_MAP,
     TOWN_NAME_MAP,
+    UV_LABEL_MAP,
     UV_LEVEL_MAP,
+    WARNING_TITLE_MAP,
     WX_CODE_TO_TEXT,
     format_warning,
     get_advice_hint,
@@ -98,6 +101,18 @@ def test_get_towns_bilingual():
     assert en_xinyi["city"] == "臺北市"
     assert en_xinyi["name_en"] == "Xinyi District"
     assert en_xinyi["city_en"] == "Taipei City"
+
+
+def test_api_accepts_lang_ja():
+    """AC1: GET /api/towns?lang=ja and /api/forecast?...&lang=ja return 200 (not 422)."""
+    towns_res = client.get("/api/towns?lang=ja")
+    assert towns_res.status_code == 200
+    assert towns_res.json()["success"] is True
+
+    target = _future(1)
+    forecast_res = client.get(f"/api/forecast?town=taipei-xinyi&date={target}&lang=ja")
+    assert forecast_res.status_code == 200
+    assert forecast_res.json()["success"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -570,3 +585,304 @@ async def test_adapter_station_name_wiring(monkeypatch: pytest.MonkeyPatch):
 
     uv_labeled_zh = _label_uv_info(uv_raw, today, lang="zh")
     assert uv_labeled_zh.station_name == "臺北"
+
+
+def test_ja_lookup_tables_and_fallback_chain():
+    """AC2 & AC3: Verify 7 lookup tables have ja entries (75 total) and
+    fallback chain assertions."""
+    # AC2: Table counts and ja presence
+    assert len([k for k, v in WX_CODE_TO_TEXT.items() if "ja" in v]) == 42
+    assert len([k for k, v in AQI_LEVEL_MAP.items() if "ja" in v]) == 10
+    assert len([k for k, v in MOON_PHASE_MAP.items() if "ja" in v]) == 8
+    assert len([k for k, v in UV_LEVEL_MAP.items() if "ja" in v]) == 5
+    assert len([k for k, v in WARNING_TITLE_MAP.items() if "ja" in v]) == 4
+    assert len([k for k, v in ADVICE_HINT_MAP.items() if "ja" in v]) == 4
+    assert len([k for k, v in UV_LABEL_MAP.items() if "ja" in v]) == 2
+
+    # JMA terms verification for AC2 examples
+    assert WX_CODE_TO_TEXT["01"]["ja"] == "晴れ"
+    assert WX_CODE_TO_TEXT["04"]["ja"] == "くもり"
+    assert WX_CODE_TO_TEXT["11"]["ja"] == "にわか雨"
+
+    # AC3: Specific required assertions
+    assert get_weather_text(None, "01", lang="ja") == "晴れ"
+    assert get_county_name_text("臺北市", lang="ja") == "臺北市"
+    assert get_town_name_text("cwa-63000010", "松山區", lang="ja") == "松山區"
+    assert get_uv_station_name_text("466920", "臺北", lang="ja") == "臺北"
+    assert get_aqi_station_name_text("84", "松山", lang="ja") == "松山"
+
+
+def test_composer_1_format_warning_ja():
+    """AC4 Composer 1: format_warning ja branch."""
+    title, desc = format_warning("豪雨特報", "臺北市", lang="ja")
+    assert title == "大雨警報"
+    assert desc == "臺北市に大雨警報が発表されています。最新の気象情報にご注意ください。"
+    assert "，" not in desc
+    assert "請留意" not in desc
+
+
+def test_ja_terminology_jma_fix():
+    """AC6: Test JMA terminology updates for AC1 & AC3 and check no 曇り, 薄曇り,
+    豪雨 in any ja values.
+    """
+    # AC1 specific mappings (at least 3)
+    assert WX_CODE_TO_TEXT["02"]["ja"] == "晴れ時々くもり"
+    assert WX_CODE_TO_TEXT["03"]["ja"] == "晴れ時々くもり"
+    assert WX_CODE_TO_TEXT["04"]["ja"] == "くもり"
+    assert WX_CODE_TO_TEXT["05"]["ja"] == "くもり時々晴れ"
+    assert WX_CODE_TO_TEXT["06"]["ja"] == "くもり時々晴れ"
+    assert WX_CODE_TO_TEXT["07"]["ja"] == "くもり"
+    assert WX_CODE_TO_TEXT["34"]["ja"] == "やや強い風"
+    assert WX_CODE_TO_TEXT["36"]["ja"] == "強風"
+    assert WX_CODE_TO_TEXT["38"]["ja"] == "地吹雪"
+    assert WX_CODE_TO_TEXT["40"]["ja"] == "非常に激しい雨"
+
+    # AC3 specific mappings (at least 3)
+    assert WARNING_TITLE_MAP["大雨特報"]["ja"] == "大雨注意報"
+    assert WARNING_TITLE_MAP["豪雨特報"]["ja"] == "大雨警報"
+    assert WARNING_TITLE_MAP["陸上強風特報"]["ja"] == "強風注意報"
+    assert WARNING_TITLE_MAP["颱風警報"]["ja"] == "台風警報"
+
+    # Whole file ja values check: no '曇り', '薄曇り', '豪雨'
+    all_maps = [
+        WX_CODE_TO_TEXT,
+        WARNING_TITLE_MAP,
+        ADVICE_HINT_MAP,
+        AQI_LEVEL_MAP,
+        UV_LEVEL_MAP,
+        UV_LABEL_MAP,
+        MOON_PHASE_MAP,
+    ]
+    for m in all_maps:
+        for entry in m.values():
+            if "ja" in entry:
+                ja_val = entry["ja"]
+                assert "曇り" not in ja_val, f"Found '曇り' in ja value: {ja_val}"
+                assert "薄曇り" not in ja_val, f"Found '薄曇り' in ja value: {ja_val}"
+                assert "豪雨" not in ja_val, f"Found '豪雨' in ja value: {ja_val}"
+
+
+def test_ja_compound_terms_cwa_fix():
+    """AC5: Verify CWA compound terms Japanese fixes (AC1-AC3) and code 19 vs 20 inequality."""
+    # AC1: 16, 17, 18, 21, 22 should be "にわか雨か雷雨" and 16 == 21
+    assert WX_CODE_TO_TEXT["16"]["ja"] == "にわか雨か雷雨"
+    assert WX_CODE_TO_TEXT["21"]["ja"] == "にわか雨か雷雨"
+    assert WX_CODE_TO_TEXT["16"]["ja"] == WX_CODE_TO_TEXT["21"]["ja"]
+    assert WX_CODE_TO_TEXT["17"]["ja"] == WX_CODE_TO_TEXT["16"]["ja"]
+    assert WX_CODE_TO_TEXT["18"]["ja"] == WX_CODE_TO_TEXT["16"]["ja"]
+    assert WX_CODE_TO_TEXT["22"]["ja"] == WX_CODE_TO_TEXT["21"]["ja"]
+
+    # AC2: 24 should be "晴れ、霧を伴う"
+    assert WX_CODE_TO_TEXT["24"]["ja"] == "晴れ、霧を伴う"
+
+    # AC3: 25 and 26 should be "くもり、霧を伴う" and equal
+    assert WX_CODE_TO_TEXT["25"]["ja"] == "くもり、霧を伴う"
+    assert WX_CODE_TO_TEXT["26"]["ja"] == "くもり、霧を伴う"
+    assert WX_CODE_TO_TEXT["25"]["ja"] == WX_CODE_TO_TEXT["26"]["ja"]
+
+    # AC4 / AC5: 19 ("晴れ午後一時雷雨") and 20 ("くもり午後一時雷雨") MUST NOT be equal
+    assert WX_CODE_TO_TEXT["19"]["ja"] == "晴れ午後一時雷雨"
+    assert WX_CODE_TO_TEXT["20"]["ja"] == "くもり午後一時雷雨"
+    assert WX_CODE_TO_TEXT["19"]["ja"] != WX_CODE_TO_TEXT["20"]["ja"]
+
+
+def test_composer_2_rule_based_summary_ja():
+    """AC4 Composer 2: _rule_based_summary ja branch and _SYSTEM_PROMPT_JA."""
+    from app.schemas.weather import DailyForecast
+    from app.services.ai_summary import _SYSTEM_PROMPT_JA, _rule_based_summary
+
+    assert "旅行の事前準備アシスタント" in _SYSTEM_PROMPT_JA
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    day = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=32.0,
+        temp_low_c=25.0,
+        max_pop_percent=20,
+        weather="晴れ",
+        weather_code="01",
+        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint_key="stable",
+    )
+    summary = _rule_based_summary(town, day, lang="ja")
+    assert "8/28の臺北市信義區の天気予報は" in summary
+    assert "最高降水確率は20%です。" in summary
+    assert "預報為" not in summary
+    assert "降雨機率" not in summary
+    assert "，" not in summary
+
+
+def test_composer_3_aqi_advice_hint_ja():
+    """AC4 Composer 3: day.advice_hint does not contain AQI sentence or newline in ja."""
+    from app.schemas.weather import AQIForecast, DailyForecast
+
+    day = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=30.0,
+        temp_low_c=24.0,
+        max_pop_percent=10,
+        weather="晴れ",
+        weather_code="01",
+        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint_key="stable",
+        aqi_forecast=AQIForecast(
+            date="2026-08-28",
+            value=35,
+            level="良好",
+            level_code="good",
+        ),
+    )
+    assert day.advice_hint is not None
+    assert "\n" not in day.advice_hint
+    assert "空気質予報は" not in day.advice_hint
+    assert "空氣品質預報為" not in day.advice_hint
+    assert day.advice_hint == "天気が安定しているため、屋外のアクティビティに適しています。"
+
+
+def test_advice_hint_spacing_per_language():
+    """AC4: ja/zh/en advice_hint has no newline/AQI text, summary has 1 newline."""
+    from app.schemas.weather import AQIForecast, DailyForecast
+    from app.services.ai_summary import _rule_based_summary
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
+
+    # 1. Chinese (zh)
+    day_zh = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=30.0,
+        temp_low_c=24.0,
+        weather="晴",
+        advice_hint="天氣穩定，適合戶外活動。",
+        aqi_forecast=AQIForecast(
+            date="2026-08-28", value=35, level="普通", level_code="moderate"
+        ),
+    )
+    assert "\n" not in day_zh.advice_hint
+    assert "空氣品質預報為" not in day_zh.advice_hint
+    summary_zh = _rule_based_summary(town, day_zh, lang="zh")
+    assert summary_zh.count("\n") == 1
+    lines_zh = summary_zh.split("\n")
+    assert len(lines_zh) == 2
+    assert lines_zh[0].startswith("臺北市信義區在 8/28 ")
+    assert lines_zh[1] == "天氣穩定，適合戶外活動。"
+
+    # 2. Japanese (ja)
+    day_ja = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=30.0,
+        temp_low_c=24.0,
+        weather="晴れ",
+        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        aqi_forecast=AQIForecast(
+            date="2026-08-28", value=35, level="普通", level_code="moderate"
+        ),
+    )
+    assert "\n" not in day_ja.advice_hint
+    assert "空気質予報は" not in day_ja.advice_hint
+    summary_ja = _rule_based_summary(town, day_ja, lang="ja")
+    assert summary_ja.count("\n") == 1
+    lines_ja = summary_ja.split("\n")
+    assert len(lines_ja) == 2
+    assert lines_ja[0].startswith("8/28の臺北市信義區の天気予報は")
+    assert lines_ja[1] == "天気が安定しているため、屋外のアクティビティに適しています。"
+
+    # 3. English (en)
+    day_en = DailyForecast(
+        date="2026-08-28",
+        temp_high_c=30.0,
+        temp_low_c=24.0,
+        weather="Clear",
+        advice_hint="Weather is generally stable, ideal for outdoor activities.",
+        aqi_forecast=AQIForecast(
+            date="2026-08-28", value=35, level="Moderate", level_code="moderate"
+        ),
+    )
+    assert "\n" not in day_en.advice_hint
+    assert "Air quality forecast:" not in day_en.advice_hint
+    summary_en = _rule_based_summary(town, day_en, lang="en")
+    assert summary_en.count("\n") == 1
+    lines_en = summary_en.split("\n")
+    assert len(lines_en) == 2
+    assert lines_en[0].startswith("The forecast for Xinyi District, Taipei City on 8/28 ")
+    assert not lines_en[0].endswith(" ")
+    assert lines_en[1] == "Weather is generally stable, ideal for outdoor activities."
+
+
+def test_advice_hint_linebreak_and_empty_prefix_all_languages():
+    """AC4: Assert advice_hint/summary formatting across languages."""
+    from app.schemas.weather import AQIForecast, DailyForecast
+    from app.services.ai_summary import _rule_based_summary
+
+    town = get_town("taipei-xinyi")
+    assert town is not None
+
+    # Test empty advice_hint scenario for zh, ja, en (no newline, no trailing newline)
+    for lang in ["zh", "ja", "en"]:
+        day_no_hint = DailyForecast(
+            date="2026-08-28",
+            temp_high_c=30.0,
+            temp_low_c=24.0,
+            weather="Clear",
+            advice_hint="",
+            aqi_forecast=AQIForecast(
+                date="2026-08-28", value=35, level="Moderate", level_code="moderate"
+            ),
+        )
+        summary_no_hint = _rule_based_summary(town, day_no_hint, lang=lang)
+        assert "\n" not in summary_no_hint
+        assert not summary_no_hint.endswith("\n")
+
+    # Integration test via API for zh, en, ja
+    target = _future(1)
+    aqi_keywords = ["空氣品質預報為", "Air quality forecast:", "空気質予報は"]
+    for lang in ["zh", "en", "ja"]:
+        res = client.get(f"/api/forecast?town=taipei-xinyi&date={target}&lang={lang}")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["success"] is True
+
+        days = body["data"]["forecast"]["days"]
+        for day in days:
+            hint = day.get("advice_hint")
+            if hint:
+                assert "\n" not in hint
+                assert not any(key in hint for key in aqi_keywords)
+
+        ai_text = body["data"]["ai_summary"]["text"]
+        assert ai_text.count("\n") == 1
+        lines = ai_text.split("\n")
+        assert len(lines) == 2
+        # First line: weather data sentence
+        assert not lines[0].endswith(" ")
+        # Second line: action advice hint
+        target_date = body["data"]["forecast"]["target_date"]
+        focused = next((d for d in days if d["date"] == target_date), None)
+        assert focused is not None
+        assert lines[1] == focused["advice_hint"]
+        # No AQI text anywhere in summary
+        assert not any(key in ai_text for key in aqi_keywords)
+
+
+
+@pytest.mark.asyncio
+async def test_adapters_ja_outputs():
+    """AC5: Verify adapter mock/demo strings produce explicit Japanese outputs."""
+    town = get_town("taipei-xinyi")
+    assert town is not None
+    today = _today_taipei()
+
+    # 1. MOENVAdapter mock demo station ja name
+    moenv_mock = MOENVAdapter(Settings(cwa_api_key="", moenv_api_key=""))
+    aqi_mock = await moenv_mock.fetch_current(town, lang="ja")
+    assert aqi_mock is not None
+    assert aqi_mock.station_name == "デモ観測局"
+    assert aqi_mock.source_label == "現在の空気質（デモ）"
+    assert aqi_mock.level == "良好"
+
+    # 2. mock_data.py mock_uv_info ja station_name
+    from app.adapters.mock_data import mock_uv_info
+    uv_ja = mock_uv_info(town, today, lang="ja")
+    assert uv_ja.station_name == "信義區モック観測局"
+    assert uv_ja.source_label == "現在の紫外線インデックス"

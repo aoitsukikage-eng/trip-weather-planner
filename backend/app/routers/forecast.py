@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Request
@@ -13,6 +12,7 @@ from app.adapters.moenv import MOENVAdapter
 from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError, UpstreamError
 from app.data.towns import all_towns, get_town
+from app.i18n.weather_text import LangType
 from app.schemas.common import ApiResponse, Meta
 from app.schemas.weather import (
     AiSummary,
@@ -51,7 +51,7 @@ async def health(request: Request) -> ApiResponse[dict]:
 @router.get("/towns")
 async def towns(
     request: Request,
-    lang: Literal["zh", "en"] = Query("zh", description="Language ('zh' or 'en')"),
+    lang: LangType = Query("zh", description="Language ('zh', 'en', or 'ja')"),  # noqa: B008
 ) -> ApiResponse[list[Town]]:
     settings = get_settings()
     cache = request.app.state.cache
@@ -74,9 +74,9 @@ async def towns(
 @router.get("/forecast")
 async def forecast(
     request: Request,
-    town: str = Query(..., description="Town code, e.g. 'taipei-xinyi'"),
-    target_date: str = Query(..., alias="date", description="Target date, YYYY-MM-DD"),
-    lang: Literal["zh", "en"] = Query("zh", description="Language ('zh' or 'en')"),
+    town: str = Query(..., description="Town code, e.g. 'taipei-xinyi'"),  # noqa: B008
+    target_date: str = Query(..., alias="date", description="Target date, YYYY-MM-DD"),  # noqa: B008
+    lang: LangType = Query("zh", description="Language ('zh', 'en', or 'ja')"),  # noqa: B008
 ) -> ApiResponse[ForecastResult]:
     settings = get_settings()
     cache = request.app.state.cache
@@ -159,15 +159,6 @@ async def forecast(
     for day in days:
         if day.date in aqi_forecasts:
             day.aqi_forecast = aqi_forecasts[day.date]
-            if day.aqi_forecast.level:
-                if lang == "en":
-                    day.advice_hint = (
-                        f"{day.advice_hint or ''} Air quality forecast: {day.aqi_forecast.level}."
-                    )
-                else:
-                    day.advice_hint = (
-                        f"{day.advice_hint or ''} 空氣品質預報為{day.aqi_forecast.level}。"
-                    )
 
     forecast_data = ForecastData(
         town=town_obj,

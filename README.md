@@ -1,6 +1,6 @@
 # Trip Weather Planner · 旅遊行前天氣規劃雲端系統
 
-以中央氣象署(CWA)天氣資料為核心的旅遊行前天氣規劃雲端系統。使用者選擇**縣市 / 鄉鎮市區**與**旅遊日期**，系統整合 7 天天氣預報、72 小時逐時趨勢、日出日落、月相與月出月沒、紫外線資訊、即時空氣品質與 3 日 AQI 預報、CWA 天氣警特報，以及規則式行前建議。
+以中央氣象署(CWA)天氣資料為核心的旅遊行前天氣規劃雲端系統。使用者選擇**縣市 / 鄉鎮市區**與**旅遊日期**，系統整合 7 天天氣預報、72 小時逐時趨勢、日出日落、月相與月出月沒、紫外線資訊、即時空氣品質與 3 日 AQI 預報、CWA 天氣警特報，以及規則式行前建議。介面支援**繁體中文 / English / 日本語**三語切換。
 
 > 國泰金控雲端開發工程師實習筆試作品。設計原則、三方收斂與決策見 `docs/`。
 
@@ -21,10 +21,9 @@
 
 | 環境 | 版本 | 說明 |
 |---|---|---|
-| `main` branch | **v1.1.0**（已發布、已打 tag） | Phase 2 全部功能已合併並發布 |
-| `phase3-tourism` branch（本 repo，開發中） | v1.1.0 之後、尚未發布 | 新增 Portfolio 首頁 Mini 元件（`frontend-mini/`）與 Weather Postcard 主題／日夜切換，尚未合併 main、未打 tag |
-| Azure 公開 demo | **v1.0.0 Phase 1** | 目前已部署的公開 demo 維持 Phase 1 版本，本次不重新部署 |
-| Phase 3（計畫中） | 未排入 v1.1.0 | TDX 旅遊資訊串接保留於 Phase 3，不包含在本次發布；與分支名稱 `phase3-tourism` 無關，尚未開始 |
+| `main` branch | v1.1.0 之後（未再打 tag） | 已合併 Portfolio Mini 元件、Weather Postcard 主題／日夜切換、zh/en 雙語化、部署 workflow 修正；本次再加入日文（ja），成為三語 |
+| Azure 公開 demo | 追隨 `main` | 合併至 `main` 後由 `.github/workflows/deploy-demo.yml` 自動部署 |
+| Phase 3（計畫中） | 未排程 | TDX 旅遊資訊串接；與分支名稱 `phase3-tourism` 無關，尚未開始 |
 
 ## 架構一覽
 
@@ -48,6 +47,17 @@
 - **MOENV 即時 AQI**：從 MOENV `aqx_p_432` 取得最近測站即時空氣品質指數（AQI）。
 - **MOENV 3 日 AQI 預報**：從 MOENV `aqf_p_01` 取得所屬空氣品質區 3 日 AQI 預報，並顯示於每日天氣卡。
 - **常用鄉鎮快捷**：以 `localStorage` 儲存常用鄉鎮，顯示為可點選 chips；支援新增／刪除、重新排序、設定預設鄉鎮，以及跨操作保留目前選取日期。
+
+## 多語支援（zh / en / ja）
+
+介面支援繁體中文、English、日本語三語，右上角 segmented control 一鍵切換，選擇以 `localStorage` 與 URL `?lang=` 保存。後端 `/api/towns` 與 `/api/forecast` 皆接受 `lang=zh|en|ja`。
+
+- **地名處理兩語不同**：368 鄉鎮市區、22 縣市與 1109 個 UV／空品測站，英文採各機構官方英譯（MOI TOWNCODE、CWA `StationNameEN`、MOENV `siteengname`）；**日文則一律沿用繁體中文原文**，因為台灣地名幾乎全為漢字，日文讀者可直接辨識，翻譯反而失真。
+- **日文用語錨定日本氣象庁**：翻譯路徑為 **中 → 英 → 日**。以中央氣象署官方英文為樞紐，對應日本氣象庁官方英文，再取其官方日文，兩端皆錨在各自機構的出版品上，不經翻譯判斷。來源為氣象庁多言語辞書（7,278 筆，日／英／繁中並列）。
+- **查表一律 fallback**：所有語系查表以 `entry.get(lang) or entry["zh"]` 回退，因此「日文沿用繁中地名」不需任何特例程式碼。
+- **`<html lang>` 隨語言切換**：影響 CJK 字型選擇（中日共用漢字的地區字形不同）、斷行規則與螢幕閱讀器發音。
+
+完整的用語錨定過程、證據分級與逐條裁定見 `docs/dev-process/developer_log.md`（2026-08-31 條目）。
 
 ## 外部資料來源（Live Mode）
 
@@ -134,6 +144,11 @@ docs/          設計文件與流程圖
 
 ## 狀態
 
+- ✅ **三語支援 zh / en / ja**（`main`）：
+  - 介面三語切換（segmented control），選擇以 `localStorage` + URL `?lang=` 保存。
+  - 天氣代碼、空品／紫外線等級、月相、警特報標題、行前建議皆已日文化。
+  - 地名（鄉鎮／縣市／測站）在日文語系下沿用繁體中文原文；日文天氣用語錨定日本氣象庁官方對照。
+  - 行前建議摘要改為兩行：天氣數據／行動建議。
 - ✅ **v1.1.0（main，已發布）**：
   - CWA 天氣警特報（`W-C0033-001`）：有效特報以 warning banner 呈現於預報頁。
   - 月相與月出月沒（`A-B0063-001`）：月出月沒時刻來自 CWA；月相、圖示與照光比例由後端計算。
@@ -164,4 +179,4 @@ docs/          設計文件與流程圖
 - Terraform example：`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton：`.github/workflows/deploy-demo.yml`
 
-`main` 分支已是正式 **v1.1.0**（已打 tag）。目前開發中的 `phase3-tourism` 分支在此基礎上新增了 Portfolio 首頁 Mini 元件與 Weather Postcard 主題／日夜切換，尚未合併 `main`、未發布。現行 Azure 公開 demo 維持 v1.0.0 Phase 1，本次不重新部署。
+`main` 為目前的正式分支（最後一個 tag 為 v1.1.0，其後的合併未再打 tag）。Portfolio 首頁 Mini 元件、Weather Postcard 主題／日夜切換、zh/en/ja 三語支援與部署 workflow 修正皆已合併至 `main`。Azure 公開 demo 由 `.github/workflows/deploy-demo.yml` 在 `main` 更新時自動部署。

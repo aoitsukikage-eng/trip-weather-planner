@@ -242,7 +242,7 @@ class CWAAdapter:
             return mock_sunrise_sunset(town, target_date, lang=lang)
 
         target_iso = target_date.isoformat()
-        county_raw = town.city_en if lang == "en" and town.city_en else town.city
+        county_raw = get_county_name_text(town.city, lang=lang)
         payload = await self._request_json(
             DATASET_SUNRISE,
             params={"CountyName": town.city, "Date": target_iso},

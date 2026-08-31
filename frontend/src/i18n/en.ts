@@ -1,12 +1,7 @@
 import type { Dictionary } from "./types";
 
 export const en: Dictionary = {
-  switchLangLabel: "中文",
   switchLangAriaLabel: "Switch language",
-  localeNames: {
-    zh: "中文",
-    en: "English",
-  },
 
   appTitle: "Trip Weather Planner",
   appTagline: "Select a destination to view 7-day forecast, 72-hour trends, and pre-trip reminders.",

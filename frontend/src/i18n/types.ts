@@ -1,7 +1,5 @@
 export type Dictionary = {
-  switchLangLabel: string;
   switchLangAriaLabel: string;
-  localeNames: Record<string, string>;
 
   // App.tsx
   appTitle: string;

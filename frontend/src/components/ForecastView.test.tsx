@@ -499,6 +499,35 @@ describe("ForecastView", () => {
 
     expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("Hualien County 卓溪鄉");
   });
+
+  test("renders ja hourlyChartSubtitle with line break under ja locale (AC4)", () => {
+    window.history.replaceState(null, "", "/?lang=ja");
+    const result = buildResult("臺北市", "信義區");
+    render(
+      <LocaleProvider>
+        <ForecastView result={result} />
+      </LocaleProvider>,
+    );
+
+    const subtitleElement = screen.getByText((content) =>
+      content.includes("折れ線は気温と体感温度、") && content.includes("下の青い棒は降水確率を示します。")
+    );
+    expect(subtitleElement.textContent).toBe("折れ線は気温と体感温度、\n下の青い棒は降水確率を示します。");
+  });
+
+  test("renders summary-panel paragraph with multiline text containing newline separator (AC4)", () => {
+    const result = buildResult("臺北市", "信義區");
+    result.ai_summary.text =
+      "臺北市信義區在 7/4 預報為「晴」,氣溫約 25–30°C,降雨機率最高 20%。\n天氣穩定，適合戶外活動。";
+    const { container } = render(<ForecastView result={result} />);
+
+    const summaryParagraph = container.querySelector(".summary-panel p");
+    expect(summaryParagraph).not.toBeNull();
+    expect(summaryParagraph?.textContent).toBe(
+      "臺北市信義區在 7/4 預報為「晴」,氣溫約 25–30°C,降雨機率最高 20%。\n天氣穩定，適合戶外活動。"
+    );
+    expect(summaryParagraph?.textContent).toContain("\n");
+  });
 });
 
 describe("getHourlyAnnotationStep", () => {

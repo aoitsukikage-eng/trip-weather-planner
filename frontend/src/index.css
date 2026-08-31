@@ -179,6 +179,12 @@ header h1 {
 .summary-panel p {
   margin: 0.25rem 0;
   line-height: 1.65;
+  white-space: pre-line;
+}
+
+:lang(ja) .summary-panel p,
+:lang(ja) .hourly-chart-header p {
+  word-break: auto-phrase;
 }
 
 .summary-panel small,
@@ -410,6 +416,7 @@ header h1 {
   color: #4a647d;
   line-height: 1.5;
   font-size: 0.92rem;
+  white-space: pre-line;
 }
 
 .chart-legend {

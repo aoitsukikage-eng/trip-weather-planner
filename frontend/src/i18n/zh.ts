@@ -1,12 +1,7 @@
 import type { Dictionary } from "./types";
 
 export const zh: Dictionary = {
-  switchLangLabel: "EN",
   switchLangAriaLabel: "切換語言",
-  localeNames: {
-    zh: "中文",
-    en: "English",
-  },
 
   appTitle: "旅遊行前天氣規劃",
   appTagline: "選擇目的地後即可查看一週天氣、未來 72 小時趨勢與行前提醒。",
