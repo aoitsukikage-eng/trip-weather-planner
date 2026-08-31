@@ -60,16 +60,27 @@ def _rule_based_summary(day: DailyForecast, lang: str = "zh") -> str:
         return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
     if lang == "ja":
-        parts = [f"{_display_date(day.date)}の予報は"]
+        # JMA phrasing: the condition is stated unquoted, temperatures as
+        # 最高気温/最低気温, and the rain chance separately. JMA publishes 降水確率
+        # per six-hour block and so has no term for a daily maximum; 最大で carries
+        # what 最高降水確率 was trying to say without inventing a term.
+        label = f"{_display_date(day.date)}の予報"
+        sentences = []
         if day.weather:
-            parts.append(f"「{day.weather}」で、")
+            sentences.append(f"{label}は、{day.weather}。")
+        stats = []
         if day.temp_low_c is not None and day.temp_high_c is not None:
-            parts.append(
-                f"気温は約{day.temp_low_c:.0f}〜{day.temp_high_c:.0f}℃、"
+            stats.append(
+                f"最高気温{day.temp_high_c:.0f}℃、最低気温{day.temp_low_c:.0f}℃"
             )
         if day.max_pop_percent is not None:
-            parts.append(f"最高降水確率は{day.max_pop_percent}%です。")
-        head = "".join(parts).strip()
+            stats.append(f"降水確率は最大で{day.max_pop_percent}%")
+        if stats:
+            body = "、".join(stats) + "です。"
+            # では, not は: without the weather sentence the body opens with
+            # 降水確率は, and two は particles in one sentence read wrong.
+            sentences.append(body if sentences else f"{label}では、{body}")
+        head = "".join(sentences) if sentences else label
         return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
     parts = [f"{_display_date(day.date)} "]

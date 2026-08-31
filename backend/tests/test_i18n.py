@@ -701,14 +701,14 @@ def test_composer_2_rule_based_summary_ja():
         max_pop_percent=20,
         weather="晴れ",
         weather_code="01",
-        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint="天気は穏やかで、お出かけ日和になりそうです。",
         advice_hint_key="stable",
     )
     summary = _rule_based_summary(day, lang="ja")
     assert summary.startswith("8/28の予報は")
     assert "臺北市" not in summary
     assert "信義區" not in summary
-    assert "最高降水確率は20%です。" in summary
+    assert "降水確率は最大で20%です。" in summary
     assert "預報為" not in summary
     assert "降雨機率" not in summary
     assert "，" not in summary
@@ -725,7 +725,7 @@ def test_composer_3_aqi_advice_hint_ja():
         max_pop_percent=10,
         weather="晴れ",
         weather_code="01",
-        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint="天気は穏やかで、お出かけ日和になりそうです。",
         advice_hint_key="stable",
         aqi_forecast=AQIForecast(
             date="2026-08-28",
@@ -738,7 +738,7 @@ def test_composer_3_aqi_advice_hint_ja():
     assert "\n" not in day.advice_hint
     assert "空気質予報は" not in day.advice_hint
     assert "空氣品質預報為" not in day.advice_hint
-    assert day.advice_hint == "天気が安定しているため、屋外のアクティビティに適しています。"
+    assert day.advice_hint == "天気は穏やかで、お出かけ日和になりそうです。"
 
 
 def test_advice_hint_spacing_per_language():
@@ -773,7 +773,7 @@ def test_advice_hint_spacing_per_language():
         temp_high_c=30.0,
         temp_low_c=24.0,
         weather="晴れ",
-        advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
+        advice_hint="天気は穏やかで、お出かけ日和になりそうです。",
         aqi_forecast=AQIForecast(
             date="2026-08-28", value=35, level="普通", level_code="moderate"
         ),
@@ -786,7 +786,7 @@ def test_advice_hint_spacing_per_language():
     assert len(lines_ja) == 2
     assert lines_ja[0].startswith("8/28の予報は")
     assert "臺北市信義區" not in summary_ja
-    assert lines_ja[1] == "天気が安定しているため、屋外のアクティビティに適しています。"
+    assert lines_ja[1] == "天気は穏やかで、お出かけ日和になりそうです。"
 
     # 3. English (en)
     day_en = DailyForecast(
