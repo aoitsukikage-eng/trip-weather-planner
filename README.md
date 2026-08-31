@@ -22,7 +22,7 @@
 | 環境 | 版本 | 說明 |
 |---|---|---|
 | `main` branch | v1.1.0 之後（未再打 tag） | 已合併 Portfolio Mini 元件、Weather Postcard 主題／日夜切換、zh/en 雙語化、部署 workflow 修正；本次再加入日文（ja），成為三語 |
-| Azure 公開 demo | 追隨 `main` | 合併至 `main` 後由 `.github/workflows/deploy-demo.yml` 自動部署 |
+| Azure 公開 demo | 手動部署，可能落後 `main` | `.github/workflows/deploy-demo.yml` 僅有 `workflow_dispatch` 觸發，**不會**因合併自動部署；需手動執行 |
 | Phase 3（計畫中） | 未排程 | TDX 旅遊資訊串接；與分支名稱 `phase3-tourism` 無關，尚未開始 |
 
 ## 架構一覽
@@ -179,4 +179,4 @@ docs/          設計文件與流程圖
 - Terraform example：`infra/terraform/environments/dev/terraform.tfvars.example`
 - Deploy workflow skeleton：`.github/workflows/deploy-demo.yml`
 
-`main` 為目前的正式分支（最後一個 tag 為 v1.1.0，其後的合併未再打 tag）。Portfolio 首頁 Mini 元件、Weather Postcard 主題／日夜切換、zh/en/ja 三語支援與部署 workflow 修正皆已合併至 `main`。Azure 公開 demo 由 `.github/workflows/deploy-demo.yml` 在 `main` 更新時自動部署。
+`main` 為目前的正式分支（最後一個 tag 為 v1.1.0，其後的合併未再打 tag）。Portfolio 首頁 Mini 元件、Weather Postcard 主題／日夜切換、zh/en/ja 三語支援與部署 workflow 修正皆已合併至 `main`。Azure 公開 demo 需以 `.github/workflows/deploy-demo.yml`（`workflow_dispatch`）手動觸發部署，不會隨 `main` 更新自動進行，因此公開 demo 可能落後 `main`。
