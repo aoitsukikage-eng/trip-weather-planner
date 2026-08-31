@@ -38,17 +38,24 @@ _SYSTEM_PROMPT_JA = (
 
 def _rule_based_summary(day: DailyForecast, lang: str = "zh") -> str:
     if lang == "en":
-        parts = []
+        # NWS phrasing: the condition stands alone, then "High X, low Y", then the
+        # rain chance. day.max_pop_percent is the day's maximum across time slices,
+        # which "up to" carries; "peak precipitation chance" was a literal rendering
+        # of the Chinese and is not how the number is spoken in English.
+        sentences = []
         if day.weather:
-            parts.append(f'"{day.weather}", ')
+            sentences.append(f"{day.weather}.")
+        stats = ""
         if day.temp_low_c is not None and day.temp_high_c is not None:
-            parts.append(
-                f"with temperatures around {day.temp_low_c:.0f}–{day.temp_high_c:.0f}°C "
-            )
+            stats = f"High {day.temp_high_c:.0f}°C, low {day.temp_low_c:.0f}°C"
         if day.max_pop_percent is not None:
-            parts.append(f"and a peak precipitation chance of {day.max_pop_percent}%. ")
+            article = _article_for_number(day.max_pop_percent)
+            chance = f"up to {article} {day.max_pop_percent}% chance of rain"
+            stats = f"{stats}, with {chance}" if stats else chance[0].upper() + chance[1:]
+        if stats:
+            sentences.append(f"{stats}.")
         label = f"Forecast for {_display_date(day.date)}"
-        detail = "".join(parts).strip()
+        detail = " ".join(sentences)
         head = f"{label}: {detail}" if detail else label
         return f"{head}\n{day.advice_hint}" if day.advice_hint else head
 
@@ -74,6 +81,11 @@ def _rule_based_summary(day: DailyForecast, lang: str = "zh") -> str:
         parts.append(f"降雨機率最高 {day.max_pop_percent}%。")
     head = "".join(parts).strip()
     return f"{head}\n{day.advice_hint}" if day.advice_hint else head
+
+
+def _article_for_number(value: int) -> str:
+    """Return the indefinite article for a spoken number ("an 80%", "a 30%")."""
+    return "an" if value in (8, 11, 18) or 80 <= value <= 89 else "a"
 
 
 def _display_date(value: str) -> str:

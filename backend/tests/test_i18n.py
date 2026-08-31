@@ -276,8 +276,8 @@ def test_advice_hint_keys_and_values():
     assert get_advice_hint_key(20.0, 10.0, 10) == "cold"
     assert get_advice_hint_key(25.0, 20.0, 10) == "stable"
 
-    assert get_advice_hint("heavy_rain", lang="en").startswith("High chance of rain.")
-    assert get_advice_hint("stable", lang="en").startswith("Weather is generally stable")
+    assert get_advice_hint("heavy_rain", lang="en").startswith("Rain is likely.")
+    assert get_advice_hint("stable", lang="en").startswith("Settled weather")
 
 
 # ---------------------------------------------------------------------------
