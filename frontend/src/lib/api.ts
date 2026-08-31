@@ -202,7 +202,7 @@ function mockForecast(town: Town, date: string): ForecastResult {
       generated_at: new Date().toISOString(),
     },
     ai_summary: {
-      text: `${town.city}${town.name}在 ${displayDate(clampedDate)} 預報為「多雲時陰」,氣溫約 23–29°C。建議攜帶輕便雨具並留意防曬。`,
+      text: `${displayDate(clampedDate)} 預報為「多雲時陰」,氣溫約 23–29°C。\n建議攜帶輕便雨具並留意防曬。`,
       mode: "rule-based (frontend mock)",
     },
   };

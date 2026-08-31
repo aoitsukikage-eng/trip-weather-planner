@@ -832,7 +832,7 @@ def test_rule_based_summary_uses_selected_target_date():
             max_pop_percent=80,
         ),
     ]
-    text, mode = service.summarize(get_town("taipei-xinyi"), days, "2026-07-05")
+    text, mode = service.summarize(days, "2026-07-05")
     assert mode == "rule-based"
     assert "7/5" in text
     assert "7/4" not in text

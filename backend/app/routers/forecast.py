@@ -177,7 +177,7 @@ async def forecast(
     )
 
     ai = AiSummaryService(settings)
-    summary_text, mode = ai.summarize(town_obj, days, focused_date, lang=lang)
+    summary_text, mode = ai.summarize(days, focused_date, lang=lang)
     result = ForecastResult(
         forecast=forecast_data,
         ai_summary=AiSummary(text=summary_text, mode=mode),

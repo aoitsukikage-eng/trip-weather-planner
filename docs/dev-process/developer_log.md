@@ -1882,3 +1882,143 @@ management/coding-layer split for this personal project.
   can be up to three days stale. Pre-existing, unrelated to this work.
 - `forecast.py` swallows `UpstreamError` with a bare `pass` and no logging.
 - `frontend-mini/` has no i18n at all and was deliberately excluded.
+
+## 2026-09-01: Pre-trip advice reduced to date-anchored text
+
+### Place name removed from the advice summary
+
+- Rationale (User ruling): the location is already anchored the moment the
+  county/township is chosen and the query submitted, and it is rendered in
+  several places — `ForecastView.tsx:404` prints `{placeLabel} · {date}`
+  directly above the summary panel, and the chart header and `FavoriteTowns`
+  repeat it. The summary itself varies only with the selected date, so the
+  date stays in the sentence and the place name goes.
+- All three language branches of `_rule_based_summary` now open with the date
+  alone: `9/3 預報為…`, `Forecast for 9/3: …`, `9/3の予報は…`.
+- The place name was the only reason the summary took a `Town`. The parameter
+  was dropped from `_rule_based_summary()` and `AiSummaryService.summarize()`,
+  and `routers/forecast.py` updated accordingly. Reintroducing a place name is
+  now a signature change rather than a string edit.
+- Gemini path handled too: `location_label` was removed from the prompt so the
+  model cannot echo a place name back, and all three system prompts now require
+  the forecast date and forbid place names. Without this the requirement would
+  have held only while `GEMINI_API_KEY` is unset.
+- `frontend/src/lib/api.ts`'s offline mock carried the place name as well. It
+  was removed, and the `\n` structural seam added so the mock matches the
+  backend's two-line shape.
+- Tests were changed to assert the *absence* of the place name, not merely the
+  new prefix; that is the invariant worth protecting.
+
+### "Forecast" retained, wording tightened
+
+- Removing the word alongside the place name was considered and rejected. Unlike
+  the place name it is not redundant: it marks the line as predicted rather than
+  observed. The same page carries observation-based values (current AQI from
+  `aqx_p_432`, current UV), and the 2026-08-31 entry removed the air-quality
+  sentence precisely because a forecast-basis and an observation-basis value
+  read side by side suggested a data contradiction. The card is labelled
+  行前建議 / Pre-trip Advice, so nothing else marks the data basis of the line.
+- zh unchanged (`預報為`). ja `天気予報` shortened to `予報`, the bare form JMA
+  uses in its own products. en moved from `The forecast for M/D is "…"` to the
+  label form `Forecast for M/D: "…"`.
+- The en branch now assembles the detail fragments before deciding whether to
+  emit the colon. The previous version used a trailing space as separator; a
+  naive colon swap would emit a dangling `Forecast for 9/3:` when weather,
+  temperature and precipitation are all absent. It degrades to `Forecast for
+  9/3` instead.
+
+### Verification
+
+- Backend `ruff` clean; 72 passed, 3 skipped. The 3 skips are async tests with
+  no `pytest-asyncio` installed in the venv — environment, not code.
+- Frontend `ForecastView.test.tsx` (28) and `api.test.ts` (5) pass.
+
+### Known follow-ups (not blocking)
+
+- Frontend `locale.test.tsx` and `App.test.tsx` fail 28 tests with
+  `localStorage.clear is not a function`. The identical failure count was
+  reproduced on a stashed clean tree at `e15d9ad`, so this is local
+  jsdom/vitest drift since the 2026-08-31 run, not a regression from this work.
+- The Gemini branch was not exercised live; both prompt changes are unverified
+  against real model output.
+- `ADVICE_HINT_MAP`'s English still has no anchoring evidence, in contrast to
+  the JMA-anchored ja entries recorded on 2026-08-31.
+
+## 2026-09-01: English advice rewritten from Chinese calques to native forecast idiom
+
+### What was wrong
+
+- The four `ADVICE_HINT_MAP` English strings were sentence-for-sentence
+  renderings of the Chinese, grammar-checked but not written in English. The
+  tells were consistent: a gerund subject with a passive verb (`Bringing an
+  umbrella … is recommended`) standing in for 「建議…」; `Remember to` in two of
+  four entries standing in for 「注意」/「記得」; 防曬 taken apart and rebuilt as
+  `protect yourself from the sun`; and `Weather is generally stable` missing the
+  definite article, an artefact of a source language without articles.
+- The data line in `_rule_based_summary` had the same problem and was missed in
+  the first pass: `a peak precipitation chance of 80%` renders 「降雨機率最高」
+  word by word, `with temperatures around X–Y°C` renders 「氣溫約」, and the
+  quotation marks around the condition carry over 「」.
+
+### Provenance finding: there is no upstream standard for these sentences
+
+- CWA publishes 降雨機率 as a number, defined as the chance of ≥0.1 mm in each
+  of three 12-hour periods within 36 hours. It does not map percentages onto
+  adjectives. NWS does, because its forecast products are prose and the number
+  has to become a sentence.
+- Neither agency publishes travel advice at all. The four Chinese sentences are
+  this project's own product copy, not a rendering of a CWA standard, so the
+  English cannot be anchored to a single authority the way the ja weather-code
+  terminology was on 2026-08-31.
+- What the agency sources do supply is syntax and verb choice, and that is all
+  they were used for here.
+
+### What the rewrite anchors to
+
+- `Rain is likely` — NWS PoP wording, where 60–70% is `LIKELY`; corroborated by
+  live NWS text ("showers likely and possibly a thunderstorm after 11pm").
+- `Wear sunscreen and drink plenty of water` — NWS heat advisory verbs ("Drink
+  plenty of fluids … stay out of the sun") and EPA UV Index ("apply … sunscreen").
+- `Dress in layers before you head out` — NWS Extreme Cold Warning ("dress in
+  layers"), with the threat register lowered to suit a 12°C trigger; NWS phrasing
+  is calibrated for wind chill and would badly over-warn at that threshold.
+- `Settled weather — a good day for outdoor plans` — no agency equivalent exists,
+  since meteorological services do not tell people it is a nice day out.
+  `settled` is the Met Office's descriptive term; the sentence is product copy
+  and is recorded as such.
+- Data line rewritten to `Forecast for M/D: <condition>. High X°C, low Y°C, with
+  up to an N% chance of rain.`, following the NWS pattern ("Partly sunny, with a
+  high near 69", "A 30 percent chance of showers"). `up to` preserves the
+  meaning of 最高 — the value is the day's maximum across time slices — in a form
+  that is spoken rather than assembled.
+- `_article_for_number()` picks `an` before 8, 11, 18 and 80–89, whose spoken
+  forms open with a vowel. Without it a PoP of 80 emits `a 80% chance`.
+
+### Scope deliberately not taken
+
+- An expansion of the advice state space was drafted and dropped. The three
+  conditions form eight input states that collapse into four keys, so a rainy hot
+  day and a rainy cold day — the two most common patterns in Taiwan — currently
+  say only "bring an umbrella". Widening it also raised whether `max_pop >= 70`
+  and `temp_low <= 12` are the right triggers, and whether the `heavy_rain` key
+  should be renamed, since it is computed from probability while `WX_CODE_TO_TEXT`
+  already uses Heavy Rain for intensity (code 39). All of that is product work,
+  independent of the translation quality this task was about, and was left out.
+- zh and ja text is unchanged. The ja advice sentences were never covered by the
+  2026-08-31 JMA anchoring, which applied to weather-code terminology only —
+  `git log -L` over `ADVICE_HINT_MAP` shows only `957f934` and `f4e237e` ever
+  touched it — so they have no more evidence behind them than the old English did.
+
+### Verification
+
+- Backend `ruff` clean; 72 passed, 3 skipped. Frontend `ForecastView.test.tsx`
+  (28) and `api.test.ts` (5) pass.
+- Empty-field degradation checked directly: `Forecast for 9/3`, `Forecast for
+  9/3: Cloudy.`, and `Forecast for 9/3: Up to a 30% chance of rain.`
+
+### Known follow-ups (not blocking)
+
+- `weather.py:22` `_advice_hint()` has no callers and hardcodes `lang="zh"`, a
+  leftover from before i18n. It would silently emit Chinese in every locale.
+- The `hot` key triggers sun-protection advice from temperature, but sun exposure
+  tracks the UV index, which this project already fetches.

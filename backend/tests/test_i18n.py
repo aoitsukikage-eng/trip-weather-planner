@@ -167,7 +167,8 @@ def test_forecast_english_domains():
     assert forecast["sunrise_sunset"]["county"] == "Taipei City"
 
     # Domain 9: ai_summary composition in English
-    assert ai_summary["text"].startswith("The forecast for Xinyi District, Taipei City on ")
+    assert ai_summary["text"].startswith("Forecast for ")
+    assert "Xinyi District" not in ai_summary["text"]
 
 
 def test_warning_domain_english(monkeypatch: pytest.MonkeyPatch):
@@ -275,8 +276,8 @@ def test_advice_hint_keys_and_values():
     assert get_advice_hint_key(20.0, 10.0, 10) == "cold"
     assert get_advice_hint_key(25.0, 20.0, 10) == "stable"
 
-    assert get_advice_hint("heavy_rain", lang="en").startswith("High chance of rain.")
-    assert get_advice_hint("stable", lang="en").startswith("Weather is generally stable")
+    assert get_advice_hint("heavy_rain", lang="en").startswith("Rain is likely.")
+    assert get_advice_hint("stable", lang="en").startswith("Settled weather")
 
 
 # ---------------------------------------------------------------------------
@@ -693,8 +694,6 @@ def test_composer_2_rule_based_summary_ja():
 
     assert "旅行の事前準備アシスタント" in _SYSTEM_PROMPT_JA
 
-    town = get_town("taipei-xinyi")
-    assert town is not None
     day = DailyForecast(
         date="2026-08-28",
         temp_high_c=32.0,
@@ -705,8 +704,10 @@ def test_composer_2_rule_based_summary_ja():
         advice_hint="天気が安定しているため、屋外のアクティビティに適しています。",
         advice_hint_key="stable",
     )
-    summary = _rule_based_summary(town, day, lang="ja")
-    assert "8/28の臺北市信義區の天気予報は" in summary
+    summary = _rule_based_summary(day, lang="ja")
+    assert summary.startswith("8/28の予報は")
+    assert "臺北市" not in summary
+    assert "信義區" not in summary
     assert "最高降水確率は20%です。" in summary
     assert "預報為" not in summary
     assert "降雨機率" not in summary
@@ -745,9 +746,6 @@ def test_advice_hint_spacing_per_language():
     from app.schemas.weather import AQIForecast, DailyForecast
     from app.services.ai_summary import _rule_based_summary
 
-    town = get_town("taipei-xinyi")
-    assert town is not None
-
     # 1. Chinese (zh)
     day_zh = DailyForecast(
         date="2026-08-28",
@@ -761,11 +759,12 @@ def test_advice_hint_spacing_per_language():
     )
     assert "\n" not in day_zh.advice_hint
     assert "空氣品質預報為" not in day_zh.advice_hint
-    summary_zh = _rule_based_summary(town, day_zh, lang="zh")
+    summary_zh = _rule_based_summary(day_zh, lang="zh")
     assert summary_zh.count("\n") == 1
     lines_zh = summary_zh.split("\n")
     assert len(lines_zh) == 2
-    assert lines_zh[0].startswith("臺北市信義區在 8/28 ")
+    assert lines_zh[0].startswith("8/28 ")
+    assert "臺北市信義區" not in summary_zh
     assert lines_zh[1] == "天氣穩定，適合戶外活動。"
 
     # 2. Japanese (ja)
@@ -781,11 +780,12 @@ def test_advice_hint_spacing_per_language():
     )
     assert "\n" not in day_ja.advice_hint
     assert "空気質予報は" not in day_ja.advice_hint
-    summary_ja = _rule_based_summary(town, day_ja, lang="ja")
+    summary_ja = _rule_based_summary(day_ja, lang="ja")
     assert summary_ja.count("\n") == 1
     lines_ja = summary_ja.split("\n")
     assert len(lines_ja) == 2
-    assert lines_ja[0].startswith("8/28の臺北市信義區の天気予報は")
+    assert lines_ja[0].startswith("8/28の予報は")
+    assert "臺北市信義區" not in summary_ja
     assert lines_ja[1] == "天気が安定しているため、屋外のアクティビティに適しています。"
 
     # 3. English (en)
@@ -801,11 +801,12 @@ def test_advice_hint_spacing_per_language():
     )
     assert "\n" not in day_en.advice_hint
     assert "Air quality forecast:" not in day_en.advice_hint
-    summary_en = _rule_based_summary(town, day_en, lang="en")
+    summary_en = _rule_based_summary(day_en, lang="en")
     assert summary_en.count("\n") == 1
     lines_en = summary_en.split("\n")
     assert len(lines_en) == 2
-    assert lines_en[0].startswith("The forecast for Xinyi District, Taipei City on 8/28 ")
+    assert lines_en[0].startswith("Forecast for 8/28: ")
+    assert "Xinyi District" not in summary_en
     assert not lines_en[0].endswith(" ")
     assert lines_en[1] == "Weather is generally stable, ideal for outdoor activities."
 
@@ -814,9 +815,6 @@ def test_advice_hint_linebreak_and_empty_prefix_all_languages():
     """AC4: Assert advice_hint/summary formatting across languages."""
     from app.schemas.weather import AQIForecast, DailyForecast
     from app.services.ai_summary import _rule_based_summary
-
-    town = get_town("taipei-xinyi")
-    assert town is not None
 
     # Test empty advice_hint scenario for zh, ja, en (no newline, no trailing newline)
     for lang in ["zh", "ja", "en"]:
@@ -830,7 +828,7 @@ def test_advice_hint_linebreak_and_empty_prefix_all_languages():
                 date="2026-08-28", value=35, level="Moderate", level_code="moderate"
             ),
         )
-        summary_no_hint = _rule_based_summary(town, day_no_hint, lang=lang)
+        summary_no_hint = _rule_based_summary(day_no_hint, lang=lang)
         assert "\n" not in summary_no_hint
         assert not summary_no_hint.endswith("\n")
 
