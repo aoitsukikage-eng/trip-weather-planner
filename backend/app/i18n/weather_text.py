@@ -115,22 +115,28 @@ ADVICE_HINT_MAP: dict[str, dict[str, str]] = {
     "heavy_rain": {
         "zh": "降雨機率高,建議攜傘或準備室內備案。",
         "en": "Rain is likely. Bring an umbrella, or plan an indoor alternative.",
-        "ja": "降水確率が高いため、雨具の持参や室内プランへの変更をおすすめします。",
+        "ja": (
+            "雨が降りやすい一日です。折り畳み傘を持って、"
+            "屋内で過ごせる場所も調べておきましょう。"
+        ),
     },
     "hot": {
         "zh": "高溫炎熱,注意防曬與補充水分。",
         "en": "A hot day ahead. Wear sunscreen and drink plenty of water.",
-        "ja": "気温が高いため、熱中症対策とこまめな水分補給を心がけてください。",
+        "ja": (
+            "厳しい暑さになりそうです。こまめに水分を補給し、"
+            "日差しの強い時間帯は日陰で休みましょう。"
+        ),
     },
     "cold": {
         "zh": "氣溫偏低,出門記得保暖。",
         "en": "A chilly day ahead. Dress in layers before you head out.",
-        "ja": "気温が低いため、防寒対策をしてお出かけください。",
+        "ja": "冷え込む一日です。暖かい服装でお出かけください。",
     },
     "stable": {
         "zh": "天氣大致穩定,適合安排戶外行程。",
         "en": "Settled weather — a good day for outdoor plans.",
-        "ja": "天気が安定しているため、屋外のアクティビティに適しています。",
+        "ja": "天気は穏やかで、お出かけ日和になりそうです。",
     },
 }
 
