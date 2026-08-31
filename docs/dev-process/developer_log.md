@@ -1882,3 +1882,64 @@ management/coding-layer split for this personal project.
   can be up to three days stale. Pre-existing, unrelated to this work.
 - `forecast.py` swallows `UpstreamError` with a bare `pass` and no logging.
 - `frontend-mini/` has no i18n at all and was deliberately excluded.
+
+## 2026-09-01: Pre-trip advice reduced to date-anchored text
+
+### Place name removed from the advice summary
+
+- Rationale (User ruling): the location is already anchored the moment the
+  county/township is chosen and the query submitted, and it is rendered in
+  several places — `ForecastView.tsx:404` prints `{placeLabel} · {date}`
+  directly above the summary panel, and the chart header and `FavoriteTowns`
+  repeat it. The summary itself varies only with the selected date, so the
+  date stays in the sentence and the place name goes.
+- All three language branches of `_rule_based_summary` now open with the date
+  alone: `9/3 預報為…`, `Forecast for 9/3: …`, `9/3の予報は…`.
+- The place name was the only reason the summary took a `Town`. The parameter
+  was dropped from `_rule_based_summary()` and `AiSummaryService.summarize()`,
+  and `routers/forecast.py` updated accordingly. Reintroducing a place name is
+  now a signature change rather than a string edit.
+- Gemini path handled too: `location_label` was removed from the prompt so the
+  model cannot echo a place name back, and all three system prompts now require
+  the forecast date and forbid place names. Without this the requirement would
+  have held only while `GEMINI_API_KEY` is unset.
+- `frontend/src/lib/api.ts`'s offline mock carried the place name as well. It
+  was removed, and the `\n` structural seam added so the mock matches the
+  backend's two-line shape.
+- Tests were changed to assert the *absence* of the place name, not merely the
+  new prefix; that is the invariant worth protecting.
+
+### "Forecast" retained, wording tightened
+
+- Removing the word alongside the place name was considered and rejected. Unlike
+  the place name it is not redundant: it marks the line as predicted rather than
+  observed. The same page carries observation-based values (current AQI from
+  `aqx_p_432`, current UV), and the 2026-08-31 entry removed the air-quality
+  sentence precisely because a forecast-basis and an observation-basis value
+  read side by side suggested a data contradiction. The card is labelled
+  行前建議 / Pre-trip Advice, so nothing else marks the data basis of the line.
+- zh unchanged (`預報為`). ja `天気予報` shortened to `予報`, the bare form JMA
+  uses in its own products. en moved from `The forecast for M/D is "…"` to the
+  label form `Forecast for M/D: "…"`.
+- The en branch now assembles the detail fragments before deciding whether to
+  emit the colon. The previous version used a trailing space as separator; a
+  naive colon swap would emit a dangling `Forecast for 9/3:` when weather,
+  temperature and precipitation are all absent. It degrades to `Forecast for
+  9/3` instead.
+
+### Verification
+
+- Backend `ruff` clean; 72 passed, 3 skipped. The 3 skips are async tests with
+  no `pytest-asyncio` installed in the venv — environment, not code.
+- Frontend `ForecastView.test.tsx` (28) and `api.test.ts` (5) pass.
+
+### Known follow-ups (not blocking)
+
+- Frontend `locale.test.tsx` and `App.test.tsx` fail 28 tests with
+  `localStorage.clear is not a function`. The identical failure count was
+  reproduced on a stashed clean tree at `e15d9ad`, so this is local
+  jsdom/vitest drift since the 2026-08-31 run, not a regression from this work.
+- The Gemini branch was not exercised live; both prompt changes are unverified
+  against real model output.
+- `ADVICE_HINT_MAP`'s English still has no anchoring evidence, in contrast to
+  the JMA-anchored ja entries recorded on 2026-08-31.
