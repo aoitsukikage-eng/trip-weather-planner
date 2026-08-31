@@ -1943,3 +1943,82 @@ management/coding-layer split for this personal project.
   against real model output.
 - `ADVICE_HINT_MAP`'s English still has no anchoring evidence, in contrast to
   the JMA-anchored ja entries recorded on 2026-08-31.
+
+## 2026-09-01: English advice rewritten from Chinese calques to native forecast idiom
+
+### What was wrong
+
+- The four `ADVICE_HINT_MAP` English strings were sentence-for-sentence
+  renderings of the Chinese, grammar-checked but not written in English. The
+  tells were consistent: a gerund subject with a passive verb (`Bringing an
+  umbrella … is recommended`) standing in for 「建議…」; `Remember to` in two of
+  four entries standing in for 「注意」/「記得」; 防曬 taken apart and rebuilt as
+  `protect yourself from the sun`; and `Weather is generally stable` missing the
+  definite article, an artefact of a source language without articles.
+- The data line in `_rule_based_summary` had the same problem and was missed in
+  the first pass: `a peak precipitation chance of 80%` renders 「降雨機率最高」
+  word by word, `with temperatures around X–Y°C` renders 「氣溫約」, and the
+  quotation marks around the condition carry over 「」.
+
+### Provenance finding: there is no upstream standard for these sentences
+
+- CWA publishes 降雨機率 as a number, defined as the chance of ≥0.1 mm in each
+  of three 12-hour periods within 36 hours. It does not map percentages onto
+  adjectives. NWS does, because its forecast products are prose and the number
+  has to become a sentence.
+- Neither agency publishes travel advice at all. The four Chinese sentences are
+  this project's own product copy, not a rendering of a CWA standard, so the
+  English cannot be anchored to a single authority the way the ja weather-code
+  terminology was on 2026-08-31.
+- What the agency sources do supply is syntax and verb choice, and that is all
+  they were used for here.
+
+### What the rewrite anchors to
+
+- `Rain is likely` — NWS PoP wording, where 60–70% is `LIKELY`; corroborated by
+  live NWS text ("showers likely and possibly a thunderstorm after 11pm").
+- `Wear sunscreen and drink plenty of water` — NWS heat advisory verbs ("Drink
+  plenty of fluids … stay out of the sun") and EPA UV Index ("apply … sunscreen").
+- `Dress in layers before you head out` — NWS Extreme Cold Warning ("dress in
+  layers"), with the threat register lowered to suit a 12°C trigger; NWS phrasing
+  is calibrated for wind chill and would badly over-warn at that threshold.
+- `Settled weather — a good day for outdoor plans` — no agency equivalent exists,
+  since meteorological services do not tell people it is a nice day out.
+  `settled` is the Met Office's descriptive term; the sentence is product copy
+  and is recorded as such.
+- Data line rewritten to `Forecast for M/D: <condition>. High X°C, low Y°C, with
+  up to an N% chance of rain.`, following the NWS pattern ("Partly sunny, with a
+  high near 69", "A 30 percent chance of showers"). `up to` preserves the
+  meaning of 最高 — the value is the day's maximum across time slices — in a form
+  that is spoken rather than assembled.
+- `_article_for_number()` picks `an` before 8, 11, 18 and 80–89, whose spoken
+  forms open with a vowel. Without it a PoP of 80 emits `a 80% chance`.
+
+### Scope deliberately not taken
+
+- An expansion of the advice state space was drafted and dropped. The three
+  conditions form eight input states that collapse into four keys, so a rainy hot
+  day and a rainy cold day — the two most common patterns in Taiwan — currently
+  say only "bring an umbrella". Widening it also raised whether `max_pop >= 70`
+  and `temp_low <= 12` are the right triggers, and whether the `heavy_rain` key
+  should be renamed, since it is computed from probability while `WX_CODE_TO_TEXT`
+  already uses Heavy Rain for intensity (code 39). All of that is product work,
+  independent of the translation quality this task was about, and was left out.
+- zh and ja text is unchanged. The ja advice sentences were never covered by the
+  2026-08-31 JMA anchoring, which applied to weather-code terminology only —
+  `git log -L` over `ADVICE_HINT_MAP` shows only `957f934` and `f4e237e` ever
+  touched it — so they have no more evidence behind them than the old English did.
+
+### Verification
+
+- Backend `ruff` clean; 72 passed, 3 skipped. Frontend `ForecastView.test.tsx`
+  (28) and `api.test.ts` (5) pass.
+- Empty-field degradation checked directly: `Forecast for 9/3`, `Forecast for
+  9/3: Cloudy.`, and `Forecast for 9/3: Up to a 30% chance of rain.`
+
+### Known follow-ups (not blocking)
+
+- `weather.py:22` `_advice_hint()` has no callers and hardcodes `lang="zh"`, a
+  leftover from before i18n. It would silently emit Chinese in every locale.
+- The `hot` key triggers sun-protection advice from temperature, but sun exposure
+  tracks the UV index, which this project already fetches.
