@@ -2022,3 +2022,60 @@ management/coding-layer split for this personal project.
   leftover from before i18n. It would silently emit Chinese in every locale.
 - The `hot` key triggers sun-protection advice from temperature, but sun exposure
   tracks the UV index, which this project already fetches.
+
+## 2026-09-01: Japanese advice rewritten to JMA forecast idiom
+
+Same treatment as the English pass earlier today, applied to ja. zh and en are
+unchanged, as are the advice keys, thresholds and all product logic.
+
+### What was wrong
+
+- All four `ADVICE_HINT_MAP` ja strings opened with 「〜ため、」. That is the
+  Chinese 「因為…所以…」 chain carried across intact. Japanese weather copy states
+  the condition, then the action; four entries sharing one connective is the
+  signature of template translation rather than four sentences written in
+  Japanese.
+- `室内プランへの変更` renders 「室內備案」 literally, in katakana business
+  register. Real Japanese advice copy names the object: 折り畳み傘.
+- `熱中症対策とこまめな水分補給` is internally redundant — 水分補給 *is* a
+  熱中症対策. The redundancy is inherited: the Chinese lists two items (防曬 and
+  補水), and 防曬 has no counterpart in Japanese heat messaging, which is framed
+  around 熱中症 rather than sun protection. A generic 熱中症対策 was inserted to
+  fill the second slot. `こまめな水分補給` itself matches JMA wording and was the
+  one part worth keeping.
+- `屋外のアクティビティに適しています` renders 「適合安排戶外行程」 with
+  travel-industry katakana and textbook grammar, where Japanese weather copy has
+  a ready-made word: 行楽日和 / お出かけ日和.
+- The ja data line repeated the English line's three faults: 「」 around the
+  condition, `気温は約X〜Y℃` for 氣溫約, and `最高降水確率` — a term JMA does not
+  have, because it publishes 降水確率 per six-hour block and never aggregates.
+
+### What the rewrite anchors to
+
+- Live 府県天気予報文 confirms the shape: the condition unquoted
+  (`晴れ　時々　くもり`), `今日日中の最高気温　20℃`, and probabilities listed per
+  block (`(06-12) 0%　(12-18) 0%`).
+- JMA's 熱中症警戒アラート wording supplies both the verb and the sentence ending:
+  「こまめな休憩や水分補給・塩分補給をしましょう」 — 〜しましょう, not 〜心がけてください.
+- 行楽日和 / お出かけ日和 is the established term for a day worth going out on;
+  お出かけ日和 was chosen as the less season-bound of the two.
+- Data line is now `M/Dの予報は、<天気>。最高気温X℃、最低気温Y℃、降水確率は最大でN%です。`
+  `最大で` carries what `最高降水確率` was reaching for without coining a term JMA
+  does not use.
+- When the condition is absent the label takes では rather than は, so the
+  sentence does not carry two は particles once it opens with 降水確率は.
+
+### Verification
+
+- Backend `ruff` clean; 72 passed, 3 skipped.
+- Degradation checked directly: `9/3の予報`, `9/3の予報は、くもり。`,
+  `9/3の予報では、降水確率は最大で30%です。`, and
+  `9/3の予報では、最高気温33℃、最低気温26℃です。`
+
+### Note on evidence
+
+- As recorded earlier today, no meteorological agency publishes travel advice, so
+  these sentences remain this project's own copy in all three languages. JMA
+  supplied syntax, verb choice and vocabulary; it did not supply the sentences.
+  The 2026-08-31 JMA anchoring covered weather-code terminology only and never
+  touched `ADVICE_HINT_MAP`.
