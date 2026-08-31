@@ -1787,3 +1787,98 @@ management/coding-layer split for this personal project.
 - It remains unmerged, unpushed, and undeployed. The preceding `f502207` Azure
   public-demo entry is an existing main/frontend deployment and does **not**
   establish deployment of this Compact Home Card.
+
+## 2026-08-31: Japanese (ja) added — trilingual zh/en/ja support accepted
+
+### Accepted implementation
+
+- The independently verified implementation is
+  `integration/20260828-twp-i18n-ja` at `3da0605`, based on `0b1ff9b`
+  (32 commits: 30 implementation, 2 merges; 21 files, +799 / -176).
+- It composes seven task branches, each independently verified before merge:
+  `9e9a6c4` (backend ja), `708607c` (frontend ja), `21de109` (JMA terminology),
+  `7388282` (html lang / CJK spacing / ja line breaking), `ca5c117` (compound
+  terms), `f659539` (summary line break), `3da0605` (drop AQI sentence + r2).
+- Backend: `LangType` widened to `Literal["zh","en","ja"]` as the single source
+  for both `/api/towns` and `/api/forecast`; all eight lookup getters converted
+  from binary branches to a fallback chain `entry.get(lang) or entry["zh"]`;
+  75 ja entries added across seven tables.
+- Frontend: `ja.ts` dictionary (63 keys), `SUPPORTED_LOCALES` extended, and the
+  binary language toggle replaced by a three-way segmented control driven by
+  `LOCALE_NAMES` in `i18n/config.ts`.
+- `document.documentElement.lang` now tracks the active locale via
+  `HTML_LANG_CODES` (zh to `zh-Hant`, en to `en`, ja to `ja`). This governs CJK
+  font selection, line-breaking rules and screen-reader pronunciation; the
+  static `index.html` value alone was previously wrong in every non-zh locale.
+
+### Place names deliberately untranslated
+
+- All place names (368 townships, 22+ counties, 1109 UV/AQI stations) render as
+  their original Traditional Chinese under `lang=ja`. Taiwanese place names are
+  almost entirely kanji and are directly legible to Japanese readers.
+- This required no special-case code: with the fallback chain in place, absent
+  ja entries fall back to zh, which is exactly the intended behaviour.
+  `town_names.py`, `station_names.py` and both generator scripts are untouched.
+
+### Terminology anchored to JMA, not translated
+
+- Method (User ruling): zh to en to ja. The Central Weather Administration's
+  official English is the pivot; the Japan Meteorological Agency's official
+  Japanese is taken from the entry whose official English matches. Neither end
+  relies on model translation judgement.
+- Authoritative source: JMA multilingual dictionary
+  `https://www.data.jma.go.jp/developer/jma_multilingual.xlsx` (7,278 rows,
+  Japanese / English / Traditional Chinese and 11 further languages).
+- The pivot caught errors a Japanese-only check could not. JMA public forecast
+  telops use hiragana `くもり`, while its terminology glossary lists the kanji
+  `曇り`; only the English pairing exposes the difference.
+- It also overturned three management proposals derived from JMA's explanatory
+  pages rather than its forecast products, each time confirming the existing
+  code was already correct: Gale is `強風` (not `非常に強い風`), Storm is `暴風`
+  (not `猛烈な風`), and Heavy rain is `大雨` (not `激しい雨`).
+- `豪雨` was removed as a forbidden term: JMA states it is not used standalone in
+  ordinary forecasts, warnings or advisories, and it appears nowhere in the
+  7,278-row dictionary. `豪雨警報` and `強風警報` were likewise removed because no
+  such warning names exist in Japan.
+- Full anchoring evidence, the evidence-grading scheme and every per-code ruling
+  are recorded in
+  `~/.agent-hub/management/decisions/task-20260829-twp-i18n-ja-terminology-decision.md`.
+
+### Pre-trip advice restructured
+
+- The advice summary is now two lines: weather data on the first, action advice
+  on the second. The line break is emitted by `_rule_based_summary` at the
+  structural seam and rendered with `white-space: pre-line`.
+- The air-quality sentence was removed from the summary entirely. The page
+  already shows current AQI from the nearest station (`aqx_p_432`), whereas the
+  summary sentence carried a regional three-day forecast (`aqf_p_01`); the two
+  differ in time basis, geographic granularity, value and level, and reading
+  them side by side suggested a data contradiction. `day.aqi_forecast` is
+  retained and still drives the seven-day strip's AQI dot.
+- A responsibility rule was recorded for line breaking: width-driven breaks
+  belong to CSS because only the browser knows the container; structural breaks
+  may be emitted by the backend because it owns the seam it joined.
+
+### Independent verification
+
+- Every task branch was verified by the acceptance layer and re-verified by the
+  management layer before merge. One round was returned: the drop-AQI card's
+  first pass left a failing assertion that compared the summary against
+  `days[0]` rather than the day matching `target_date`; r2 corrected the test
+  only, with zero product-code change.
+- Post-merge on `3da0605`: backend `ruff` clean and 75 tests passed; frontend
+  12 test files / 140 tests passed; production build succeeded.
+- Live verification on the Ubuntu preview station confirmed trilingual output,
+  Traditional Chinese place names under `lang=ja`, one line break per summary,
+  and no air-quality text remaining in the summary.
+
+### Known follow-ups (not blocking)
+
+- 14 CWA-invented compound weather codes remain composed from JMA parts rather
+  than matched to a dictionary entry; JMA has no single equivalent because
+  Taiwan merges two or three conditions into one code.
+- `moenv.py` `fetch_forecast` selects the oldest `publishtime` for each
+  `forecastdate` because it overwrites while iterating; the AQI forecast shown
+  can be up to three days stale. Pre-existing, unrelated to this work.
+- `forecast.py` swallows `UpstreamError` with a bare `pass` and no logging.
+- `frontend-mini/` has no i18n at all and was deliberately excluded.
