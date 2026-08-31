@@ -137,7 +137,13 @@ def test_forecast_english_domains():
     assert first_day["weather"] in {entry["en"] for entry in WX_CODE_TO_TEXT.values()}
 
     # Domain 2: advice_hint & advice_hint_key
-    assert first_day["advice_hint_key"] in {"heavy_rain", "hot", "cold", "stable"}
+    assert first_day["advice_hint_key"] in {
+        "rain_likely",
+        "rain_chance",
+        "hot",
+        "cold",
+        "stable",
+    }
     assert first_day["advice_hint"] is not None
     assert any(
         first_day["advice_hint"].startswith(entry["en"]) for entry in ADVICE_HINT_MAP.values()
@@ -271,13 +277,49 @@ def test_uv_and_moon_phase_mappings():
 
 
 def test_advice_hint_keys_and_values():
-    assert get_advice_hint_key(34.0, 25.0, 80) == "heavy_rain"
+    assert get_advice_hint_key(34.0, 25.0, 80) == "rain_likely"
     assert get_advice_hint_key(34.0, 25.0, 30) == "hot"
     assert get_advice_hint_key(20.0, 10.0, 10) == "cold"
     assert get_advice_hint_key(25.0, 20.0, 10) == "stable"
 
-    assert get_advice_hint("heavy_rain", lang="en").startswith("Rain is likely.")
+    assert get_advice_hint("rain_likely", lang="en").startswith("Rain is likely.")
     assert get_advice_hint("stable", lang="en").startswith("Settled weather")
+
+
+def test_rain_tiers_follow_nws_thresholds():
+    """Rain wins at 60% (NWS "likely"); 30-59% is a chance, not a settled day."""
+    # Boundaries of the "likely" tier.
+    assert get_advice_hint_key(25.0, 20.0, 60) == "rain_likely"
+    assert get_advice_hint_key(25.0, 20.0, 59) == "rain_chance"
+    # Boundaries of the "chance" tier.
+    assert get_advice_hint_key(25.0, 20.0, 30) == "rain_chance"
+    assert get_advice_hint_key(25.0, 20.0, 29) == "stable"
+    # Temperature still outranks a mere chance of rain.
+    assert get_advice_hint_key(34.0, 25.0, 40) == "hot"
+    assert get_advice_hint_key(20.0, 10.0, 40) == "cold"
+    # Missing precipitation data must not crash the lower tier.
+    assert get_advice_hint_key(25.0, 20.0, None) == "stable"
+
+
+def test_stable_never_contradicts_a_printed_rain_chance():
+    """Regression: a 60% day used to render "a good day for outdoor plans"."""
+    from app.schemas.weather import DailyForecast
+    from app.services.ai_summary import _rule_based_summary
+
+    for pop in (30, 45, 60, 80):
+        key = get_advice_hint_key(25.0, 18.0, pop)
+        assert key != "stable", f"{pop}% rain must not read as settled"
+        day = DailyForecast(
+            date="2026-09-03",
+            temp_high_c=25.0,
+            temp_low_c=18.0,
+            max_pop_percent=pop,
+            weather="Cloudy",
+            advice_hint=get_advice_hint(key, lang="en"),
+        )
+        summary = _rule_based_summary(day, lang="en")
+        assert f"{pop}% chance of rain" in summary
+        assert "good day for outdoor plans" not in summary
 
 
 # ---------------------------------------------------------------------------
@@ -597,7 +639,11 @@ def test_ja_lookup_tables_and_fallback_chain():
     assert len([k for k, v in MOON_PHASE_MAP.items() if "ja" in v]) == 8
     assert len([k for k, v in UV_LEVEL_MAP.items() if "ja" in v]) == 5
     assert len([k for k, v in WARNING_TITLE_MAP.items() if "ja" in v]) == 4
-    assert len([k for k, v in ADVICE_HINT_MAP.items() if "ja" in v]) == 4
+    # Compared against the table size: this is the one map that grows, and a
+    # new key must not be able to ship without a ja entry.
+    assert len([k for k, v in ADVICE_HINT_MAP.items() if "ja" in v]) == len(
+        ADVICE_HINT_MAP
+    )
     assert len([k for k, v in UV_LABEL_MAP.items() if "ja" in v]) == 2
 
     # JMA terms verification for AC2 examples

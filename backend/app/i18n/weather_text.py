@@ -112,7 +112,7 @@ def get_weather_text(weather: str | None, weather_code: str | None, lang: str = 
 # Domain 2: Advice Hint
 # ---------------------------------------------------------------------------
 ADVICE_HINT_MAP: dict[str, dict[str, str]] = {
-    "heavy_rain": {
+    "rain_likely": {
         "zh": "降雨機率高,建議攜傘或準備室內備案。",
         "en": "Rain is likely. Bring an umbrella, or plan an indoor alternative.",
         "ja": (
@@ -120,9 +120,14 @@ ADVICE_HINT_MAP: dict[str, dict[str, str]] = {
             "屋内で過ごせる場所も調べておきましょう。"
         ),
     },
+    "rain_chance": {
+        "zh": "可能會下雨,建議隨身帶把傘。",
+        "en": "A chance of rain. Pack an umbrella just in case.",
+        "ja": "雨の可能性があります。念のため折り畳み傘を持っておきましょう。",
+    },
     "hot": {
         "zh": "高溫炎熱,注意防曬與補充水分。",
-        "en": "A hot day ahead. Wear sunscreen and drink plenty of water.",
+        "en": "A hot day ahead. Drink plenty of water and stay out of the midday sun.",
         "ja": (
             "厳しい暑さになりそうです。こまめに水分を補給し、"
             "日差しの強い時間帯は日陰で休みましょう。"
@@ -144,12 +149,18 @@ ADVICE_HINT_MAP: dict[str, dict[str, str]] = {
 def get_advice_hint_key(
     temp_high: float | None, temp_low: float | None, max_pop: int | None
 ) -> str:
-    if max_pop is not None and max_pop >= 70:
-        return "heavy_rain"
+    # Rain tiers follow the NWS probability-of-precipitation wording table:
+    # 60-70% is "likely", 30-50% is "chance". Below 30% the day is settled and
+    # "stable" can claim so without contradicting the precipitation figure
+    # printed on the same card.
+    if max_pop is not None and max_pop >= 60:
+        return "rain_likely"
     if temp_high is not None and temp_high >= 33:
         return "hot"
     if temp_low is not None and temp_low <= 12:
         return "cold"
+    if max_pop is not None and max_pop >= 30:
+        return "rain_chance"
     return "stable"
 
 
