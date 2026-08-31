@@ -2079,3 +2079,71 @@ unchanged, as are the advice keys, thresholds and all product logic.
   supplied syntax, verb choice and vocabulary; it did not supply the sentences.
   The 2026-08-31 JMA anchoring covered weather-code terminology only and never
   touched `ADVICE_HINT_MAP`.
+
+## 2026-09-01: Rain advice split into two NWS tiers; sunscreen claim dropped
+
+Closes two of the three follow-ups left open earlier today. The third — expanding
+the advice into a full combination matrix — was examined and deliberately dropped;
+see below.
+
+### The defect: `stable` contradicted the figure printed above it
+
+A day with 60% precipitation and unremarkable temperatures triggered none of the
+three conditions and fell through to `stable`, producing this on one card:
+
+```
+Forecast for 9/3: Cloudy. High 25°C, low 18°C, with up to a 60% chance of rain.
+Settled weather — a good day for outdoor plans.
+```
+
+The reassuring line was the one that was wrong, and it was wrong precisely when a
+user most needed the opposite.
+
+### Fix: two rain tiers taken from the NWS PoP table
+
+- `max_pop >= 60` → `rain_likely` (NWS "LIKELY", 60–70%). The old trigger was 70,
+  which left the whole 60–69 band unadvised.
+- `max_pop >= 30` → `rain_chance` (NWS "CHANCE", 30–50%), evaluated after the
+  temperature conditions so a hot or cold day still leads with the temperature.
+- Below 30% `stable` may now claim a settled day without contradicting the number.
+- `heavy_rain` renamed to `rain_likely`. The key is computed from probability
+  while `WX_CODE_TO_TEXT` already uses Heavy Rain for code 39, an intensity; the
+  same term meant two things in one codebase, and lowering the trigger to 60%
+  made the misnomer worse. No frontend component reads `advice_hint_key`, so the
+  rename is contained to the backend and its tests.
+
+### Sunscreen claim removed from `hot`
+
+- `Wear sunscreen` was triggered by `temp_high >= 33`, but sunburn risk tracks UV,
+  not temperature; a humid overcast 34°C day can carry a low UV index.
+- The obvious fix — drive it from the UV data the project already fetches — is not
+  available. `DATASET_UV = "O-A0005-001"` is a CWA *observation* dataset, and
+  `_label_uv_info()` already relabels it 「目前紫外線僅供參考」 whenever the target
+  date is not today. Six of the seven forecast days have no UV value of their own.
+- Only the sunburn claim was unsupported. Hydration and shade are ordinary heat
+  guidance and are what NWS itself advises ("Drink plenty of fluids … stay out of
+  the sun"), so en now reads "Drink plenty of water and stay out of the midday
+  sun". ja already said 日陰で休みましょう and needed no change.
+- zh still says 防曬. It is the origin of the claim, it reads as normal advice to a
+  Taiwanese user, and changing the source copy was left as the owner's call.
+
+### Combination matrix examined and dropped
+
+- The three conditions form eight input states collapsing into five keys, so a
+  rainy hot day still leads with rain alone. That was judged not worth fixing: the
+  data line already prints `High 33°C, low 26°C`, so nothing is missing from the
+  card, and one actionable tip reads better than three stacked ones.
+- The earlier suggestion to raise `temp_low <= 12` to 15 is withdrawn. A dry 14°C
+  day in Taipei genuinely is a good day to be out; `stable` is correct there.
+
+### Verification
+
+- Backend `ruff` clean; 74 passed, 3 skipped (two new tests).
+- `test_rain_tiers_follow_nws_thresholds` pins both tier boundaries (60/59, 30/29),
+  confirms temperature still outranks a mere chance of rain, and covers a null
+  `max_pop`.
+- `test_stable_never_contradicts_a_printed_rain_chance` is a regression test for
+  the defect above: across 30/45/60/80% it asserts the key is never `stable` and
+  that the rendered summary never pairs the printed figure with "good day for
+  outdoor plans".
+- Frontend `ForecastView.test.tsx` (28) and `api.test.ts` (5) pass.
