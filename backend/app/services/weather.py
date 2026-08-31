@@ -19,11 +19,6 @@ from app.i18n.weather_text import (
 from app.schemas.weather import DailyForecast, HourlyForecast, TimeSlice
 
 
-def _advice_hint(temp_high: float | None, temp_low: float | None, max_pop: int | None) -> str:
-    key = get_advice_hint_key(temp_high, temp_low, max_pop)
-    return get_advice_hint(key, lang="zh")
-
-
 def normalize_to_daily(slices: list[TimeSlice], lang: str = "zh") -> list[DailyForecast]:
     """Group slices by calendar date and summarize each day."""
     buckets: dict[str, list[TimeSlice]] = defaultdict(list)
