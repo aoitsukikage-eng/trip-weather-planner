@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -12,7 +13,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_uv_info
-from app.core.cache import TTLCache
+from app.core.cache import AsyncSingleFlight, TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
 from app.i18n.station_names import get_uv_station_name_text
@@ -152,9 +153,19 @@ class ForecastSlices:
 
 
 class CWAAdapter:
-    def __init__(self, settings: Settings, cache: TTLCache | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        cache: TTLCache | None = None,
+        client: httpx.AsyncClient | None = None,
+        single_flight: AsyncSingleFlight | None = None,
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> None:
         self._settings = settings
         self._cache = cache
+        self._client = client
+        self._single_flight = single_flight
+        self._semaphore = semaphore
 
     async def fetch_forecast_slices(self, town: Town) -> ForecastSlices:
         if self._settings.use_mock:
@@ -174,34 +185,55 @@ class CWAAdapter:
             transport_dataset=resolve_live_dataset(DATASET_NEAR, town),
         )
 
-        weekly_payload = await self._request_json(
-            weekly.transport_dataset,
-            params={"LocationName": town.name},
-            ttl=self._settings.cache_ttl_seconds,
-        )
-        daily_slices = self._parse_forecast_payload(weekly_payload, town)
-        if not daily_slices:
-            raise UpstreamError(
-                f"CWA payload contained no forecast rows for {town.name}.",
-                error_code="empty_forecast",
+        async def _fetch_weekly() -> tuple[list[TimeSlice], str]:
+            weekly_payload = await self._request_json(
+                weekly.transport_dataset,
+                params={"LocationName": town.name},
+                ttl=self._settings.cache_ttl_seconds,
             )
+            daily_slices = self._parse_forecast_payload(weekly_payload, town)
+            if not daily_slices:
+                weekly_key = self._build_cache_key(
+                    weekly.transport_dataset, {"LocationName": town.name}
+                )
+                if self._cache is not None:
+                    stale = self._cache.get_entry(weekly_key)
+                    if stale.status in ("fresh", "stale") and stale.value:
+                        stale_slices = self._parse_forecast_payload(stale.value, town)
+                        if stale_slices:
+                            return stale_slices, weekly.source_label
+                raise UpstreamError(
+                    f"CWA payload contained no forecast rows for {town.name}.",
+                    error_code="empty_forecast",
+                )
+            return daily_slices, weekly.source_label
 
-        near_payload = await self._request_json(
-            near_term.transport_dataset,
-            params={"LocationName": town.name},
-            ttl=self._settings.cache_ttl_seconds,
-        )
-        hourly_slices = self._parse_forecast_payload(near_payload, town)
-        if not hourly_slices:
-            raise UpstreamError(
-                f"CWA payload contained no near-term forecast rows for {town.name}.",
-                error_code="empty_forecast",
-            )
+        async def _fetch_near() -> tuple[list[TimeSlice], str]:
+            try:
+                near_payload = await self._request_json(
+                    near_term.transport_dataset,
+                    params={"LocationName": town.name},
+                    ttl=self._settings.cache_ttl_seconds,
+                )
+                hourly_slices = self._parse_forecast_payload(near_payload, town)
+                return hourly_slices or [], near_term.source_label
+            except UpstreamError:
+                # Near-term hourly is optional and can degrade to empty list
+                return [], near_term.source_label
+
+        weekly_res, near_res = await asyncio.gather(_fetch_weekly(), _fetch_near())
+        daily_slices, weekly_label = weekly_res
+        hourly_slices, near_label = near_res
+
+        if hourly_slices:
+            source_label = f"{weekly_label} + {near_label}"
+        else:
+            source_label = weekly_label
 
         return ForecastSlices(
             daily=daily_slices,
             hourly=hourly_slices,
-            source_label=f"{weekly.source_label} + {near_term.source_label}",
+            source_label=source_label,
         )
 
     async def fetch_all_towns(self) -> list[Town]:
@@ -372,9 +404,35 @@ class CWAAdapter:
         ttl: int | None = None,
     ) -> dict[str, Any]:
         effective_cache_key = cache_key or self._build_cache_key(dataset, params)
-        cached = self._cache_get(effective_cache_key)
-        if cached is not None:
-            return cached
+        if self._cache is not None:
+            entry = self._cache.get_entry(effective_cache_key)
+            if entry.status == "fresh":
+                return entry.value
+
+        if self._single_flight is not None:
+            return await self._single_flight.run(
+                effective_cache_key,
+                self._execute_request_json,
+                dataset,
+                params,
+                effective_cache_key,
+                ttl,
+            )
+        return await self._execute_request_json(
+            dataset, params, effective_cache_key, ttl
+        )
+
+    async def _execute_request_json(
+        self,
+        dataset: str,
+        params: dict[str, str] | None,
+        effective_cache_key: str,
+        ttl: int | None,
+    ) -> dict[str, Any]:
+        if self._cache is not None:
+            entry = self._cache.get_entry(effective_cache_key)
+            if entry.status == "fresh":
+                return entry.value
 
         request_params = {
             "Authorization": self._settings.cwa_api_key,
@@ -384,30 +442,64 @@ class CWAAdapter:
             request_params.update(params)
 
         url = f"{self._settings.cwa_base_url}/{dataset}"
-        try:
+
+        async def _do_http() -> dict[str, Any]:
+            if self._client is not None:
+                resp = await self._client.get(url, params=request_params)
+                resp.raise_for_status()
+                return resp.json()
             async with httpx.AsyncClient(timeout=self._settings.upstream_timeout_seconds) as client:
                 resp = await client.get(url, params=request_params)
                 resp.raise_for_status()
-                payload = resp.json()
+                return resp.json()
+
+        try:
+            if self._semaphore is not None:
+                async with self._semaphore:
+                    payload = await _do_http()
+            else:
+                payload = await _do_http()
         except httpx.TimeoutException as exc:
+            if self._cache is not None:
+                stale_entry = self._cache.get_entry(effective_cache_key)
+                if stale_entry.status in ("fresh", "stale") and stale_entry.value:
+                    return stale_entry.value
             raise UpstreamError("CWA request timed out.", error_code="upstream_timeout") from exc
         except httpx.HTTPStatusError as exc:
+            if self._cache is not None:
+                stale_entry = self._cache.get_entry(effective_cache_key)
+                if stale_entry.status in ("fresh", "stale") and stale_entry.value:
+                    return stale_entry.value
             raise UpstreamError(
                 f"CWA request failed: HTTP {exc.response.status_code}",
                 error_code="upstream_http_error",
             ) from exc
         except httpx.HTTPError as exc:
+            if self._cache is not None:
+                stale_entry = self._cache.get_entry(effective_cache_key)
+                if stale_entry.status in ("fresh", "stale") and stale_entry.value:
+                    return stale_entry.value
             raise UpstreamError(
                 f"CWA request failed: {exc}",
                 error_code="upstream_http_error",
             ) from exc
         except ValueError as exc:
+            if self._cache is not None:
+                stale_entry = self._cache.get_entry(effective_cache_key)
+                if stale_entry.status in ("fresh", "stale") and stale_entry.value:
+                    return stale_entry.value
             raise UpstreamError(
                 "CWA returned invalid JSON.",
                 error_code="upstream_invalid_json",
             ) from exc
 
-        self._cache_set(effective_cache_key, payload, ttl)
+        if self._cache is not None:
+            self._cache.set(
+                effective_cache_key,
+                payload,
+                ttl=ttl,
+                stale_retention=self._settings.stale_retention_seconds,
+            )
         return payload
 
     @staticmethod
@@ -629,7 +721,12 @@ class CWAAdapter:
     def _cache_set(self, key: str, value: Any, ttl: int | None) -> None:
         if self._cache is None:
             return
-        self._cache.set(key, value, ttl=ttl)
+        self._cache.set(
+            key,
+            value,
+            ttl=ttl,
+            stale_retention=self._settings.stale_retention_seconds,
+        )
 
     @staticmethod
     def _build_cache_key(dataset: str, params: dict[str, str] | None) -> str:

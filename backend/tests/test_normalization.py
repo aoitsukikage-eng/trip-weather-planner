@@ -836,3 +836,133 @@ def test_rule_based_summary_uses_selected_target_date():
     assert mode == "rule-based"
     assert "7/5" in text
     assert "7/4" not in text
+
+
+@pytest.mark.asyncio
+async def test_cwa_adapter_uses_injected_client_with_mock_transport():
+    import httpx
+
+    called = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal called
+        called += 1
+        assert "A-B0063-001" in str(request.url)
+        return httpx.Response(
+            200,
+            json={"CountyName": "臺北市", "MoonRiseTime": "18:00", "MoonSetTime": "06:00"},
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = CWAAdapter(Settings(cwa_api_key="test-key"), client=client)
+        town = get_town("taipei-xinyi")
+        assert town is not None
+        moon = await adapter.fetch_moon(town, date(2026, 7, 4))
+        assert moon.moonrise_time == "18:00"
+        assert called == 1
+
+
+@pytest.mark.asyncio
+async def test_cwa_adapter_stale_fallback_on_upstream_failure():
+    import httpx
+
+    from app.core.cache import TTLCache
+
+    clock_time = 1000.0
+    cache = TTLCache(default_ttl=60, stale_retention=3600, clock=lambda: clock_time)
+
+    ok_payload = {"CountyName": "臺北市", "MoonRiseTime": "18:00", "MoonSetTime": "06:00"}
+
+    def ok_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=ok_payload)
+
+    transport = httpx.MockTransport(ok_handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = CWAAdapter(
+            Settings(cwa_api_key="test-key"), cache=cache, client=client
+        )
+        town = get_town("taipei-xinyi")
+        assert town is not None
+        moon = await adapter.fetch_moon(town, date(2026, 7, 4))
+        assert moon.moonrise_time == "18:00"
+
+    # Advance clock past fresh TTL
+    clock_time = 1100.0
+
+    def fail_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text="Internal Server Error")
+
+    fail_transport = httpx.MockTransport(fail_handler)
+    async with httpx.AsyncClient(transport=fail_transport) as client:
+        fail_adapter = CWAAdapter(
+            Settings(cwa_api_key="test-key"), cache=cache, client=client
+        )
+        # Should gracefully return stale payload
+        moon2 = await fail_adapter.fetch_moon(town, date(2026, 7, 4))
+        assert moon2.moonrise_time == "18:00"
+
+
+@pytest.mark.asyncio
+async def test_cwa_adapter_single_flight_coalescing():
+    import httpx
+
+    from app.core.cache import AsyncSingleFlight, TTLCache
+
+    call_count = 0
+
+    async def slow_handler(request: httpx.Request) -> httpx.Response:
+        nonlocal call_count
+        call_count += 1
+        await asyncio.sleep(0.05)
+        return httpx.Response(
+            200,
+            json={"CountyName": "臺北市", "MoonRiseTime": "18:00", "MoonSetTime": "06:00"},
+        )
+
+    transport = httpx.MockTransport(slow_handler)
+    cache = TTLCache(default_ttl=60)
+    sf = AsyncSingleFlight()
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = CWAAdapter(
+            Settings(cwa_api_key="test-key"),
+            cache=cache,
+            client=client,
+            single_flight=sf,
+        )
+        town = get_town("taipei-xinyi")
+        assert town is not None
+
+        r1, r2 = await asyncio.gather(
+            adapter.fetch_moon(town, date(2026, 7, 4)),
+            adapter.fetch_moon(town, date(2026, 7, 4)),
+        )
+        assert r1.moonrise_time == "18:00"
+        assert r2.moonrise_time == "18:00"
+        assert call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_cwa_forecast_slices_near_degradation_preserves_daily():
+    town = get_town("taipei-xinyi")
+    assert town is not None
+
+    adapter = CWAAdapter(Settings(cwa_api_key="test-key"))
+
+    async def fake_request_json(dataset: str, **kwargs):  # noqa: ANN001, ANN003
+        if "063" in dataset or "091" in dataset or "071" in dataset or "003" in dataset:
+            return _week_payload()
+        # Near term fails with UpstreamError
+        raise UpstreamError("near term unavailable", error_code="upstream_timeout")
+
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(adapter, "_request_json", fake_request_json)
+
+    slices = await adapter.fetch_forecast_slices(town)
+    # Weekly daily slices must still be present
+    assert len(slices.daily) > 0
+    # Hourly is degraded to empty list
+    assert slices.hourly == []
+    monkeypatch.undo()
