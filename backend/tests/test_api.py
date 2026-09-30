@@ -65,47 +65,34 @@ def test_towns_cover_all_22_divisions():
     cities = {t["city"] for t in body["data"]}
     # All 22 counties/cities of Taiwan must be represented.
     assert len(cities) == 22
-    assert body["meta"]["source"] == "mock"
+    assert body["meta"]["source"] == "local-catalog"
 
 
-def test_towns_live_mode_prefers_full_live_catalog(monkeypatch: pytest.MonkeyPatch):
+def test_towns_use_local_catalog_when_cwa_catalog_scan_fails(
+    monkeypatch: pytest.MonkeyPatch,
+):
     os.environ["CWA_API_KEY"] = "demo-key"
     get_settings.cache_clear()
     app_settings.cwa_api_key = "demo-key"
 
     from app.adapters.cwa import CWAAdapter
 
-    fake_towns = [
-        {
-            "code": f"cwa-{index:05d}",
-            "name": f"測試鄉鎮{index}",
-            "city": "新北市" if index % 2 == 0 else "臺北市",
-            "lat": 25.0 + index * 0.001,
-            "lon": 121.0 + index * 0.001,
-        }
-        for index in range(300)
-    ]
-    fake_towns.append(
-        {
-            "code": "cwa-65000270",
-            "name": "貢寮區",
-            "city": "新北市",
-            "lat": 25.021273,
-            "lon": 121.910293,
-        }
-    )
+    async def fail_fetch_all_towns(self):  # noqa: ARG001
+        raise AssertionError("request path must not scan CWA town datasets")
 
-    async def fake_fetch_all_towns(self):  # noqa: ARG001
-        from app.schemas.weather import Town
-
-        return [Town(**item) for item in fake_towns]
-
-    monkeypatch.setattr(CWAAdapter, "fetch_all_towns", fake_fetch_all_towns)
+    monkeypatch.setattr(CWAAdapter, "fetch_all_towns", fail_fetch_all_towns)
     body = client.get("/api/towns").json()
     assert body["success"] is True
-    assert len(body["data"]) >= 300
-    assert any(item["name"] == "貢寮區" and item["city"] == "新北市" for item in body["data"])
-    assert body["meta"]["source"] == "cwa-live"
+    assert len(body["data"]) >= 368
+    assert all(item["code"].startswith("cwa-") for item in body["data"])
+    assert body["meta"]["source"] == "local-catalog"
+
+    os.environ["CWA_API_KEY"] = ""
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = ""
+    forecast = client.get(f"/api/forecast?town=cwa-63000020&date={_future(0)}")
+    assert forecast.status_code == 200
+    assert forecast.json()["data"]["forecast"]["town"]["code"] == "cwa-63000020"
 
 
 def test_forecast_returns_multiple_days_and_marks_target():

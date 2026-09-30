@@ -11,7 +11,7 @@ from app.adapters.cwa import CWAAdapter
 from app.adapters.moenv import MOENVAdapter
 from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError, UpstreamError
-from app.data.towns import all_towns, get_town
+from app.data.towns import all_towns, canonical_code_for, get_canonical_town, get_town
 from app.i18n.weather_text import LangType
 from app.schemas.common import ApiResponse, Meta
 from app.schemas.weather import (
@@ -53,22 +53,9 @@ async def towns(
     request: Request,
     lang: LangType = Query("zh", description="Language ('zh', 'en', or 'ja')"),  # noqa: B008
 ) -> ApiResponse[list[Town]]:
-    settings = get_settings()
-    cache = request.app.state.cache
-    if settings.use_mock:
-        return ApiResponse[list[Town]](
-            data=all_towns(), meta=_meta(request, source="mock")
-        )
-
-    adapter = CWAAdapter(settings, cache)
-    try:
-        town_list = await adapter.fetch_all_towns()
-        return ApiResponse[list[Town]](data=town_list, meta=_meta(request, source="cwa-live"))
-    except UpstreamError:
-        return ApiResponse[list[Town]](
-            data=all_towns(),
-            meta=_meta(request, source="static-fallback"),
-        )
+    return ApiResponse[list[Town]](
+        data=all_towns(), meta=_meta(request, source="local-catalog")
+    )
 
 
 @router.get("/forecast")
@@ -82,14 +69,9 @@ async def forecast(
     cache = request.app.state.cache
 
     town_obj = get_town(town)
-    if town_obj is None and not settings.use_mock:
-        adapter = CWAAdapter(settings, cache)
-        try:
-            live_towns = await adapter.fetch_all_towns()
-            town_obj = next((item for item in live_towns if item.code == town), None)
-        except UpstreamError:
-            town_obj = None
-    if town_obj is None:
+    canonical_code = canonical_code_for(town)
+    canonical_town = get_canonical_town(town)
+    if town_obj is None or canonical_code is None or canonical_town is None:
         raise NotFoundError(f"Unknown town code: {town}", error_code="unknown_town")
 
     try:
@@ -102,7 +84,7 @@ async def forecast(
             error_code="date_out_of_range",
         )
 
-    cache_key = f"forecast:{town}:{target_date}:{lang}"
+    cache_key = f"forecast:{canonical_code}:{target_date}:{lang}"
     cached = cache.get(cache_key)
     if cached is not None:
         return ApiResponse[ForecastResult](
@@ -110,7 +92,7 @@ async def forecast(
         )
 
     adapter = CWAAdapter(settings, cache)
-    slices = await adapter.fetch_forecast_slices(town_obj)
+    slices = await adapter.fetch_forecast_slices(canonical_town)
     # Return the full week plus the near-term 72h chart data in one response.
     days = trim_daily_to_window(normalize_to_daily(slices.daily, lang=lang), _taipei_today())
     focused_date = target_date
