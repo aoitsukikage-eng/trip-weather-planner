@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 from math import cos, radians, sqrt
 from typing import Any
 
 import httpx
 
-from app.core.cache import TTLCache
+from app.core.cache import AsyncSingleFlight, TTLCache
 from app.core.config import Settings
 from app.core.errors import UpstreamError
 from app.i18n.station_names import get_aqi_station_name_text
@@ -60,8 +61,19 @@ def aqi_level(value: int | None) -> str | None:
 
 
 class MOENVAdapter:
-    def __init__(self, settings: Settings, cache: TTLCache | None = None) -> None:
-        self._settings, self._cache = settings, cache
+    def __init__(
+        self,
+        settings: Settings,
+        cache: TTLCache | None = None,
+        client: httpx.AsyncClient | None = None,
+        single_flight: AsyncSingleFlight | None = None,
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> None:
+        self._settings = settings
+        self._cache = cache
+        self._client = client
+        self._single_flight = single_flight
+        self._semaphore = semaphore
 
     async def fetch_current(self, town: Town, lang: str = "zh") -> AQIInfo | None:
         if self._settings.use_moenv_mock:
@@ -138,22 +150,60 @@ class MOENVAdapter:
 
     async def _request(self, dataset: str) -> list[dict[str, Any]]:
         key = f"moenv:{dataset}"
-        cached = self._cache.get(key) if self._cache else None
-        if cached is not None:
-            return cached
-        try:
+        if self._cache is not None:
+            entry = self._cache.get_entry(key)
+            if entry.status == "fresh":
+                return entry.value
+
+        if self._single_flight is not None:
+            return await self._single_flight.run(
+                key,
+                self._execute_request,
+                dataset,
+                key,
+            )
+        return await self._execute_request(dataset, key)
+
+    async def _execute_request(self, dataset: str, key: str) -> list[dict[str, Any]]:
+        if self._cache is not None:
+            entry = self._cache.get_entry(key)
+            if entry.status == "fresh":
+                return entry.value
+
+        url = f"{self._settings.moenv_base_url}/{dataset}"
+        params = {"api_key": self._settings.moenv_api_key, "format": "JSON"}
+
+        async def _do_http() -> Any:
+            if self._client is not None:
+                resp = await self._client.get(url, params=params)
+                resp.raise_for_status()
+                return resp.json()
             async with httpx.AsyncClient(timeout=self._settings.upstream_timeout_seconds) as client:
-                response = await client.get(
-                    f"{self._settings.moenv_base_url}/{dataset}",
-                    params={"api_key": self._settings.moenv_api_key, "format": "JSON"},
-                )
-                response.raise_for_status()
-                payload = response.json()
+                resp = await client.get(url, params=params)
+                resp.raise_for_status()
+                return resp.json()
+
+        try:
+            if self._semaphore is not None:
+                async with self._semaphore:
+                    payload = await _do_http()
+            else:
+                payload = await _do_http()
         except (httpx.HTTPError, ValueError) as exc:
+            if self._cache is not None:
+                stale_entry = self._cache.get_entry(key)
+                if stale_entry.status in ("fresh", "stale") and stale_entry.value:
+                    return stale_entry.value
             raise UpstreamError("MOENV request failed.", error_code="moenv_upstream_error") from exc
+
         rows = _rows_from_payload(payload)
-        if self._cache:
-            self._cache.set(key, rows, ttl=self._settings.cache_ttl_seconds)
+        if self._cache is not None:
+            self._cache.set(
+                key,
+                rows,
+                ttl=self._settings.cache_ttl_seconds,
+                stale_retention=self._settings.stale_retention_seconds,
+            )
         return rows
 
 

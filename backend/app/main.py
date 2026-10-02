@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
+from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.core.cache import TTLCache
+from app.core.cache import AsyncSingleFlight, TTLCache
 from app.core.config import get_settings
 from app.core.errors import (
     AppError,
@@ -19,6 +22,20 @@ from app.routers import forecast
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    current_settings = get_settings()
+    app.state.upstream_semaphore = asyncio.Semaphore(
+        current_settings.upstream_concurrency_limit
+    )
+    async with httpx.AsyncClient(timeout=current_settings.upstream_timeout_seconds) as client:
+        app.state.http_client = client
+        yield
+        app.state.http_client = None
+        app.state.upstream_semaphore = None
+
+
 app = FastAPI(
     title="Trip Weather Planner API",
     version=__version__,
@@ -28,6 +45,7 @@ app = FastAPI(
         "and adds an AI trip summary. Third-party APIs are proxied server-side; "
         "keys never reach the frontend."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -37,7 +55,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.state.cache = TTLCache(default_ttl=settings.cache_ttl_seconds)
+app.state.cache = TTLCache(
+    default_ttl=settings.cache_ttl_seconds,
+    stale_retention=settings.stale_retention_seconds,
+)
+app.state.single_flight = AsyncSingleFlight()
+app.state.http_client = None
+app.state.upstream_semaphore = None
 
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)

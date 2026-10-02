@@ -1,0 +1,3318 @@
+{
+  "schema_version": 1,
+  "source_url": "https://twp-backend.purplewave-91ee1594.southeastasia.azurecontainerapps.io/api/towns?lang=zh",
+  "towns": [
+    {
+      "code": "cwa-09007010",
+      "name": "南竿鄉",
+      "city": "連江縣",
+      "name_en": "Nangan Township",
+      "city_en": "Lienchiang County",
+      "lat": 26.154204,
+      "lon": 119.929303
+    },
+    {
+      "code": "cwa-09007020",
+      "name": "北竿鄉",
+      "city": "連江縣",
+      "name_en": "Beigan Township",
+      "city_en": "Lienchiang County",
+      "lat": 26.226921,
+      "lon": 119.988516
+    },
+    {
+      "code": "cwa-09007030",
+      "name": "莒光鄉",
+      "city": "連江縣",
+      "name_en": "Juguang Township",
+      "city_en": "Lienchiang County",
+      "lat": 25.973551,
+      "lon": 119.924587
+    },
+    {
+      "code": "cwa-09007040",
+      "name": "東引鄉",
+      "city": "連江縣",
+      "name_en": "Dongyin Township",
+      "city_en": "Lienchiang County",
+      "lat": 26.369152,
+      "lon": 120.48158
+    },
+    {
+      "code": "cwa-09020010",
+      "name": "金城鎮",
+      "city": "金門縣",
+      "name_en": "Jincheng Township",
+      "city_en": "Kinmen County",
+      "lat": 24.434365,
+      "lon": 118.312425
+    },
+    {
+      "code": "cwa-09020020",
+      "name": "金沙鎮",
+      "city": "金門縣",
+      "name_en": "Jinsha Township",
+      "city_en": "Kinmen County",
+      "lat": 24.490563,
+      "lon": 118.404955
+    },
+    {
+      "code": "cwa-09020030",
+      "name": "金湖鎮",
+      "city": "金門縣",
+      "name_en": "Jinhu Township",
+      "city_en": "Kinmen County",
+      "lat": 24.443039,
+      "lon": 118.40891
+    },
+    {
+      "code": "cwa-09020040",
+      "name": "金寧鄉",
+      "city": "金門縣",
+      "name_en": "Jinning Township",
+      "city_en": "Kinmen County",
+      "lat": 24.452557,
+      "lon": 118.326696
+    },
+    {
+      "code": "cwa-09020050",
+      "name": "烈嶼鄉",
+      "city": "金門縣",
+      "name_en": "Lieyu Township",
+      "city_en": "Kinmen County",
+      "lat": 24.431151,
+      "lon": 118.236334
+    },
+    {
+      "code": "cwa-09020060",
+      "name": "烏坵鄉",
+      "city": "金門縣",
+      "name_en": "Wuchiou Township",
+      "city_en": "Kinmen County",
+      "lat": 24.992845,
+      "lon": 119.445975
+    },
+    {
+      "code": "cwa-10002010",
+      "name": "宜蘭市",
+      "city": "宜蘭縣",
+      "name_en": "Yilan City",
+      "city_en": "Yilan County",
+      "lat": 24.753707,
+      "lon": 121.745083
+    },
+    {
+      "code": "cwa-10002020",
+      "name": "羅東鎮",
+      "city": "宜蘭縣",
+      "name_en": "Luodong Township",
+      "city_en": "Yilan County",
+      "lat": 24.678673,
+      "lon": 121.758763
+    },
+    {
+      "code": "cwa-10002030",
+      "name": "蘇澳鎮",
+      "city": "宜蘭縣",
+      "name_en": "Suao Township",
+      "city_en": "Yilan County",
+      "lat": 24.596231,
+      "lon": 121.833838
+    },
+    {
+      "code": "cwa-10002040",
+      "name": "頭城鎮",
+      "city": "宜蘭縣",
+      "name_en": "Toucheng Township",
+      "city_en": "Yilan County",
+      "lat": 24.861073,
+      "lon": 121.815263
+    },
+    {
+      "code": "cwa-10002050",
+      "name": "礁溪鄉",
+      "city": "宜蘭縣",
+      "name_en": "Jiaoxi Township",
+      "city_en": "Yilan County",
+      "lat": 24.825321,
+      "lon": 121.763169
+    },
+    {
+      "code": "cwa-10002060",
+      "name": "壯圍鄉",
+      "city": "宜蘭縣",
+      "name_en": "Zhuangwei Township",
+      "city_en": "Yilan County",
+      "lat": 24.748707,
+      "lon": 121.777413
+    },
+    {
+      "code": "cwa-10002070",
+      "name": "員山鄉",
+      "city": "宜蘭縣",
+      "name_en": "Yuanshan Township",
+      "city_en": "Yilan County",
+      "lat": 24.74527,
+      "lon": 121.715123
+    },
+    {
+      "code": "cwa-10002080",
+      "name": "冬山鄉",
+      "city": "宜蘭縣",
+      "name_en": "Dongshan Township",
+      "city_en": "Yilan County",
+      "lat": 24.636322,
+      "lon": 121.784015
+    },
+    {
+      "code": "cwa-10002090",
+      "name": "五結鄉",
+      "city": "宜蘭縣",
+      "name_en": "Wujie Township",
+      "city_en": "Yilan County",
+      "lat": 24.686573,
+      "lon": 121.790085
+    },
+    {
+      "code": "cwa-10002100",
+      "name": "三星鄉",
+      "city": "宜蘭縣",
+      "name_en": "Sanxing Township",
+      "city_en": "Yilan County",
+      "lat": 24.667367,
+      "lon": 121.645667
+    },
+    {
+      "code": "cwa-10002110",
+      "name": "大同鄉",
+      "city": "宜蘭縣",
+      "name_en": "Datong Township",
+      "city_en": "Yilan County",
+      "lat": 24.679025,
+      "lon": 121.601058
+    },
+    {
+      "code": "cwa-10002120",
+      "name": "南澳鄉",
+      "city": "宜蘭縣",
+      "name_en": "Nanao Township",
+      "city_en": "Yilan County",
+      "lat": 24.467879,
+      "lon": 121.795907
+    },
+    {
+      "code": "cwa-10004010",
+      "name": "竹北市",
+      "city": "新竹縣",
+      "name_en": "Zhubei City",
+      "city_en": "Hsinchu County",
+      "lat": 24.841245,
+      "lon": 120.995698
+    },
+    {
+      "code": "cwa-10004020",
+      "name": "竹東鎮",
+      "city": "新竹縣",
+      "name_en": "Zhudong Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.738498,
+      "lon": 121.083537
+    },
+    {
+      "code": "cwa-10004030",
+      "name": "新埔鎮",
+      "city": "新竹縣",
+      "name_en": "Xinpu Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.829658,
+      "lon": 121.06309
+    },
+    {
+      "code": "cwa-10004040",
+      "name": "關西鎮",
+      "city": "新竹縣",
+      "name_en": "Guanxi Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.794171,
+      "lon": 121.167608
+    },
+    {
+      "code": "cwa-10004050",
+      "name": "湖口鄉",
+      "city": "新竹縣",
+      "name_en": "Hukou Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.902694,
+      "lon": 121.039799
+    },
+    {
+      "code": "cwa-10004060",
+      "name": "新豐鄉",
+      "city": "新竹縣",
+      "name_en": "Xinfeng Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.902527,
+      "lon": 120.977255
+    },
+    {
+      "code": "cwa-10004070",
+      "name": "芎林鄉",
+      "city": "新竹縣",
+      "name_en": "Qionglin Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.775089,
+      "lon": 121.073659
+    },
+    {
+      "code": "cwa-10004080",
+      "name": "橫山鄉",
+      "city": "新竹縣",
+      "name_en": "Hengshan Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.718599,
+      "lon": 121.133287
+    },
+    {
+      "code": "cwa-10004090",
+      "name": "北埔鄉",
+      "city": "新竹縣",
+      "name_en": "Beipu Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.703729,
+      "lon": 121.048234
+    },
+    {
+      "code": "cwa-10004100",
+      "name": "寶山鄉",
+      "city": "新竹縣",
+      "name_en": "Baoshan Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.767367,
+      "lon": 120.982971
+    },
+    {
+      "code": "cwa-10004110",
+      "name": "峨眉鄉",
+      "city": "新竹縣",
+      "name_en": "Emei Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.69053,
+      "lon": 121.011373
+    },
+    {
+      "code": "cwa-10004120",
+      "name": "尖石鄉",
+      "city": "新竹縣",
+      "name_en": "Jianshi Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.706998,
+      "lon": 121.193279
+    },
+    {
+      "code": "cwa-10004130",
+      "name": "五峰鄉",
+      "city": "新竹縣",
+      "name_en": "Wufeng Township",
+      "city_en": "Hsinchu County",
+      "lat": 24.633917,
+      "lon": 121.111359
+    },
+    {
+      "code": "cwa-10005010",
+      "name": "苗栗市",
+      "city": "苗栗縣",
+      "name_en": "Miaoli City",
+      "city_en": "Miaoli County",
+      "lat": 24.563327,
+      "lon": 120.81097
+    },
+    {
+      "code": "cwa-10005020",
+      "name": "苑裡鎮",
+      "city": "苗栗縣",
+      "name_en": "Yuanli Township",
+      "city_en": "Miaoli County",
+      "lat": 24.441421,
+      "lon": 120.644959
+    },
+    {
+      "code": "cwa-10005030",
+      "name": "通霄鎮",
+      "city": "苗栗縣",
+      "name_en": "Tongxiao Township",
+      "city_en": "Miaoli County",
+      "lat": 24.493071,
+      "lon": 120.676106
+    },
+    {
+      "code": "cwa-10005040",
+      "name": "竹南鎮",
+      "city": "苗栗縣",
+      "name_en": "Zhunan Township",
+      "city_en": "Miaoli County",
+      "lat": 24.685651,
+      "lon": 120.865292
+    },
+    {
+      "code": "cwa-10005050",
+      "name": "頭份市",
+      "city": "苗栗縣",
+      "name_en": "Toufen City",
+      "city_en": "Miaoli County",
+      "lat": 24.687917,
+      "lon": 120.904766
+    },
+    {
+      "code": "cwa-10005060",
+      "name": "後龍鎮",
+      "city": "苗栗縣",
+      "name_en": "Houlong Township",
+      "city_en": "Miaoli County",
+      "lat": 24.615428,
+      "lon": 120.783847
+    },
+    {
+      "code": "cwa-10005070",
+      "name": "卓蘭鎮",
+      "city": "苗栗縣",
+      "name_en": "Zhuolan Township",
+      "city_en": "Miaoli County",
+      "lat": 24.314649,
+      "lon": 120.816396
+    },
+    {
+      "code": "cwa-10005080",
+      "name": "大湖鄉",
+      "city": "苗栗縣",
+      "name_en": "Dahu Township",
+      "city_en": "Miaoli County",
+      "lat": 24.425185,
+      "lon": 120.857997
+    },
+    {
+      "code": "cwa-10005090",
+      "name": "公館鄉",
+      "city": "苗栗縣",
+      "name_en": "Gongguan Township",
+      "city_en": "Miaoli County",
+      "lat": 24.507572,
+      "lon": 120.820309
+    },
+    {
+      "code": "cwa-10005100",
+      "name": "銅鑼鄉",
+      "city": "苗栗縣",
+      "name_en": "Tongluo Township",
+      "city_en": "Miaoli County",
+      "lat": 24.488751,
+      "lon": 120.779668
+    },
+    {
+      "code": "cwa-10005110",
+      "name": "南庄鄉",
+      "city": "苗栗縣",
+      "name_en": "Nanzhuang Township",
+      "city_en": "Miaoli County",
+      "lat": 24.598865,
+      "lon": 120.992181
+    },
+    {
+      "code": "cwa-10005120",
+      "name": "頭屋鄉",
+      "city": "苗栗縣",
+      "name_en": "Touwu Township",
+      "city_en": "Miaoli County",
+      "lat": 24.579517,
+      "lon": 120.842914
+    },
+    {
+      "code": "cwa-10005130",
+      "name": "三義鄉",
+      "city": "苗栗縣",
+      "name_en": "Sanyi Township",
+      "city_en": "Miaoli County",
+      "lat": 24.414619,
+      "lon": 120.762009
+    },
+    {
+      "code": "cwa-10005140",
+      "name": "西湖鄉",
+      "city": "苗栗縣",
+      "name_en": "Xihu Township",
+      "city_en": "Miaoli County",
+      "lat": 24.558384,
+      "lon": 120.749169
+    },
+    {
+      "code": "cwa-10005150",
+      "name": "造橋鄉",
+      "city": "苗栗縣",
+      "name_en": "Zaoqiao Township",
+      "city_en": "Miaoli County",
+      "lat": 24.640182,
+      "lon": 120.857273
+    },
+    {
+      "code": "cwa-10005160",
+      "name": "三灣鄉",
+      "city": "苗栗縣",
+      "name_en": "Sanwan Township",
+      "city_en": "Miaoli County",
+      "lat": 24.654906,
+      "lon": 120.948627
+    },
+    {
+      "code": "cwa-10005170",
+      "name": "獅潭鄉",
+      "city": "苗栗縣",
+      "name_en": "Shitan Township",
+      "city_en": "Miaoli County",
+      "lat": 24.541316,
+      "lon": 120.9119
+    },
+    {
+      "code": "cwa-10005180",
+      "name": "泰安鄉",
+      "city": "苗栗縣",
+      "name_en": "Taian Township",
+      "city_en": "Miaoli County",
+      "lat": 24.448973,
+      "lon": 120.899784
+    },
+    {
+      "code": "cwa-10007010",
+      "name": "彰化市",
+      "city": "彰化縣",
+      "name_en": "Zhanghua City",
+      "city_en": "Changhua County",
+      "lat": 24.082575,
+      "lon": 120.534059
+    },
+    {
+      "code": "cwa-10007020",
+      "name": "鹿港鎮",
+      "city": "彰化縣",
+      "name_en": "Lugang Township",
+      "city_en": "Changhua County",
+      "lat": 24.058958,
+      "lon": 120.426901
+    },
+    {
+      "code": "cwa-10007030",
+      "name": "和美鎮",
+      "city": "彰化縣",
+      "name_en": "Hemei Township",
+      "city_en": "Changhua County",
+      "lat": 24.110231,
+      "lon": 120.486077
+    },
+    {
+      "code": "cwa-10007040",
+      "name": "線西鄉",
+      "city": "彰化縣",
+      "name_en": "Xianxi Township",
+      "city_en": "Changhua County",
+      "lat": 24.132324,
+      "lon": 120.46258
+    },
+    {
+      "code": "cwa-10007050",
+      "name": "伸港鄉",
+      "city": "彰化縣",
+      "name_en": "Shengang Township",
+      "city_en": "Changhua County",
+      "lat": 24.161568,
+      "lon": 120.478036
+    },
+    {
+      "code": "cwa-10007060",
+      "name": "福興鄉",
+      "city": "彰化縣",
+      "name_en": "Fuxing Township",
+      "city_en": "Changhua County",
+      "lat": 24.049723,
+      "lon": 120.43572
+    },
+    {
+      "code": "cwa-10007070",
+      "name": "秀水鄉",
+      "city": "彰化縣",
+      "name_en": "Xiushui Township",
+      "city_en": "Changhua County",
+      "lat": 24.037015,
+      "lon": 120.494706
+    },
+    {
+      "code": "cwa-10007080",
+      "name": "花壇鄉",
+      "city": "彰化縣",
+      "name_en": "Huatan Township",
+      "city_en": "Changhua County",
+      "lat": 24.031358,
+      "lon": 120.530105
+    },
+    {
+      "code": "cwa-10007090",
+      "name": "芬園鄉",
+      "city": "彰化縣",
+      "name_en": "Fenyuan Township",
+      "city_en": "Changhua County",
+      "lat": 24.015384,
+      "lon": 120.620811
+    },
+    {
+      "code": "cwa-10007100",
+      "name": "員林市",
+      "city": "彰化縣",
+      "name_en": "Yuanlin City",
+      "city_en": "Changhua County",
+      "lat": 23.960809,
+      "lon": 120.566222
+    },
+    {
+      "code": "cwa-10007110",
+      "name": "溪湖鎮",
+      "city": "彰化縣",
+      "name_en": "Xihu Township",
+      "city_en": "Changhua County",
+      "lat": 23.967903,
+      "lon": 120.475412
+    },
+    {
+      "code": "cwa-10007120",
+      "name": "田中鎮",
+      "city": "彰化縣",
+      "name_en": "Tianzhong Township",
+      "city_en": "Changhua County",
+      "lat": 23.863241,
+      "lon": 120.572807
+    },
+    {
+      "code": "cwa-10007130",
+      "name": "大村鄉",
+      "city": "彰化縣",
+      "name_en": "Dacun Township",
+      "city_en": "Changhua County",
+      "lat": 23.995175,
+      "lon": 120.539115
+    },
+    {
+      "code": "cwa-10007140",
+      "name": "埔鹽鄉",
+      "city": "彰化縣",
+      "name_en": "Puyan Township",
+      "city_en": "Changhua County",
+      "lat": 24.002038,
+      "lon": 120.455432
+    },
+    {
+      "code": "cwa-10007150",
+      "name": "埔心鄉",
+      "city": "彰化縣",
+      "name_en": "Puxin Township",
+      "city_en": "Changhua County",
+      "lat": 23.954739,
+      "lon": 120.53539
+    },
+    {
+      "code": "cwa-10007160",
+      "name": "永靖鄉",
+      "city": "彰化縣",
+      "name_en": "Yongjing Township",
+      "city_en": "Changhua County",
+      "lat": 23.926423,
+      "lon": 120.539588
+    },
+    {
+      "code": "cwa-10007170",
+      "name": "社頭鄉",
+      "city": "彰化縣",
+      "name_en": "Shetou Township",
+      "city_en": "Changhua County",
+      "lat": 23.898478,
+      "lon": 120.577712
+    },
+    {
+      "code": "cwa-10007180",
+      "name": "二水鄉",
+      "city": "彰化縣",
+      "name_en": "Ershui Township",
+      "city_en": "Changhua County",
+      "lat": 23.808358,
+      "lon": 120.610779
+    },
+    {
+      "code": "cwa-10007190",
+      "name": "北斗鎮",
+      "city": "彰化縣",
+      "name_en": "Beidou Township",
+      "city_en": "Changhua County",
+      "lat": 23.863301,
+      "lon": 120.513686
+    },
+    {
+      "code": "cwa-10007200",
+      "name": "二林鎮",
+      "city": "彰化縣",
+      "name_en": "Erlin Township",
+      "city_en": "Changhua County",
+      "lat": 23.90147,
+      "lon": 120.366228
+    },
+    {
+      "code": "cwa-10007210",
+      "name": "田尾鄉",
+      "city": "彰化縣",
+      "name_en": "Tianwei Township",
+      "city_en": "Changhua County",
+      "lat": 23.893948,
+      "lon": 120.5178
+    },
+    {
+      "code": "cwa-10007220",
+      "name": "埤頭鄉",
+      "city": "彰化縣",
+      "name_en": "Bitou Township",
+      "city_en": "Changhua County",
+      "lat": 23.893303,
+      "lon": 120.45404
+    },
+    {
+      "code": "cwa-10007230",
+      "name": "芳苑鄉",
+      "city": "彰化縣",
+      "name_en": "Fangyuan Township",
+      "city_en": "Changhua County",
+      "lat": 23.926058,
+      "lon": 120.312202
+    },
+    {
+      "code": "cwa-10007240",
+      "name": "大城鄉",
+      "city": "彰化縣",
+      "name_en": "Dacheng Township",
+      "city_en": "Changhua County",
+      "lat": 23.854033,
+      "lon": 120.31281
+    },
+    {
+      "code": "cwa-10007250",
+      "name": "竹塘鄉",
+      "city": "彰化縣",
+      "name_en": "Zhutang Township",
+      "city_en": "Changhua County",
+      "lat": 23.862199,
+      "lon": 120.419721
+    },
+    {
+      "code": "cwa-10007260",
+      "name": "溪州鄉",
+      "city": "彰化縣",
+      "name_en": "Xizhou Township",
+      "city_en": "Changhua County",
+      "lat": 23.853448,
+      "lon": 120.490937
+    },
+    {
+      "code": "cwa-10008010",
+      "name": "南投市",
+      "city": "南投縣",
+      "name_en": "Nantou City",
+      "city_en": "Nantou County",
+      "lat": 23.913301,
+      "lon": 120.679244
+    },
+    {
+      "code": "cwa-10008020",
+      "name": "埔里鎮",
+      "city": "南投縣",
+      "name_en": "Puli Township",
+      "city_en": "Nantou County",
+      "lat": 23.968308,
+      "lon": 120.961063
+    },
+    {
+      "code": "cwa-10008030",
+      "name": "草屯鎮",
+      "city": "南投縣",
+      "name_en": "Caotun Township",
+      "city_en": "Nantou County",
+      "lat": 23.975548,
+      "lon": 120.672118
+    },
+    {
+      "code": "cwa-10008040",
+      "name": "竹山鎮",
+      "city": "南投縣",
+      "name_en": "Zhushan Township",
+      "city_en": "Nantou County",
+      "lat": 23.759415,
+      "lon": 120.663294
+    },
+    {
+      "code": "cwa-10008050",
+      "name": "集集鎮",
+      "city": "南投縣",
+      "name_en": "Jiji Township",
+      "city_en": "Nantou County",
+      "lat": 23.830193,
+      "lon": 120.778403
+    },
+    {
+      "code": "cwa-10008060",
+      "name": "名間鄉",
+      "city": "南投縣",
+      "name_en": "Mingjian Township",
+      "city_en": "Nantou County",
+      "lat": 23.840067,
+      "lon": 120.694926
+    },
+    {
+      "code": "cwa-10008070",
+      "name": "鹿谷鄉",
+      "city": "南投縣",
+      "name_en": "Lugu Township",
+      "city_en": "Nantou County",
+      "lat": 23.747354,
+      "lon": 120.745441
+    },
+    {
+      "code": "cwa-10008080",
+      "name": "中寮鄉",
+      "city": "南投縣",
+      "name_en": "Zhongliao Township",
+      "city_en": "Nantou County",
+      "lat": 23.880736,
+      "lon": 120.758025
+    },
+    {
+      "code": "cwa-10008090",
+      "name": "魚池鄉",
+      "city": "南投縣",
+      "name_en": "Yuchi Township",
+      "city_en": "Nantou County",
+      "lat": 23.897526,
+      "lon": 120.927501
+    },
+    {
+      "code": "cwa-10008100",
+      "name": "國姓鄉",
+      "city": "南投縣",
+      "name_en": "Guoxing Township",
+      "city_en": "Nantou County",
+      "lat": 24.04186,
+      "lon": 120.849273
+    },
+    {
+      "code": "cwa-10008110",
+      "name": "水里鄉",
+      "city": "南投縣",
+      "name_en": "Shuili Township",
+      "city_en": "Nantou County",
+      "lat": 23.813071,
+      "lon": 120.847774
+    },
+    {
+      "code": "cwa-10008120",
+      "name": "信義鄉",
+      "city": "南投縣",
+      "name_en": "Xinyi Township",
+      "city_en": "Nantou County",
+      "lat": 23.698586,
+      "lon": 120.846435
+    },
+    {
+      "code": "cwa-10008130",
+      "name": "仁愛鄉",
+      "city": "南投縣",
+      "name_en": "Renai Township",
+      "city_en": "Nantou County",
+      "lat": 24.023225,
+      "lon": 121.124146
+    },
+    {
+      "code": "cwa-10009010",
+      "name": "斗六市",
+      "city": "雲林縣",
+      "name_en": "Douliu City",
+      "city_en": "Yunlin County",
+      "lat": 23.698834,
+      "lon": 120.518874
+    },
+    {
+      "code": "cwa-10009020",
+      "name": "斗南鎮",
+      "city": "雲林縣",
+      "name_en": "Dounan Township",
+      "city_en": "Yunlin County",
+      "lat": 23.681731,
+      "lon": 120.469515
+    },
+    {
+      "code": "cwa-10009030",
+      "name": "虎尾鎮",
+      "city": "雲林縣",
+      "name_en": "Huwei Township",
+      "city_en": "Yunlin County",
+      "lat": 23.71,
+      "lon": 120.437174
+    },
+    {
+      "code": "cwa-10009040",
+      "name": "西螺鎮",
+      "city": "雲林縣",
+      "name_en": "Xiluo Township",
+      "city_en": "Yunlin County",
+      "lat": 23.799496,
+      "lon": 120.457501
+    },
+    {
+      "code": "cwa-10009050",
+      "name": "土庫鎮",
+      "city": "雲林縣",
+      "name_en": "Tuku Township",
+      "city_en": "Yunlin County",
+      "lat": 23.679602,
+      "lon": 120.384316
+    },
+    {
+      "code": "cwa-10009060",
+      "name": "北港鎮",
+      "city": "雲林縣",
+      "name_en": "Beigang Township",
+      "city_en": "Yunlin County",
+      "lat": 23.577747,
+      "lon": 120.294269
+    },
+    {
+      "code": "cwa-10009070",
+      "name": "古坑鄉",
+      "city": "雲林縣",
+      "name_en": "Gukeng Township",
+      "city_en": "Yunlin County",
+      "lat": 23.644554,
+      "lon": 120.553893
+    },
+    {
+      "code": "cwa-10009080",
+      "name": "大埤鄉",
+      "city": "雲林縣",
+      "name_en": "Dabi Township",
+      "city_en": "Yunlin County",
+      "lat": 23.647544,
+      "lon": 120.423228
+    },
+    {
+      "code": "cwa-10009090",
+      "name": "莿桐鄉",
+      "city": "雲林縣",
+      "name_en": "Citong Township",
+      "city_en": "Yunlin County",
+      "lat": 23.762786,
+      "lon": 120.494331
+    },
+    {
+      "code": "cwa-10009100",
+      "name": "林內鄉",
+      "city": "雲林縣",
+      "name_en": "Linnei Township",
+      "city_en": "Yunlin County",
+      "lat": 23.757916,
+      "lon": 120.60475
+    },
+    {
+      "code": "cwa-10009110",
+      "name": "二崙鄉",
+      "city": "雲林縣",
+      "name_en": "Erlun Township",
+      "city_en": "Yunlin County",
+      "lat": 23.772884,
+      "lon": 120.404695
+    },
+    {
+      "code": "cwa-10009120",
+      "name": "崙背鄉",
+      "city": "雲林縣",
+      "name_en": "Lunbei Township",
+      "city_en": "Yunlin County",
+      "lat": 23.764182,
+      "lon": 120.350987
+    },
+    {
+      "code": "cwa-10009130",
+      "name": "麥寮鄉",
+      "city": "雲林縣",
+      "name_en": "Mailiao Township",
+      "city_en": "Yunlin County",
+      "lat": 23.755569,
+      "lon": 120.243504
+    },
+    {
+      "code": "cwa-10009140",
+      "name": "東勢鄉",
+      "city": "雲林縣",
+      "name_en": "Dongshi Township",
+      "city_en": "Yunlin County",
+      "lat": 23.676784,
+      "lon": 120.244478
+    },
+    {
+      "code": "cwa-10009150",
+      "name": "褒忠鄉",
+      "city": "雲林縣",
+      "name_en": "Baozhong Township",
+      "city_en": "Yunlin County",
+      "lat": 23.692847,
+      "lon": 120.295255
+    },
+    {
+      "code": "cwa-10009160",
+      "name": "臺西鄉",
+      "city": "雲林縣",
+      "name_en": "Taixi Township",
+      "city_en": "Yunlin County",
+      "lat": 23.702154,
+      "lon": 120.188699
+    },
+    {
+      "code": "cwa-10009170",
+      "name": "元長鄉",
+      "city": "雲林縣",
+      "name_en": "Yuanchang Township",
+      "city_en": "Yunlin County",
+      "lat": 23.651429,
+      "lon": 120.307024
+    },
+    {
+      "code": "cwa-10009180",
+      "name": "四湖鄉",
+      "city": "雲林縣",
+      "name_en": "Sihu Township",
+      "city_en": "Yunlin County",
+      "lat": 23.639901,
+      "lon": 120.216314
+    },
+    {
+      "code": "cwa-10009190",
+      "name": "口湖鄉",
+      "city": "雲林縣",
+      "name_en": "Kouhu Township",
+      "city_en": "Yunlin County",
+      "lat": 23.584236,
+      "lon": 120.177328
+    },
+    {
+      "code": "cwa-10009200",
+      "name": "水林鄉",
+      "city": "雲林縣",
+      "name_en": "Shuilin Township",
+      "city_en": "Yunlin County",
+      "lat": 23.574572,
+      "lon": 120.237993
+    },
+    {
+      "code": "cwa-10010010",
+      "name": "太保市",
+      "city": "嘉義縣",
+      "name_en": "Taibao City",
+      "city_en": "Chiayi County",
+      "lat": 23.460227,
+      "lon": 120.323988
+    },
+    {
+      "code": "cwa-10010020",
+      "name": "朴子市",
+      "city": "嘉義縣",
+      "name_en": "Puzi City",
+      "city_en": "Chiayi County",
+      "lat": 23.459889,
+      "lon": 120.23784
+    },
+    {
+      "code": "cwa-10010030",
+      "name": "布袋鎮",
+      "city": "嘉義縣",
+      "name_en": "Budai Township",
+      "city_en": "Chiayi County",
+      "lat": 23.379781,
+      "lon": 120.158836
+    },
+    {
+      "code": "cwa-10010040",
+      "name": "大林鎮",
+      "city": "嘉義縣",
+      "name_en": "Dalin Township",
+      "city_en": "Chiayi County",
+      "lat": 23.605679,
+      "lon": 120.463049
+    },
+    {
+      "code": "cwa-10010050",
+      "name": "民雄鄉",
+      "city": "嘉義縣",
+      "name_en": "Minxueng Township",
+      "city_en": "Chiayi County",
+      "lat": 23.553198,
+      "lon": 120.420388
+    },
+    {
+      "code": "cwa-10010060",
+      "name": "溪口鄉",
+      "city": "嘉義縣",
+      "name_en": "Xikou Township",
+      "city_en": "Chiayi County",
+      "lat": 23.604306,
+      "lon": 120.384186
+    },
+    {
+      "code": "cwa-10010070",
+      "name": "新港鄉",
+      "city": "嘉義縣",
+      "name_en": "Xingang Township",
+      "city_en": "Chiayi County",
+      "lat": 23.553823,
+      "lon": 120.33934
+    },
+    {
+      "code": "cwa-10010080",
+      "name": "六腳鄉",
+      "city": "嘉義縣",
+      "name_en": "Liujiao Township",
+      "city_en": "Chiayi County",
+      "lat": 23.494917,
+      "lon": 120.283644
+    },
+    {
+      "code": "cwa-10010090",
+      "name": "東石鄉",
+      "city": "嘉義縣",
+      "name_en": "Dongshi Township",
+      "city_en": "Chiayi County",
+      "lat": 23.460549,
+      "lon": 120.145574
+    },
+    {
+      "code": "cwa-10010100",
+      "name": "義竹鄉",
+      "city": "嘉義縣",
+      "name_en": "Yizhu Township",
+      "city_en": "Chiayi County",
+      "lat": 23.337966,
+      "lon": 120.23518
+    },
+    {
+      "code": "cwa-10010110",
+      "name": "鹿草鄉",
+      "city": "嘉義縣",
+      "name_en": "Lucao Township",
+      "city_en": "Chiayi County",
+      "lat": 23.413119,
+      "lon": 120.300134
+    },
+    {
+      "code": "cwa-10010120",
+      "name": "水上鄉",
+      "city": "嘉義縣",
+      "name_en": "Shuishang Township",
+      "city_en": "Chiayi County",
+      "lat": 23.430202,
+      "lon": 120.390069
+    },
+    {
+      "code": "cwa-10010130",
+      "name": "中埔鄉",
+      "city": "嘉義縣",
+      "name_en": "Zhongpu Township",
+      "city_en": "Chiayi County",
+      "lat": 23.426784,
+      "lon": 120.514834
+    },
+    {
+      "code": "cwa-10010140",
+      "name": "竹崎鄉",
+      "city": "嘉義縣",
+      "name_en": "Zhuqi Township",
+      "city_en": "Chiayi County",
+      "lat": 23.524746,
+      "lon": 120.54327
+    },
+    {
+      "code": "cwa-10010150",
+      "name": "梅山鄉",
+      "city": "嘉義縣",
+      "name_en": "Meishan Township",
+      "city_en": "Chiayi County",
+      "lat": 23.586663,
+      "lon": 120.547613
+    },
+    {
+      "code": "cwa-10010160",
+      "name": "番路鄉",
+      "city": "嘉義縣",
+      "name_en": "Fanlu Township",
+      "city_en": "Chiayi County",
+      "lat": 23.466256,
+      "lon": 120.54595
+    },
+    {
+      "code": "cwa-10010170",
+      "name": "大埔鄉",
+      "city": "嘉義縣",
+      "name_en": "Dapu Township",
+      "city_en": "Chiayi County",
+      "lat": 23.296602,
+      "lon": 120.585649
+    },
+    {
+      "code": "cwa-10010180",
+      "name": "阿里山鄉",
+      "city": "嘉義縣",
+      "name_en": "Alishan Township",
+      "city_en": "Chiayi County",
+      "lat": 23.473192,
+      "lon": 120.70533
+    },
+    {
+      "code": "cwa-10013010",
+      "name": "屏東市",
+      "city": "屏東縣",
+      "name_en": "Pingtung City",
+      "city_en": "Pingtung County",
+      "lat": 22.664236,
+      "lon": 120.483389
+    },
+    {
+      "code": "cwa-10013020",
+      "name": "潮州鎮",
+      "city": "屏東縣",
+      "name_en": "Chaozhou Township",
+      "city_en": "Pingtung County",
+      "lat": 22.551628,
+      "lon": 120.534887
+    },
+    {
+      "code": "cwa-10013030",
+      "name": "東港鎮",
+      "city": "屏東縣",
+      "name_en": "Donggang Township",
+      "city_en": "Pingtung County",
+      "lat": 22.468431,
+      "lon": 120.446219
+    },
+    {
+      "code": "cwa-10013040",
+      "name": "恆春鎮",
+      "city": "屏東縣",
+      "name_en": "Hengchun Township",
+      "city_en": "Pingtung County",
+      "lat": 22.00562,
+      "lon": 120.739267
+    },
+    {
+      "code": "cwa-10013050",
+      "name": "萬丹鄉",
+      "city": "屏東縣",
+      "name_en": "Wandan Township",
+      "city_en": "Pingtung County",
+      "lat": 22.591255,
+      "lon": 120.477053
+    },
+    {
+      "code": "cwa-10013060",
+      "name": "長治鄉",
+      "city": "屏東縣",
+      "name_en": "Changzhi Township",
+      "city_en": "Pingtung County",
+      "lat": 22.678252,
+      "lon": 120.519151
+    },
+    {
+      "code": "cwa-10013070",
+      "name": "麟洛鄉",
+      "city": "屏東縣",
+      "name_en": "Linluo Township",
+      "city_en": "Pingtung County",
+      "lat": 22.652337,
+      "lon": 120.519039
+    },
+    {
+      "code": "cwa-10013080",
+      "name": "九如鄉",
+      "city": "屏東縣",
+      "name_en": "Jiuru Township",
+      "city_en": "Pingtung County",
+      "lat": 22.742028,
+      "lon": 120.482341
+    },
+    {
+      "code": "cwa-10013090",
+      "name": "里港鄉",
+      "city": "屏東縣",
+      "name_en": "Ligang Township",
+      "city_en": "Pingtung County",
+      "lat": 22.780915,
+      "lon": 120.486413
+    },
+    {
+      "code": "cwa-10013100",
+      "name": "鹽埔鄉",
+      "city": "屏東縣",
+      "name_en": "Yanpu Township",
+      "city_en": "Pingtung County",
+      "lat": 22.75619,
+      "lon": 120.564632
+    },
+    {
+      "code": "cwa-10013110",
+      "name": "高樹鄉",
+      "city": "屏東縣",
+      "name_en": "Gaoshu Township",
+      "city_en": "Pingtung County",
+      "lat": 22.828307,
+      "lon": 120.592252
+    },
+    {
+      "code": "cwa-10013120",
+      "name": "萬巒鄉",
+      "city": "屏東縣",
+      "name_en": "Wanluan Township",
+      "city_en": "Pingtung County",
+      "lat": 22.574483,
+      "lon": 120.559724
+    },
+    {
+      "code": "cwa-10013130",
+      "name": "內埔鄉",
+      "city": "屏東縣",
+      "name_en": "Neipu Township",
+      "city_en": "Pingtung County",
+      "lat": 22.613822,
+      "lon": 120.558674
+    },
+    {
+      "code": "cwa-10013140",
+      "name": "竹田鄉",
+      "city": "屏東縣",
+      "name_en": "Zhutian Township",
+      "city_en": "Pingtung County",
+      "lat": 22.586459,
+      "lon": 120.535983
+    },
+    {
+      "code": "cwa-10013150",
+      "name": "新埤鄉",
+      "city": "屏東縣",
+      "name_en": "Xinbi Township",
+      "city_en": "Pingtung County",
+      "lat": 22.471981,
+      "lon": 120.541838
+    },
+    {
+      "code": "cwa-10013160",
+      "name": "枋寮鄉",
+      "city": "屏東縣",
+      "name_en": "Fangliao Township",
+      "city_en": "Pingtung County",
+      "lat": 22.367263,
+      "lon": 120.58544
+    },
+    {
+      "code": "cwa-10013170",
+      "name": "新園鄉",
+      "city": "屏東縣",
+      "name_en": "Xinyuan Township",
+      "city_en": "Pingtung County",
+      "lat": 22.545606,
+      "lon": 120.453485
+    },
+    {
+      "code": "cwa-10013180",
+      "name": "崁頂鄉",
+      "city": "屏東縣",
+      "name_en": "Kanding Township",
+      "city_en": "Pingtung County",
+      "lat": 22.516479,
+      "lon": 120.506052
+    },
+    {
+      "code": "cwa-10013190",
+      "name": "林邊鄉",
+      "city": "屏東縣",
+      "name_en": "Linbian Township",
+      "city_en": "Pingtung County",
+      "lat": 22.436711,
+      "lon": 120.506257
+    },
+    {
+      "code": "cwa-10013200",
+      "name": "南州鄉",
+      "city": "屏東縣",
+      "name_en": "Nanzhou Township",
+      "city_en": "Pingtung County",
+      "lat": 22.492187,
+      "lon": 120.501729
+    },
+    {
+      "code": "cwa-10013210",
+      "name": "佳冬鄉",
+      "city": "屏東縣",
+      "name_en": "Jiadong Township",
+      "city_en": "Pingtung County",
+      "lat": 22.420985,
+      "lon": 120.544388
+    },
+    {
+      "code": "cwa-10013220",
+      "name": "琉球鄉",
+      "city": "屏東縣",
+      "name_en": "Liuqiu Township",
+      "city_en": "Pingtung County",
+      "lat": 22.354779,
+      "lon": 120.374245
+    },
+    {
+      "code": "cwa-10013230",
+      "name": "車城鄉",
+      "city": "屏東縣",
+      "name_en": "Checheng Township",
+      "city_en": "Pingtung County",
+      "lat": 22.075498,
+      "lon": 120.706222
+    },
+    {
+      "code": "cwa-10013240",
+      "name": "滿州鄉",
+      "city": "屏東縣",
+      "name_en": "Manzhou Township",
+      "city_en": "Pingtung County",
+      "lat": 22.022579,
+      "lon": 120.830601
+    },
+    {
+      "code": "cwa-10013250",
+      "name": "枋山鄉",
+      "city": "屏東縣",
+      "name_en": "Fangshan Township",
+      "city_en": "Pingtung County",
+      "lat": 22.265762,
+      "lon": 120.644421
+    },
+    {
+      "code": "cwa-10013260",
+      "name": "三地門鄉",
+      "city": "屏東縣",
+      "name_en": "Sandimen Township",
+      "city_en": "Pingtung County",
+      "lat": 22.729403,
+      "lon": 120.678205
+    },
+    {
+      "code": "cwa-10013270",
+      "name": "霧臺鄉",
+      "city": "屏東縣",
+      "name_en": "Wutai Township",
+      "city_en": "Pingtung County",
+      "lat": 22.750784,
+      "lon": 120.671
+    },
+    {
+      "code": "cwa-10013280",
+      "name": "瑪家鄉",
+      "city": "屏東縣",
+      "name_en": "Majia Township",
+      "city_en": "Pingtung County",
+      "lat": 22.710287,
+      "lon": 120.641303
+    },
+    {
+      "code": "cwa-10013290",
+      "name": "泰武鄉",
+      "city": "屏東縣",
+      "name_en": "Taiwu Township",
+      "city_en": "Pingtung County",
+      "lat": 22.593631,
+      "lon": 120.623792
+    },
+    {
+      "code": "cwa-10013300",
+      "name": "來義鄉",
+      "city": "屏東縣",
+      "name_en": "Laiyi Township",
+      "city_en": "Pingtung County",
+      "lat": 22.527868,
+      "lon": 120.623488
+    },
+    {
+      "code": "cwa-10013310",
+      "name": "春日鄉",
+      "city": "屏東縣",
+      "name_en": "Chunri Township",
+      "city_en": "Pingtung County",
+      "lat": 22.37274,
+      "lon": 120.621031
+    },
+    {
+      "code": "cwa-10013320",
+      "name": "獅子鄉",
+      "city": "屏東縣",
+      "name_en": "Shizi Township",
+      "city_en": "Pingtung County",
+      "lat": 22.203535,
+      "lon": 120.697395
+    },
+    {
+      "code": "cwa-10013330",
+      "name": "牡丹鄉",
+      "city": "屏東縣",
+      "name_en": "Mudan Township",
+      "city_en": "Pingtung County",
+      "lat": 22.128092,
+      "lon": 120.766205
+    },
+    {
+      "code": "cwa-10014010",
+      "name": "臺東市",
+      "city": "臺東縣",
+      "name_en": "Taitung City",
+      "city_en": "Taitung County",
+      "lat": 22.756487,
+      "lon": 121.138672
+    },
+    {
+      "code": "cwa-10014020",
+      "name": "成功鎮",
+      "city": "臺東縣",
+      "name_en": "Chenggong Township",
+      "city_en": "Taitung County",
+      "lat": 23.10202,
+      "lon": 121.371614
+    },
+    {
+      "code": "cwa-10014030",
+      "name": "關山鎮",
+      "city": "臺東縣",
+      "name_en": "Guanshan Township",
+      "city_en": "Taitung County",
+      "lat": 23.049215,
+      "lon": 121.155013
+    },
+    {
+      "code": "cwa-10014040",
+      "name": "卑南鄉",
+      "city": "臺東縣",
+      "name_en": "Beinan Township",
+      "city_en": "Taitung County",
+      "lat": 22.784339,
+      "lon": 121.078955
+    },
+    {
+      "code": "cwa-10014050",
+      "name": "鹿野鄉",
+      "city": "臺東縣",
+      "name_en": "Luye Township",
+      "city_en": "Taitung County",
+      "lat": 22.941551,
+      "lon": 121.143606
+    },
+    {
+      "code": "cwa-10014060",
+      "name": "池上鄉",
+      "city": "臺東縣",
+      "name_en": "Chishang Township",
+      "city_en": "Taitung County",
+      "lat": 23.124024,
+      "lon": 121.206956
+    },
+    {
+      "code": "cwa-10014070",
+      "name": "東河鄉",
+      "city": "臺東縣",
+      "name_en": "Donghe Township",
+      "city_en": "Taitung County",
+      "lat": 22.970526,
+      "lon": 121.294647
+    },
+    {
+      "code": "cwa-10014080",
+      "name": "長濱鄉",
+      "city": "臺東縣",
+      "name_en": "Changbin Township",
+      "city_en": "Taitung County",
+      "lat": 23.316795,
+      "lon": 121.443323
+    },
+    {
+      "code": "cwa-10014090",
+      "name": "太麻里鄉",
+      "city": "臺東縣",
+      "name_en": "Taimali Township",
+      "city_en": "Taitung County",
+      "lat": 22.617286,
+      "lon": 120.999559
+    },
+    {
+      "code": "cwa-10014100",
+      "name": "大武鄉",
+      "city": "臺東縣",
+      "name_en": "Dawu Township",
+      "city_en": "Taitung County",
+      "lat": 22.342278,
+      "lon": 120.882043
+    },
+    {
+      "code": "cwa-10014110",
+      "name": "綠島鄉",
+      "city": "臺東縣",
+      "name_en": "Lvdao Township",
+      "city_en": "Taitung County",
+      "lat": 22.670721,
+      "lon": 121.460476
+    },
+    {
+      "code": "cwa-10014120",
+      "name": "海端鄉",
+      "city": "臺東縣",
+      "name_en": "Haiduan Township",
+      "city_en": "Taitung County",
+      "lat": 23.103786,
+      "lon": 121.16858
+    },
+    {
+      "code": "cwa-10014130",
+      "name": "延平鄉",
+      "city": "臺東縣",
+      "name_en": "Yanping Township",
+      "city_en": "Taitung County",
+      "lat": 22.904123,
+      "lon": 121.077647
+    },
+    {
+      "code": "cwa-10014140",
+      "name": "金峰鄉",
+      "city": "臺東縣",
+      "name_en": "Jinfeng Township",
+      "city_en": "Taitung County",
+      "lat": 22.596478,
+      "lon": 120.952783
+    },
+    {
+      "code": "cwa-10014150",
+      "name": "達仁鄉",
+      "city": "臺東縣",
+      "name_en": "Daren Township",
+      "city_en": "Taitung County",
+      "lat": 22.298587,
+      "lon": 120.874917
+    },
+    {
+      "code": "cwa-10014160",
+      "name": "蘭嶼鄉",
+      "city": "臺東縣",
+      "name_en": "Lanyu Township",
+      "city_en": "Taitung County",
+      "lat": 22.024722,
+      "lon": 121.557778
+    },
+    {
+      "code": "cwa-10015010",
+      "name": "花蓮市",
+      "city": "花蓮縣",
+      "name_en": "Hualien City",
+      "city_en": "Hualien County",
+      "lat": 23.983897,
+      "lon": 121.598641
+    },
+    {
+      "code": "cwa-10015020",
+      "name": "鳳林鎮",
+      "city": "花蓮縣",
+      "name_en": "Fenglin Township",
+      "city_en": "Hualien County",
+      "lat": 23.74648,
+      "lon": 121.443705
+    },
+    {
+      "code": "cwa-10015030",
+      "name": "玉里鎮",
+      "city": "花蓮縣",
+      "name_en": "Yuli Township",
+      "city_en": "Hualien County",
+      "lat": 23.337337,
+      "lon": 121.307209
+    },
+    {
+      "code": "cwa-10015040",
+      "name": "新城鄉",
+      "city": "花蓮縣",
+      "name_en": "Xincheng Township",
+      "city_en": "Hualien County",
+      "lat": 24.041257,
+      "lon": 121.596231
+    },
+    {
+      "code": "cwa-10015050",
+      "name": "吉安鄉",
+      "city": "花蓮縣",
+      "name_en": "Jian Township",
+      "city_en": "Hualien County",
+      "lat": 23.97477,
+      "lon": 121.55554
+    },
+    {
+      "code": "cwa-10015060",
+      "name": "壽豐鄉",
+      "city": "花蓮縣",
+      "name_en": "Shoufeng Township",
+      "city_en": "Hualien County",
+      "lat": 23.872007,
+      "lon": 121.500738
+    },
+    {
+      "code": "cwa-10015070",
+      "name": "光復鄉",
+      "city": "花蓮縣",
+      "name_en": "Guangfu Township",
+      "city_en": "Hualien County",
+      "lat": 23.671121,
+      "lon": 121.415122
+    },
+    {
+      "code": "cwa-10015080",
+      "name": "豐濱鄉",
+      "city": "花蓮縣",
+      "name_en": "Fengbin Township",
+      "city_en": "Hualien County",
+      "lat": 23.603086,
+      "lon": 121.513007
+    },
+    {
+      "code": "cwa-10015090",
+      "name": "瑞穗鄉",
+      "city": "花蓮縣",
+      "name_en": "Ruisui Township",
+      "city_en": "Hualien County",
+      "lat": 23.498475,
+      "lon": 121.367871
+    },
+    {
+      "code": "cwa-10015100",
+      "name": "富里鄉",
+      "city": "花蓮縣",
+      "name_en": "Fuli Township",
+      "city_en": "Hualien County",
+      "lat": 23.18122,
+      "lon": 121.242134
+    },
+    {
+      "code": "cwa-10015110",
+      "name": "秀林鄉",
+      "city": "花蓮縣",
+      "name_en": "Xiulin Township",
+      "city_en": "Hualien County",
+      "lat": 24.120561,
+      "lon": 121.61674
+    },
+    {
+      "code": "cwa-10015120",
+      "name": "萬榮鄉",
+      "city": "花蓮縣",
+      "name_en": "Wanrong Township",
+      "city_en": "Hualien County",
+      "lat": 23.716576,
+      "lon": 121.402803
+    },
+    {
+      "code": "cwa-10015130",
+      "name": "卓溪鄉",
+      "city": "花蓮縣",
+      "name_en": "Zhuoxi Township",
+      "city_en": "Hualien County",
+      "lat": 23.348269,
+      "lon": 121.295348
+    },
+    {
+      "code": "cwa-10016010",
+      "name": "馬公市",
+      "city": "澎湖縣",
+      "name_en": "Magong City",
+      "city_en": "Penghu County",
+      "lat": 23.567554,
+      "lon": 119.570666
+    },
+    {
+      "code": "cwa-10016020",
+      "name": "湖西鄉",
+      "city": "澎湖縣",
+      "name_en": "Huxi Township",
+      "city_en": "Penghu County",
+      "lat": 23.585359,
+      "lon": 119.644584
+    },
+    {
+      "code": "cwa-10016030",
+      "name": "白沙鄉",
+      "city": "澎湖縣",
+      "name_en": "Baisha Township",
+      "city_en": "Penghu County",
+      "lat": 23.66824,
+      "lon": 119.590497
+    },
+    {
+      "code": "cwa-10016040",
+      "name": "西嶼鄉",
+      "city": "澎湖縣",
+      "name_en": "Xiyu Township",
+      "city_en": "Penghu County",
+      "lat": 23.602685,
+      "lon": 119.498788
+    },
+    {
+      "code": "cwa-10016050",
+      "name": "望安鄉",
+      "city": "澎湖縣",
+      "name_en": "Wangan Township",
+      "city_en": "Penghu County",
+      "lat": 23.359118,
+      "lon": 119.492356
+    },
+    {
+      "code": "cwa-10016060",
+      "name": "七美鄉",
+      "city": "澎湖縣",
+      "name_en": "Qimei Township",
+      "city_en": "Penghu County",
+      "lat": 23.208433,
+      "lon": 119.416528
+    },
+    {
+      "code": "cwa-10017010",
+      "name": "中正區",
+      "city": "基隆市",
+      "name_en": "Zhongzheng District",
+      "city_en": "Keelung City",
+      "lat": 25.153191,
+      "lon": 121.759355
+    },
+    {
+      "code": "cwa-10017020",
+      "name": "七堵區",
+      "city": "基隆市",
+      "name_en": "Qidu District",
+      "city_en": "Keelung City",
+      "lat": 25.097645,
+      "lon": 121.705027
+    },
+    {
+      "code": "cwa-10017030",
+      "name": "暖暖區",
+      "city": "基隆市",
+      "name_en": "Nuannuan District",
+      "city_en": "Keelung City",
+      "lat": 25.101908,
+      "lon": 121.727652
+    },
+    {
+      "code": "cwa-10017040",
+      "name": "仁愛區",
+      "city": "基隆市",
+      "name_en": "Renai District",
+      "city_en": "Keelung City",
+      "lat": 25.129443,
+      "lon": 121.732586
+    },
+    {
+      "code": "cwa-10017050",
+      "name": "中山區",
+      "city": "基隆市",
+      "name_en": "Zhongshan District",
+      "city_en": "Keelung City",
+      "lat": 25.154739,
+      "lon": 121.721458
+    },
+    {
+      "code": "cwa-10017060",
+      "name": "安樂區",
+      "city": "基隆市",
+      "name_en": "Anle District",
+      "city_en": "Keelung City",
+      "lat": 25.122817,
+      "lon": 121.715042
+    },
+    {
+      "code": "cwa-10017070",
+      "name": "信義區",
+      "city": "基隆市",
+      "name_en": "Xinyi District",
+      "city_en": "Keelung City",
+      "lat": 25.131324,
+      "lon": 121.743102
+    },
+    {
+      "code": "cwa-10018010",
+      "name": "東區",
+      "city": "新竹市",
+      "name_en": "E. District",
+      "city_en": "Hsinchu City",
+      "lat": 24.806995,
+      "lon": 120.965302
+    },
+    {
+      "code": "cwa-10018020",
+      "name": "北區",
+      "city": "新竹市",
+      "name_en": "N. District",
+      "city_en": "Hsinchu City",
+      "lat": 24.818109,
+      "lon": 120.96211
+    },
+    {
+      "code": "cwa-10018030",
+      "name": "香山區",
+      "city": "新竹市",
+      "name_en": "Xiangshan District",
+      "city_en": "Hsinchu City",
+      "lat": 24.798788,
+      "lon": 120.933766
+    },
+    {
+      "code": "cwa-10020010",
+      "name": "東區",
+      "city": "嘉義市",
+      "name_en": "E. District",
+      "city_en": "Chiayi City",
+      "lat": 23.480384,
+      "lon": 120.445361
+    },
+    {
+      "code": "cwa-10020020",
+      "name": "西區",
+      "city": "嘉義市",
+      "name_en": "W. District",
+      "city_en": "Chiayi City",
+      "lat": 23.466267,
+      "lon": 120.427285
+    },
+    {
+      "code": "cwa-63000010",
+      "name": "松山區",
+      "city": "臺北市",
+      "name_en": "Songshan District",
+      "city_en": "Taipei City",
+      "lat": 25.051608,
+      "lon": 121.568983
+    },
+    {
+      "code": "cwa-63000020",
+      "name": "信義區",
+      "city": "臺北市",
+      "name_en": "Xinyi District",
+      "city_en": "Taipei City",
+      "lat": 25.035095,
+      "lon": 121.558742
+    },
+    {
+      "code": "cwa-63000030",
+      "name": "大安區",
+      "city": "臺北市",
+      "name_en": "Daan District",
+      "city_en": "Taipei City",
+      "lat": 25.028247,
+      "lon": 121.526401
+    },
+    {
+      "code": "cwa-63000040",
+      "name": "中山區",
+      "city": "臺北市",
+      "name_en": "Zhongshan District",
+      "city_en": "Taipei City",
+      "lat": 25.06626,
+      "lon": 121.525346
+    },
+    {
+      "code": "cwa-63000050",
+      "name": "中正區",
+      "city": "臺北市",
+      "name_en": "Zhongzheng District",
+      "city_en": "Taipei City",
+      "lat": 25.046058,
+      "lon": 121.516565
+    },
+    {
+      "code": "cwa-63000060",
+      "name": "大同區",
+      "city": "臺北市",
+      "name_en": "Datong District",
+      "city_en": "Taipei City",
+      "lat": 25.068025,
+      "lon": 121.507228
+    },
+    {
+      "code": "cwa-63000070",
+      "name": "萬華區",
+      "city": "臺北市",
+      "name_en": "Wanhua District",
+      "city_en": "Taipei City",
+      "lat": 25.036715,
+      "lon": 121.491618
+    },
+    {
+      "code": "cwa-63000080",
+      "name": "文山區",
+      "city": "臺北市",
+      "name_en": "Wenshan District",
+      "city_en": "Taipei City",
+      "lat": 24.991364,
+      "lon": 121.561759
+    },
+    {
+      "code": "cwa-63000090",
+      "name": "南港區",
+      "city": "臺北市",
+      "name_en": "Nangang District",
+      "city_en": "Taipei City",
+      "lat": 25.056317,
+      "lon": 121.59849
+    },
+    {
+      "code": "cwa-63000100",
+      "name": "內湖區",
+      "city": "臺北市",
+      "name_en": "Neihu District",
+      "city_en": "Taipei City",
+      "lat": 25.071182,
+      "lon": 121.58069
+    },
+    {
+      "code": "cwa-63000110",
+      "name": "士林區",
+      "city": "臺北市",
+      "name_en": "Shilin District",
+      "city_en": "Taipei City",
+      "lat": 25.094612,
+      "lon": 121.511458
+    },
+    {
+      "code": "cwa-63000120",
+      "name": "北投區",
+      "city": "臺北市",
+      "name_en": "Beitou District",
+      "city_en": "Taipei City",
+      "lat": 25.134133,
+      "lon": 121.494596
+    },
+    {
+      "code": "cwa-64000010",
+      "name": "鹽埕區",
+      "city": "高雄市",
+      "name_en": "Yancheng District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.626497,
+      "lon": 120.278707
+    },
+    {
+      "code": "cwa-64000020",
+      "name": "鼓山區",
+      "city": "高雄市",
+      "name_en": "Gushan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.638584,
+      "lon": 120.273016
+    },
+    {
+      "code": "cwa-64000030",
+      "name": "左營區",
+      "city": "高雄市",
+      "name_en": "Zuoying District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.691595,
+      "lon": 120.287036
+    },
+    {
+      "code": "cwa-64000040",
+      "name": "楠梓區",
+      "city": "高雄市",
+      "name_en": "Nanzi District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.73025,
+      "lon": 120.318266
+    },
+    {
+      "code": "cwa-64000050",
+      "name": "三民區",
+      "city": "高雄市",
+      "name_en": "Sanmin District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.649368,
+      "lon": 120.291742
+    },
+    {
+      "code": "cwa-64000060",
+      "name": "新興區",
+      "city": "高雄市",
+      "name_en": "Xinxing District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.63276,
+      "lon": 120.301947
+    },
+    {
+      "code": "cwa-64000070",
+      "name": "前金區",
+      "city": "高雄市",
+      "name_en": "Qianjin District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.629184,
+      "lon": 120.286147
+    },
+    {
+      "code": "cwa-64000080",
+      "name": "苓雅區",
+      "city": "高雄市",
+      "name_en": "Lingya District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.623511,
+      "lon": 120.304085
+    },
+    {
+      "code": "cwa-64000090",
+      "name": "前鎮區",
+      "city": "高雄市",
+      "name_en": "Qianzhen District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.588331,
+      "lon": 120.310239
+    },
+    {
+      "code": "cwa-64000100",
+      "name": "旗津區",
+      "city": "高雄市",
+      "name_en": "Qijin District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.612669,
+      "lon": 120.259857
+    },
+    {
+      "code": "cwa-64000110",
+      "name": "小港區",
+      "city": "高雄市",
+      "name_en": "Xiaogang District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.567159,
+      "lon": 120.330139
+    },
+    {
+      "code": "cwa-64000120",
+      "name": "鳳山區",
+      "city": "高雄市",
+      "name_en": "Fengshan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.62895,
+      "lon": 120.354328
+    },
+    {
+      "code": "cwa-64000130",
+      "name": "林園區",
+      "city": "高雄市",
+      "name_en": "Linyuan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.509736,
+      "lon": 120.38671
+    },
+    {
+      "code": "cwa-64000140",
+      "name": "大寮區",
+      "city": "高雄市",
+      "name_en": "Daliao District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.607134,
+      "lon": 120.387431
+    },
+    {
+      "code": "cwa-64000150",
+      "name": "大樹區",
+      "city": "高雄市",
+      "name_en": "Dashu District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.695141,
+      "lon": 120.425003
+    },
+    {
+      "code": "cwa-64000160",
+      "name": "大社區",
+      "city": "高雄市",
+      "name_en": "Dashe District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.731832,
+      "lon": 120.338556
+    },
+    {
+      "code": "cwa-64000170",
+      "name": "仁武區",
+      "city": "高雄市",
+      "name_en": "Renwu District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.703054,
+      "lon": 120.339578
+    },
+    {
+      "code": "cwa-64000180",
+      "name": "鳥松區",
+      "city": "高雄市",
+      "name_en": "Niaosong District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.661582,
+      "lon": 120.356275
+    },
+    {
+      "code": "cwa-64000190",
+      "name": "岡山區",
+      "city": "高雄市",
+      "name_en": "Gangshan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.7991,
+      "lon": 120.286929
+    },
+    {
+      "code": "cwa-64000200",
+      "name": "橋頭區",
+      "city": "高雄市",
+      "name_en": "Qiaotou District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.75932,
+      "lon": 120.297688
+    },
+    {
+      "code": "cwa-64000210",
+      "name": "燕巢區",
+      "city": "高雄市",
+      "name_en": "Yanchao District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.795113,
+      "lon": 120.354005
+    },
+    {
+      "code": "cwa-64000220",
+      "name": "田寮區",
+      "city": "高雄市",
+      "name_en": "Tianliao District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.871588,
+      "lon": 120.351334
+    },
+    {
+      "code": "cwa-64000230",
+      "name": "阿蓮區",
+      "city": "高雄市",
+      "name_en": "Alian District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.884885,
+      "lon": 120.319234
+    },
+    {
+      "code": "cwa-64000240",
+      "name": "路竹區",
+      "city": "高雄市",
+      "name_en": "Luzhu District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.856394,
+      "lon": 120.251176
+    },
+    {
+      "code": "cwa-64000250",
+      "name": "湖內區",
+      "city": "高雄市",
+      "name_en": "Hunei District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.910132,
+      "lon": 120.203646
+    },
+    {
+      "code": "cwa-64000260",
+      "name": "茄萣區",
+      "city": "高雄市",
+      "name_en": "Jiading District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.908516,
+      "lon": 120.174426
+    },
+    {
+      "code": "cwa-64000270",
+      "name": "永安區",
+      "city": "高雄市",
+      "name_en": "Yongan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.820017,
+      "lon": 120.216195
+    },
+    {
+      "code": "cwa-64000280",
+      "name": "彌陀區",
+      "city": "高雄市",
+      "name_en": "Mituo District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.783209,
+      "lon": 120.242564
+    },
+    {
+      "code": "cwa-64000290",
+      "name": "梓官區",
+      "city": "高雄市",
+      "name_en": "Ziguan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.762455,
+      "lon": 120.259214
+    },
+    {
+      "code": "cwa-64000300",
+      "name": "旗山區",
+      "city": "高雄市",
+      "name_en": "Qishan District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.890391,
+      "lon": 120.475404
+    },
+    {
+      "code": "cwa-64000310",
+      "name": "美濃區",
+      "city": "高雄市",
+      "name_en": "Meinong District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.896518,
+      "lon": 120.533776
+    },
+    {
+      "code": "cwa-64000320",
+      "name": "六龜區",
+      "city": "高雄市",
+      "name_en": "Liugui District",
+      "city_en": "Kaohsiung City",
+      "lat": 23.000179,
+      "lon": 120.624638
+    },
+    {
+      "code": "cwa-64000330",
+      "name": "甲仙區",
+      "city": "高雄市",
+      "name_en": "Jiaxian District",
+      "city_en": "Kaohsiung City",
+      "lat": 23.085825,
+      "lon": 120.579812
+    },
+    {
+      "code": "cwa-64000340",
+      "name": "杉林區",
+      "city": "高雄市",
+      "name_en": "Shanlin District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.973535,
+      "lon": 120.531927
+    },
+    {
+      "code": "cwa-64000350",
+      "name": "內門區",
+      "city": "高雄市",
+      "name_en": "Neimen District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.94459,
+      "lon": 120.454551
+    },
+    {
+      "code": "cwa-64000360",
+      "name": "茂林區",
+      "city": "高雄市",
+      "name_en": "Maolin District",
+      "city_en": "Kaohsiung City",
+      "lat": 22.888083,
+      "lon": 120.655623
+    },
+    {
+      "code": "cwa-64000370",
+      "name": "桃源區",
+      "city": "高雄市",
+      "name_en": "Taoyuan District",
+      "city_en": "Kaohsiung City",
+      "lat": 23.161023,
+      "lon": 120.756064
+    },
+    {
+      "code": "cwa-64000380",
+      "name": "那瑪夏區",
+      "city": "高雄市",
+      "name_en": "Namaxia District",
+      "city_en": "Kaohsiung City",
+      "lat": 23.240035,
+      "lon": 120.6887
+    },
+    {
+      "code": "cwa-65000010",
+      "name": "板橋區",
+      "city": "新北市",
+      "name_en": "Banqiao District",
+      "city_en": "New Taipei City",
+      "lat": 25.01154,
+      "lon": 121.450888
+    },
+    {
+      "code": "cwa-65000020",
+      "name": "三重區",
+      "city": "新北市",
+      "name_en": "Sanzhong District",
+      "city_en": "New Taipei City",
+      "lat": 25.062727,
+      "lon": 121.480099
+    },
+    {
+      "code": "cwa-65000030",
+      "name": "中和區",
+      "city": "新北市",
+      "name_en": "Zhonghe District",
+      "city_en": "New Taipei City",
+      "lat": 25.000438,
+      "lon": 121.49279
+    },
+    {
+      "code": "cwa-65000040",
+      "name": "永和區",
+      "city": "新北市",
+      "name_en": "Yonghe District",
+      "city_en": "New Taipei City",
+      "lat": 25.010926,
+      "lon": 121.511985
+    },
+    {
+      "code": "cwa-65000050",
+      "name": "新莊區",
+      "city": "新北市",
+      "name_en": "Xinzhuang District",
+      "city_en": "New Taipei City",
+      "lat": 25.037648,
+      "lon": 121.442335
+    },
+    {
+      "code": "cwa-65000060",
+      "name": "新店區",
+      "city": "新北市",
+      "name_en": "Xindian District",
+      "city_en": "New Taipei City",
+      "lat": 24.969155,
+      "lon": 121.533397
+    },
+    {
+      "code": "cwa-65000070",
+      "name": "樹林區",
+      "city": "新北市",
+      "name_en": "Shulin District",
+      "city_en": "New Taipei City",
+      "lat": 24.991747,
+      "lon": 121.416592
+    },
+    {
+      "code": "cwa-65000080",
+      "name": "鶯歌區",
+      "city": "新北市",
+      "name_en": "Yingge District",
+      "city_en": "New Taipei City",
+      "lat": 24.957831,
+      "lon": 121.346152
+    },
+    {
+      "code": "cwa-65000090",
+      "name": "三峽區",
+      "city": "新北市",
+      "name_en": "Sanxia District",
+      "city_en": "New Taipei City",
+      "lat": 24.936061,
+      "lon": 121.360843
+    },
+    {
+      "code": "cwa-65000100",
+      "name": "淡水區",
+      "city": "新北市",
+      "name_en": "Danshui District",
+      "city_en": "New Taipei City",
+      "lat": 25.188869,
+      "lon": 121.43572
+    },
+    {
+      "code": "cwa-65000110",
+      "name": "汐止區",
+      "city": "新北市",
+      "name_en": "Xizhi District",
+      "city_en": "New Taipei City",
+      "lat": 25.065596,
+      "lon": 121.650742
+    },
+    {
+      "code": "cwa-65000120",
+      "name": "瑞芳區",
+      "city": "新北市",
+      "name_en": "Ruifang District",
+      "city_en": "New Taipei City",
+      "lat": 25.110676,
+      "lon": 121.801752
+    },
+    {
+      "code": "cwa-65000130",
+      "name": "土城區",
+      "city": "新北市",
+      "name_en": "Tucheng District",
+      "city_en": "New Taipei City",
+      "lat": 24.974166,
+      "lon": 121.43471
+    },
+    {
+      "code": "cwa-65000140",
+      "name": "蘆洲區",
+      "city": "新北市",
+      "name_en": "Luzhou District",
+      "city_en": "New Taipei City",
+      "lat": 25.086664,
+      "lon": 121.465658
+    },
+    {
+      "code": "cwa-65000150",
+      "name": "五股區",
+      "city": "新北市",
+      "name_en": "Wugu District",
+      "city_en": "New Taipei City",
+      "lat": 25.08497,
+      "lon": 121.429692
+    },
+    {
+      "code": "cwa-65000160",
+      "name": "泰山區",
+      "city": "新北市",
+      "name_en": "Taishan District",
+      "city_en": "New Taipei City",
+      "lat": 25.061122,
+      "lon": 121.423294
+    },
+    {
+      "code": "cwa-65000170",
+      "name": "林口區",
+      "city": "新北市",
+      "name_en": "Linkou District",
+      "city_en": "New Taipei City",
+      "lat": 25.078714,
+      "lon": 121.380575
+    },
+    {
+      "code": "cwa-65000180",
+      "name": "深坑區",
+      "city": "新北市",
+      "name_en": "Shenkeng District",
+      "city_en": "New Taipei City",
+      "lat": 25.004226,
+      "lon": 121.607653
+    },
+    {
+      "code": "cwa-65000190",
+      "name": "石碇區",
+      "city": "新北市",
+      "name_en": "Shiding District",
+      "city_en": "New Taipei City",
+      "lat": 24.993297,
+      "lon": 121.649704
+    },
+    {
+      "code": "cwa-65000200",
+      "name": "坪林區",
+      "city": "新北市",
+      "name_en": "Pinglin District",
+      "city_en": "New Taipei City",
+      "lat": 24.937916,
+      "lon": 121.703581
+    },
+    {
+      "code": "cwa-65000210",
+      "name": "三芝區",
+      "city": "新北市",
+      "name_en": "Sanzhi District",
+      "city_en": "New Taipei City",
+      "lat": 25.259569,
+      "lon": 121.49265
+    },
+    {
+      "code": "cwa-65000220",
+      "name": "石門區",
+      "city": "新北市",
+      "name_en": "Shimen District",
+      "city_en": "New Taipei City",
+      "lat": 25.293055,
+      "lon": 121.559408
+    },
+    {
+      "code": "cwa-65000230",
+      "name": "八里區",
+      "city": "新北市",
+      "name_en": "Bali District",
+      "city_en": "New Taipei City",
+      "lat": 25.151167,
+      "lon": 121.39324
+    },
+    {
+      "code": "cwa-65000240",
+      "name": "平溪區",
+      "city": "新北市",
+      "name_en": "Pingxi District",
+      "city_en": "New Taipei City",
+      "lat": 25.028398,
+      "lon": 121.729965
+    },
+    {
+      "code": "cwa-65000250",
+      "name": "雙溪區",
+      "city": "新北市",
+      "name_en": "Shuangxi District",
+      "city_en": "New Taipei City",
+      "lat": 25.035584,
+      "lon": 121.857548
+    },
+    {
+      "code": "cwa-65000260",
+      "name": "貢寮區",
+      "city": "新北市",
+      "name_en": "Gongliao District",
+      "city_en": "New Taipei City",
+      "lat": 25.023639,
+      "lon": 121.902069
+    },
+    {
+      "code": "cwa-65000270",
+      "name": "金山區",
+      "city": "新北市",
+      "name_en": "Jinshan District",
+      "city_en": "New Taipei City",
+      "lat": 25.224162,
+      "lon": 121.628341
+    },
+    {
+      "code": "cwa-65000280",
+      "name": "萬里區",
+      "city": "新北市",
+      "name_en": "Wanli District",
+      "city_en": "New Taipei City",
+      "lat": 25.179817,
+      "lon": 121.681365
+    },
+    {
+      "code": "cwa-65000290",
+      "name": "烏來區",
+      "city": "新北市",
+      "name_en": "Wulai District",
+      "city_en": "New Taipei City",
+      "lat": 24.873686,
+      "lon": 121.539955
+    },
+    {
+      "code": "cwa-66000010",
+      "name": "中區",
+      "city": "臺中市",
+      "name_en": "Zhong District",
+      "city_en": "Taichung City",
+      "lat": 24.145697,
+      "lon": 120.671241
+    },
+    {
+      "code": "cwa-66000020",
+      "name": "東區",
+      "city": "臺中市",
+      "name_en": "E. District",
+      "city_en": "Taichung City",
+      "lat": 24.13843,
+      "lon": 120.695505
+    },
+    {
+      "code": "cwa-66000030",
+      "name": "南區",
+      "city": "臺中市",
+      "name_en": "Nan District",
+      "city_en": "Taichung City",
+      "lat": 24.118842,
+      "lon": 120.655667
+    },
+    {
+      "code": "cwa-66000040",
+      "name": "西區",
+      "city": "臺中市",
+      "name_en": "W. District",
+      "city_en": "Taichung City",
+      "lat": 24.142918,
+      "lon": 120.66295
+    },
+    {
+      "code": "cwa-66000050",
+      "name": "北區",
+      "city": "臺中市",
+      "name_en": "N. District",
+      "city_en": "Taichung City",
+      "lat": 24.167748,
+      "lon": 120.67395
+    },
+    {
+      "code": "cwa-66000060",
+      "name": "西屯區",
+      "city": "臺中市",
+      "name_en": "Xitun District",
+      "city_en": "Taichung City",
+      "lat": 24.167277,
+      "lon": 120.625579
+    },
+    {
+      "code": "cwa-66000070",
+      "name": "南屯區",
+      "city": "臺中市",
+      "name_en": "Nantun District",
+      "city_en": "Taichung City",
+      "lat": 24.140056,
+      "lon": 120.634645
+    },
+    {
+      "code": "cwa-66000080",
+      "name": "北屯區",
+      "city": "臺中市",
+      "name_en": "Beitun District",
+      "city_en": "Taichung City",
+      "lat": 24.18473,
+      "lon": 120.67837
+    },
+    {
+      "code": "cwa-66000090",
+      "name": "豐原區",
+      "city": "臺中市",
+      "name_en": "Fengyuan District",
+      "city_en": "Taichung City",
+      "lat": 24.243892,
+      "lon": 120.710004
+    },
+    {
+      "code": "cwa-66000100",
+      "name": "東勢區",
+      "city": "臺中市",
+      "name_en": "Dongshi District",
+      "city_en": "Taichung City",
+      "lat": 24.260329,
+      "lon": 120.819757
+    },
+    {
+      "code": "cwa-66000110",
+      "name": "大甲區",
+      "city": "臺中市",
+      "name_en": "Dajia District",
+      "city_en": "Taichung City",
+      "lat": 24.350838,
+      "lon": 120.614294
+    },
+    {
+      "code": "cwa-66000120",
+      "name": "清水區",
+      "city": "臺中市",
+      "name_en": "Qingshui District",
+      "city_en": "Taichung City",
+      "lat": 24.270172,
+      "lon": 120.55163
+    },
+    {
+      "code": "cwa-66000130",
+      "name": "沙鹿區",
+      "city": "臺中市",
+      "name_en": "Shalu District",
+      "city_en": "Taichung City",
+      "lat": 24.235084,
+      "lon": 120.558133
+    },
+    {
+      "code": "cwa-66000140",
+      "name": "梧棲區",
+      "city": "臺中市",
+      "name_en": "Wuqi District",
+      "city_en": "Taichung City",
+      "lat": 24.256657,
+      "lon": 120.523706
+    },
+    {
+      "code": "cwa-66000150",
+      "name": "后里區",
+      "city": "臺中市",
+      "name_en": "Houli District",
+      "city_en": "Taichung City",
+      "lat": 24.306704,
+      "lon": 120.702572
+    },
+    {
+      "code": "cwa-66000160",
+      "name": "神岡區",
+      "city": "臺中市",
+      "name_en": "Shengang District",
+      "city_en": "Taichung City",
+      "lat": 24.25957,
+      "lon": 120.653231
+    },
+    {
+      "code": "cwa-66000170",
+      "name": "潭子區",
+      "city": "臺中市",
+      "name_en": "Tanzi District",
+      "city_en": "Taichung City",
+      "lat": 24.211248,
+      "lon": 120.696998
+    },
+    {
+      "code": "cwa-66000180",
+      "name": "大雅區",
+      "city": "臺中市",
+      "name_en": "Daya District",
+      "city_en": "Taichung City",
+      "lat": 24.230893,
+      "lon": 120.63965
+    },
+    {
+      "code": "cwa-66000190",
+      "name": "新社區",
+      "city": "臺中市",
+      "name_en": "Xinshe District",
+      "city_en": "Taichung City",
+      "lat": 24.235529,
+      "lon": 120.801405
+    },
+    {
+      "code": "cwa-66000200",
+      "name": "石岡區",
+      "city": "臺中市",
+      "name_en": "Shigang District",
+      "city_en": "Taichung City",
+      "lat": 24.276692,
+      "lon": 120.771892
+    },
+    {
+      "code": "cwa-66000210",
+      "name": "外埔區",
+      "city": "臺中市",
+      "name_en": "Waipu District",
+      "city_en": "Taichung City",
+      "lat": 24.333798,
+      "lon": 120.646212
+    },
+    {
+      "code": "cwa-66000220",
+      "name": "大安區",
+      "city": "臺中市",
+      "name_en": "Daan District",
+      "city_en": "Taichung City",
+      "lat": 24.347963,
+      "lon": 120.578366
+    },
+    {
+      "code": "cwa-66000230",
+      "name": "烏日區",
+      "city": "臺中市",
+      "name_en": "Wuri District",
+      "city_en": "Taichung City",
+      "lat": 24.106527,
+      "lon": 120.615582
+    },
+    {
+      "code": "cwa-66000240",
+      "name": "大肚區",
+      "city": "臺中市",
+      "name_en": "Dadu District",
+      "city_en": "Taichung City",
+      "lat": 24.152888,
+      "lon": 120.537574
+    },
+    {
+      "code": "cwa-66000250",
+      "name": "龍井區",
+      "city": "臺中市",
+      "name_en": "Longjing District",
+      "city_en": "Taichung City",
+      "lat": 24.194294,
+      "lon": 120.537625
+    },
+    {
+      "code": "cwa-66000260",
+      "name": "霧峰區",
+      "city": "臺中市",
+      "name_en": "Wufeng District",
+      "city_en": "Taichung City",
+      "lat": 24.062818,
+      "lon": 120.691954
+    },
+    {
+      "code": "cwa-66000270",
+      "name": "太平區",
+      "city": "臺中市",
+      "name_en": "Taiping District",
+      "city_en": "Taichung City",
+      "lat": 24.12815,
+      "lon": 120.710202
+    },
+    {
+      "code": "cwa-66000280",
+      "name": "大里區",
+      "city": "臺中市",
+      "name_en": "Dali District",
+      "city_en": "Taichung City",
+      "lat": 24.101152,
+      "lon": 120.6695
+    },
+    {
+      "code": "cwa-66000290",
+      "name": "和平區",
+      "city": "臺中市",
+      "name_en": "Heping District",
+      "city_en": "Taichung City",
+      "lat": 24.176581,
+      "lon": 120.875458
+    },
+    {
+      "code": "cwa-67000010",
+      "name": "新營區",
+      "city": "臺南市",
+      "name_en": "Xinying District",
+      "city_en": "Tainan City",
+      "lat": 23.31183,
+      "lon": 120.308433
+    },
+    {
+      "code": "cwa-67000020",
+      "name": "鹽水區",
+      "city": "臺南市",
+      "name_en": "Yanshui District",
+      "city_en": "Tainan City",
+      "lat": 23.321798,
+      "lon": 120.25808
+    },
+    {
+      "code": "cwa-67000030",
+      "name": "白河區",
+      "city": "臺南市",
+      "name_en": "Baihe District",
+      "city_en": "Tainan City",
+      "lat": 23.353101,
+      "lon": 120.407533
+    },
+    {
+      "code": "cwa-67000040",
+      "name": "柳營區",
+      "city": "臺南市",
+      "name_en": "Liuying District",
+      "city_en": "Tainan City",
+      "lat": 23.280281,
+      "lon": 120.303703
+    },
+    {
+      "code": "cwa-67000050",
+      "name": "後壁區",
+      "city": "臺南市",
+      "name_en": "Houbi District",
+      "city_en": "Tainan City",
+      "lat": 23.367849,
+      "lon": 120.353189
+    },
+    {
+      "code": "cwa-67000060",
+      "name": "東山區",
+      "city": "臺南市",
+      "name_en": "Dongshan District",
+      "city_en": "Tainan City",
+      "lat": 23.327872,
+      "lon": 120.396428
+    },
+    {
+      "code": "cwa-67000070",
+      "name": "麻豆區",
+      "city": "臺南市",
+      "name_en": "Madou District",
+      "city_en": "Tainan City",
+      "lat": 23.186698,
+      "lon": 120.250389
+    },
+    {
+      "code": "cwa-67000080",
+      "name": "下營區",
+      "city": "臺南市",
+      "name_en": "Xiaying District",
+      "city_en": "Tainan City",
+      "lat": 23.237385,
+      "lon": 120.256237
+    },
+    {
+      "code": "cwa-67000090",
+      "name": "六甲區",
+      "city": "臺南市",
+      "name_en": "Liujia District",
+      "city_en": "Tainan City",
+      "lat": 23.23352,
+      "lon": 120.339356
+    },
+    {
+      "code": "cwa-67000100",
+      "name": "官田區",
+      "city": "臺南市",
+      "name_en": "Guantian District",
+      "city_en": "Tainan City",
+      "lat": 23.194993,
+      "lon": 120.307229
+    },
+    {
+      "code": "cwa-67000110",
+      "name": "大內區",
+      "city": "臺南市",
+      "name_en": "Danei District",
+      "city_en": "Tainan City",
+      "lat": 23.120705,
+      "lon": 120.348871
+    },
+    {
+      "code": "cwa-67000120",
+      "name": "佳里區",
+      "city": "臺南市",
+      "name_en": "Jiali District",
+      "city_en": "Tainan City",
+      "lat": 23.167042,
+      "lon": 120.168965
+    },
+    {
+      "code": "cwa-67000130",
+      "name": "學甲區",
+      "city": "臺南市",
+      "name_en": "Xuejia District",
+      "city_en": "Tainan City",
+      "lat": 23.232162,
+      "lon": 120.17423
+    },
+    {
+      "code": "cwa-67000140",
+      "name": "西港區",
+      "city": "臺南市",
+      "name_en": "Xigang District",
+      "city_en": "Tainan City",
+      "lat": 23.12474,
+      "lon": 120.195379
+    },
+    {
+      "code": "cwa-67000150",
+      "name": "七股區",
+      "city": "臺南市",
+      "name_en": "Qigu District",
+      "city_en": "Tainan City",
+      "lat": 23.142472,
+      "lon": 120.131322
+    },
+    {
+      "code": "cwa-67000160",
+      "name": "將軍區",
+      "city": "臺南市",
+      "name_en": "Jiangjun District",
+      "city_en": "Tainan City",
+      "lat": 23.200646,
+      "lon": 120.150613
+    },
+    {
+      "code": "cwa-67000170",
+      "name": "北門區",
+      "city": "臺南市",
+      "name_en": "Beimen District",
+      "city_en": "Tainan City",
+      "lat": 23.269539,
+      "lon": 120.117299
+    },
+    {
+      "code": "cwa-67000180",
+      "name": "新化區",
+      "city": "臺南市",
+      "name_en": "Xinhua District",
+      "city_en": "Tainan City",
+      "lat": 23.040281,
+      "lon": 120.302799
+    },
+    {
+      "code": "cwa-67000190",
+      "name": "善化區",
+      "city": "臺南市",
+      "name_en": "Shanhua District",
+      "city_en": "Tainan City",
+      "lat": 23.134077,
+      "lon": 120.288637
+    },
+    {
+      "code": "cwa-67000200",
+      "name": "新市區",
+      "city": "臺南市",
+      "name_en": "Xinshi District",
+      "city_en": "Tainan City",
+      "lat": 23.080674,
+      "lon": 120.286963
+    },
+    {
+      "code": "cwa-67000210",
+      "name": "安定區",
+      "city": "臺南市",
+      "name_en": "Anding District",
+      "city_en": "Tainan City",
+      "lat": 23.123267,
+      "lon": 120.228927
+    },
+    {
+      "code": "cwa-67000220",
+      "name": "山上區",
+      "city": "臺南市",
+      "name_en": "Shanshang District",
+      "city_en": "Tainan City",
+      "lat": 23.105318,
+      "lon": 120.344485
+    },
+    {
+      "code": "cwa-67000230",
+      "name": "玉井區",
+      "city": "臺南市",
+      "name_en": "Yujing District",
+      "city_en": "Tainan City",
+      "lat": 23.125487,
+      "lon": 120.45202
+    },
+    {
+      "code": "cwa-67000240",
+      "name": "楠西區",
+      "city": "臺南市",
+      "name_en": "Nanxi District",
+      "city_en": "Tainan City",
+      "lat": 23.175871,
+      "lon": 120.478265
+    },
+    {
+      "code": "cwa-67000250",
+      "name": "南化區",
+      "city": "臺南市",
+      "name_en": "Nanhua District",
+      "city_en": "Tainan City",
+      "lat": 23.044758,
+      "lon": 120.469696
+    },
+    {
+      "code": "cwa-67000260",
+      "name": "左鎮區",
+      "city": "臺南市",
+      "name_en": "Zuozhen District",
+      "city_en": "Tainan City",
+      "lat": 23.058656,
+      "lon": 120.400655
+    },
+    {
+      "code": "cwa-67000270",
+      "name": "仁德區",
+      "city": "臺南市",
+      "name_en": "Rende District",
+      "city_en": "Tainan City",
+      "lat": 22.974167,
+      "lon": 120.243591
+    },
+    {
+      "code": "cwa-67000280",
+      "name": "歸仁區",
+      "city": "臺南市",
+      "name_en": "Guiren District",
+      "city_en": "Tainan City",
+      "lat": 22.968751,
+      "lon": 120.285793
+    },
+    {
+      "code": "cwa-67000290",
+      "name": "關廟區",
+      "city": "臺南市",
+      "name_en": "Guanmiao District",
+      "city_en": "Tainan City",
+      "lat": 22.964584,
+      "lon": 120.31971
+    },
+    {
+      "code": "cwa-67000300",
+      "name": "龍崎區",
+      "city": "臺南市",
+      "name_en": "Longqi District",
+      "city_en": "Tainan City",
+      "lat": 22.96516,
+      "lon": 120.356746
+    },
+    {
+      "code": "cwa-67000310",
+      "name": "永康區",
+      "city": "臺南市",
+      "name_en": "Yongkang District",
+      "city_en": "Tainan City",
+      "lat": 23.027864,
+      "lon": 120.248884
+    },
+    {
+      "code": "cwa-67000320",
+      "name": "東區",
+      "city": "臺南市",
+      "name_en": "E. District",
+      "city_en": "Tainan City",
+      "lat": 22.981955,
+      "lon": 120.215911
+    },
+    {
+      "code": "cwa-67000330",
+      "name": "南區",
+      "city": "臺南市",
+      "name_en": "Nan District",
+      "city_en": "Tainan City",
+      "lat": 22.962938,
+      "lon": 120.180564
+    },
+    {
+      "code": "cwa-67000340",
+      "name": "北區",
+      "city": "臺南市",
+      "name_en": "N. District",
+      "city_en": "Tainan City",
+      "lat": 23.001415,
+      "lon": 120.194801
+    },
+    {
+      "code": "cwa-67000350",
+      "name": "安南區",
+      "city": "臺南市",
+      "name_en": "Annan District",
+      "city_en": "Tainan City",
+      "lat": 23.048965,
+      "lon": 120.176615
+    },
+    {
+      "code": "cwa-67000360",
+      "name": "安平區",
+      "city": "臺南市",
+      "name_en": "Anping District",
+      "city_en": "Tainan City",
+      "lat": 22.996394,
+      "lon": 120.160419
+    },
+    {
+      "code": "cwa-67000370",
+      "name": "中西區",
+      "city": "臺南市",
+      "name_en": "Zhongxi District",
+      "city_en": "Tainan City",
+      "lat": 22.994044,
+      "lon": 120.197595
+    },
+    {
+      "code": "cwa-68000010",
+      "name": "桃園區",
+      "city": "桃園市",
+      "name_en": "Taoyuan District",
+      "city_en": "Taoyuan City",
+      "lat": 24.99572,
+      "lon": 121.293452
+    },
+    {
+      "code": "cwa-68000020",
+      "name": "中壢區",
+      "city": "桃園市",
+      "name_en": "Zhongli District",
+      "city_en": "Taoyuan City",
+      "lat": 24.967495,
+      "lon": 121.216919
+    },
+    {
+      "code": "cwa-68000030",
+      "name": "大溪區",
+      "city": "桃園市",
+      "name_en": "Daxi District",
+      "city_en": "Taoyuan City",
+      "lat": 24.882288,
+      "lon": 121.278915
+    },
+    {
+      "code": "cwa-68000040",
+      "name": "楊梅區",
+      "city": "桃園市",
+      "name_en": "Yangmei District",
+      "city_en": "Taoyuan City",
+      "lat": 24.909366,
+      "lon": 121.137642
+    },
+    {
+      "code": "cwa-68000050",
+      "name": "蘆竹區",
+      "city": "桃園市",
+      "name_en": "Luzhu District",
+      "city_en": "Taoyuan City",
+      "lat": 25.048746,
+      "lon": 121.287054
+    },
+    {
+      "code": "cwa-68000060",
+      "name": "大園區",
+      "city": "桃園市",
+      "name_en": "Dayuan District",
+      "city_en": "Taoyuan City",
+      "lat": 25.0657,
+      "lon": 121.187251
+    },
+    {
+      "code": "cwa-68000070",
+      "name": "龜山區",
+      "city": "桃園市",
+      "name_en": "Guishan District",
+      "city_en": "Taoyuan City",
+      "lat": 24.99433,
+      "lon": 121.32969
+    },
+    {
+      "code": "cwa-68000080",
+      "name": "八德區",
+      "city": "桃園市",
+      "name_en": "Bade District",
+      "city_en": "Taoyuan City",
+      "lat": 24.93072,
+      "lon": 121.276395
+    },
+    {
+      "code": "cwa-68000090",
+      "name": "龍潭區",
+      "city": "桃園市",
+      "name_en": "Longtan District",
+      "city_en": "Taoyuan City",
+      "lat": 24.872568,
+      "lon": 121.214096
+    },
+    {
+      "code": "cwa-68000100",
+      "name": "平鎮區",
+      "city": "桃園市",
+      "name_en": "Pingzhen District",
+      "city_en": "Taoyuan City",
+      "lat": 24.947382,
+      "lon": 121.209999
+    },
+    {
+      "code": "cwa-68000110",
+      "name": "新屋區",
+      "city": "桃園市",
+      "name_en": "Xinwu District",
+      "city_en": "Taoyuan City",
+      "lat": 24.974325,
+      "lon": 121.097324
+    },
+    {
+      "code": "cwa-68000120",
+      "name": "觀音區",
+      "city": "桃園市",
+      "name_en": "Guanyin District",
+      "city_en": "Taoyuan City",
+      "lat": 25.038202,
+      "lon": 121.073654
+    },
+    {
+      "code": "cwa-68000130",
+      "name": "復興區",
+      "city": "桃園市",
+      "name_en": "Fuxing District",
+      "city_en": "Taoyuan City",
+      "lat": 24.820342,
+      "lon": 121.34341
+    }
+  ]
+}

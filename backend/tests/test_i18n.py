@@ -89,8 +89,8 @@ def test_get_towns_bilingual():
     assert zh_resp["success"] is True
     assert en_resp["success"] is True
 
-    zh_xinyi = next(t for t in zh_resp["data"] if t["code"] == "taipei-xinyi")
-    en_xinyi = next(t for t in en_resp["data"] if t["code"] == "taipei-xinyi")
+    zh_xinyi = next(t for t in zh_resp["data"] if t["code"] == "cwa-63000020")
+    en_xinyi = next(t for t in en_resp["data"] if t["code"] == "cwa-63000020")
 
     assert zh_xinyi["name"] == "信義區"
     assert zh_xinyi["city"] == "臺北市"
