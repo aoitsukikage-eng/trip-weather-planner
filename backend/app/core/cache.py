@@ -136,6 +136,7 @@ class AsyncSingleFlight:
 
     def __init__(self) -> None:
         self._inflight: dict[str, asyncio.Task[Any]] = {}
+        self._waiters: dict[str, int] = {}
 
     async def run(
         self,
@@ -147,21 +148,36 @@ class AsyncSingleFlight:
         if key in self._inflight:
             if inspect.iscoroutine(fn):
                 fn.close()
-            return await asyncio.shield(self._inflight[key])
+            task = self._inflight[key]
+        else:
+            coro = fn if inspect.iscoroutine(fn) else fn(*args, **kwargs)
+            task = asyncio.create_task(coro)
+            self._inflight[key] = task
+            self._waiters[key] = 0
 
-        coro = fn if inspect.iscoroutine(fn) else fn(*args, **kwargs)
-        task = asyncio.create_task(coro)
-        self._inflight[key] = task
+            def _cleanup(_: asyncio.Task[Any]) -> None:
+                if self._inflight.get(key) is task:
+                    del self._inflight[key]
+                    self._waiters.pop(key, None)
 
-        def _cleanup(_: asyncio.Task[Any]) -> None:
-            if self._inflight.get(key) is task:
-                del self._inflight[key]
+            task.add_done_callback(_cleanup)
 
-        task.add_done_callback(_cleanup)
-        return await asyncio.shield(task)
+        self._waiters[key] = self._waiters.get(key, 0) + 1
+        cancelled = False
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
+        finally:
+            remaining = self._waiters.get(key, 1) - 1
+            self._waiters[key] = remaining
+            if cancelled and remaining <= 0 and not task.done():
+                task.cancel()
 
     def is_inflight(self, key: str) -> bool:
         return key in self._inflight
 
     def clear(self) -> None:
         self._inflight.clear()
+        self._waiters.clear()

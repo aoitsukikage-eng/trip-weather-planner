@@ -142,7 +142,7 @@ async def forecast(
                 meta=_meta(request, cached=True, source="cache"),
             )
 
-    semaphore = asyncio.Semaphore(settings.upstream_concurrency_limit)
+    semaphore = getattr(request.app.state, "upstream_semaphore", None)
     adapter = CWAAdapter(
         settings,
         cache,
@@ -277,17 +277,19 @@ async def forecast(
         )
         return res, slices.source_label, degraded_fields
 
+    async def _build_with_deadline() -> tuple[ForecastResult, str, list[str]]:
+        return await asyncio.wait_for(
+            _do_build(),
+            timeout=settings.forecast_timeout_seconds,
+        )
+
     try:
         if single_flight is not None:
-            result, source_label, degraded_fields = await asyncio.wait_for(
-                single_flight.run(flight_key, _do_build),
-                timeout=settings.forecast_timeout_seconds,
+            result, source_label, degraded_fields = await single_flight.run(
+                flight_key, _build_with_deadline
             )
         else:
-            result, source_label, degraded_fields = await asyncio.wait_for(
-                _do_build(),
-                timeout=settings.forecast_timeout_seconds,
-            )
+            result, source_label, degraded_fields = await _build_with_deadline()
 
         if cache is not None:
             cache.set(
@@ -322,11 +324,7 @@ async def forecast(
         return ApiResponse[ForecastResult](
             data=result, meta=_meta(request, cached=False, source=source_label)
         )
-    except (TimeoutError, AppError, Exception) as exc:
-        if isinstance(exc, AppError) and not isinstance(exc, UpstreamError):
-            # Client / input validation errors should not trigger stale fallback
-            raise
-
+    except (TimeoutError, UpstreamError) as exc:
         stale_result = None
         if cache is not None:
             stale_entry = cache.get_entry(public_cache_key)
@@ -371,7 +369,7 @@ async def forecast(
             duration_ms=duration_ms,
             degraded_fields=["all"],
         )
-        if isinstance(exc, asyncio.TimeoutError):
+        if isinstance(exc, TimeoutError):
             raise UpstreamError(
                 "Forecast build timed out.", error_code="upstream_timeout"
             ) from exc

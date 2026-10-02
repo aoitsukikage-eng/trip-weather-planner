@@ -7,6 +7,7 @@ import os
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -40,6 +41,8 @@ def force_mock_mode():
     app_settings.cwa_api_key = ""
     app_settings.moenv_api_key = ""
     app.state.cache.clear()
+    if getattr(app.state, "single_flight", None) is not None:
+        app.state.single_flight.clear()
     yield
     if original_cwa is None:
         os.environ.pop("CWA_API_KEY", None)
@@ -53,6 +56,8 @@ def force_mock_mode():
     app_settings.cwa_api_key = original_cwa or ""
     app_settings.moenv_api_key = original_moenv or ""
     app.state.cache.clear()
+    if getattr(app.state, "single_flight", None) is not None:
+        app.state.single_flight.clear()
 
 
 def test_health_mock_mode():
@@ -374,84 +379,176 @@ async def test_forecast_coalescing_same_key(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.asyncio
-async def test_forecast_concurrency_ceiling_never_exceeded(
+async def test_forecast_global_concurrency_ceiling_across_requests_with_mock_transport(
     monkeypatch: pytest.MonkeyPatch,
 ):
+    from typing import Any
+
     import httpx
 
-    from app.adapters.cwa import CWAAdapter, ForecastSlices
-    from app.adapters.mock_data import mock_sunrise_sunset, mock_time_slices, mock_uv_info
-    from app.adapters.moenv import MOENVAdapter
-    from app.schemas.weather import MoonInfo
+    from app.main import lifespan
+
+    os.environ["CWA_API_KEY"] = "test-cwa-key"
+    os.environ["MOENV_API_KEY"] = "test-moenv-key"
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = "test-cwa-key"
+    app_settings.moenv_api_key = "test-moenv-key"
 
     active_ops = 0
     max_active_ops = 0
+    today = _today_taipei()
 
-    async def tracked_op(result_fn):
+    def make_cwa_slices_payload(location_name: str) -> dict[str, Any]:
+        times_wx, times_t, times_mint, times_maxt, times_pop = [], [], [], [], []
+        for i in range(14):
+            dt_start = datetime.combine(today, datetime.min.time()) + timedelta(hours=i * 12)
+            dt_end = dt_start + timedelta(hours=12)
+            st = dt_start.strftime("%Y-%m-%d %H:%M:%S")
+            et = dt_end.strftime("%Y-%m-%d %H:%M:%S")
+            times_wx.append({
+                "StartTime": st,
+                "EndTime": et,
+                "ElementValue": [{"value": "晴時多雲", "Wx": "晴時多雲", "WxCode": "02"}],
+            })
+            times_t.append({
+                "StartTime": st,
+                "EndTime": et,
+                "ElementValue": [{"value": "26", "T": "26"}],
+            })
+            times_mint.append({
+                "StartTime": st,
+                "EndTime": et,
+                "ElementValue": [{"value": "22", "MinT": "22"}],
+            })
+            times_maxt.append({
+                "StartTime": st,
+                "EndTime": et,
+                "ElementValue": [{"value": "30", "MaxT": "30"}],
+            })
+            times_pop.append({
+                "StartTime": st,
+                "EndTime": et,
+                "ElementValue": [{"value": "10", "PoP": "10"}],
+            })
+
+        return {
+            "records": {
+                "Locations": [
+                    {
+                        "Location": [
+                            {
+                                "LocationName": location_name,
+                                "WeatherElement": [
+                                    {"ElementName": "Wx", "Time": times_wx},
+                                    {"ElementName": "T", "Time": times_t},
+                                    {"ElementName": "MinT", "Time": times_mint},
+                                    {"ElementName": "MaxT", "Time": times_maxt},
+                                    {"ElementName": "PoP", "Time": times_pop},
+                                ],
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+    async def handle_request(request: httpx.Request) -> httpx.Response:
         nonlocal active_ops, max_active_ops
         active_ops += 1
         max_active_ops = max(max_active_ops, active_ops)
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.04)
         active_ops -= 1
-        return result_fn()
 
-    async def fake_slices(self, town):
-        return await tracked_op(
-            lambda: ForecastSlices(
-                daily=mock_time_slices(
-                    "F-D0047-091", town, horizon_start=_today_taipei()
-                ),
-                hourly=mock_time_slices(
-                    "F-D0047-093", town, horizon_start=_today_taipei()
-                ),
-                source_label="test",
+        url_str = str(request.url)
+        params = dict(request.url.params)
+        loc = params.get("LocationName", "信義區")
+
+        if "F-D0047" in url_str:
+            return httpx.Response(200, json=make_cwa_slices_payload(loc))
+        if "A-B0062-001" in url_str:
+            return httpx.Response(
+                200,
+                json={
+                    "records": {
+                        "locations": {
+                            "location": [
+                                {
+                                    "CountyName": "臺北市",
+                                    "time": [
+                                        {
+                                            "Date": today.isoformat(),
+                                            "SunRiseTime": "05:45",
+                                            "SunSetTime": "17:45",
+                                        }
+                                    ],
+                                }
+                            ]
+                        }
+                    }
+                },
             )
-        )
-
-    async def fake_sunrise(self, town, d, lang="zh"):
-        return await tracked_op(lambda: mock_sunrise_sunset(town, d, lang=lang))
-
-    async def fake_uv(self, town, d, lang="zh"):
-        return await tracked_op(lambda: mock_uv_info(town, d, lang=lang))
-
-    async def fake_moon(self, town, d, lang="zh"):
-        return await tracked_op(
-            lambda: MoonInfo(
-                county="臺北市",
-                target_date=d.isoformat(),
-                source_date=d.isoformat(),
-                phase="滿月",
-                icon="🌕",
-                illumination_fraction=1.0,
-                waxing=False,
+        if "A-B0063-001" in url_str:
+            return httpx.Response(
+                200,
+                json={
+                    "CountyName": "臺北市",
+                    "MoonRiseTime": "18:00",
+                    "MoonSetTime": "06:00",
+                },
             )
-        )
+        if "O-A0005-001" in url_str or "O-A0001-001" in url_str:
+            return httpx.Response(200, json={"records": {"location": []}})
+        if "W-C0033-001" in url_str:
+            return httpx.Response(200, json={"records": ""})
+        if "aqx_p_432" in url_str:
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "sitename": "測試站",
+                        "siteid": "1",
+                        "latitude": "25.03",
+                        "longitude": "121.56",
+                        "aqi": "40",
+                        "status": "良好",
+                        "publishtime": "2026-10-02 12:00",
+                    }
+                ],
+            )
+        if "aqf_p_01" in url_str:
+            return httpx.Response(
+                200,
+                json=[
+                    {"area": "北部", "forecastdate": today.isoformat(), "aqi": "40"}
+                ],
+            )
+        return httpx.Response(200, json={})
 
-    async def fake_warnings(self, town, lang="zh"):
-        return await tracked_op(lambda: [])
+    async with lifespan(app):
+        mock_client = httpx.AsyncClient(transport=httpx.MockTransport(handle_request))
+        app.state.http_client = mock_client
+        app.state.cache.clear()
+        app.state.single_flight.clear()
 
-    async def fake_current_aqi(self, town, lang="zh"):
-        return await tracked_op(lambda: None)
+        # At least four concurrent requests with different final build/cache keys
+        towns = ["cwa-63000010", "cwa-63000020", "cwa-63000030", "cwa-63000040"]
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+            tasks = [
+                ac.get(f"/api/forecast?town={t}&date={today.isoformat()}")
+                for t in towns
+            ]
+            responses = await asyncio.gather(*tasks)
 
-    async def fake_forecast_aqi(self, county, lang="zh"):
-        return await tracked_op(lambda: {})
+        for t, r in zip(towns, responses, strict=True):
+            assert r.status_code == 200, f"Status: {r.status_code}, Body: {r.text}"
+            body = r.json()
+            assert body["success"] is True
+            assert body["data"]["forecast"]["town"]["code"] == t
 
-    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", fake_slices)
-    monkeypatch.setattr(CWAAdapter, "fetch_sunrise_sunset", fake_sunrise)
-    monkeypatch.setattr(CWAAdapter, "fetch_uv_info", fake_uv)
-    monkeypatch.setattr(CWAAdapter, "fetch_moon", fake_moon)
-    monkeypatch.setattr(CWAAdapter, "fetch_warnings", fake_warnings)
-    monkeypatch.setattr(MOENVAdapter, "fetch_current", fake_current_aqi)
-    monkeypatch.setattr(MOENVAdapter, "fetch_forecast", fake_forecast_aqi)
-
-    today = _future(2)
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        res = await ac.get(f"/api/forecast?town=taipei-xinyi&date={today}")
-        assert res.status_code == 200
-        # Configured ceiling is 3; verify active operations never exceeded 3
-        assert max_active_ops <= 3
+        # Verify real concurrency occurred and application-wide limit 3 was never exceeded
+        assert 2 <= max_active_ops <= 3
 
 
 def test_near_hourly_degradation_preserves_daily_forecast(
@@ -578,3 +675,215 @@ def test_structured_log_content_and_secret_redaction(caplog: pytest.LogCaptureFi
     assert found is True
     assert "Authorization" not in caplog.text
     assert "CWA-" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_forecast_leader_deadline_cancels_underlying_build_and_cleans_state(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    import httpx
+
+    from app.main import lifespan
+
+    os.environ["CWA_API_KEY"] = "test-cwa-key"
+    os.environ["MOENV_API_KEY"] = "test-moenv-key"
+    get_settings.cache_clear()
+    app_settings.cwa_api_key = "test-cwa-key"
+    app_settings.moenv_api_key = "test-moenv-key"
+
+    active_ops = 0
+    cancelled_ops = 0
+    today = _today_taipei()
+    town = "cwa-63000020"
+    flight_key = f"build:{town}:{today.isoformat()}:zh"
+
+    async def slow_handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active_ops, cancelled_ops
+        active_ops += 1
+        try:
+            await asyncio.sleep(5.0)
+            return httpx.Response(200, json={})
+        except asyncio.CancelledError:
+            cancelled_ops += 1
+            raise
+        finally:
+            active_ops -= 1
+
+    monkeypatch.setattr(get_settings(), "forecast_timeout_seconds", 0.05)
+
+    async with lifespan(app):
+        mock_client = httpx.AsyncClient(transport=httpx.MockTransport(slow_handler))
+        app.state.http_client = mock_client
+        app.state.cache.clear()
+        app.state.single_flight.clear()
+
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+            resp = await ac.get(f"/api/forecast?town={town}&date={today.isoformat()}")
+            assert resp.status_code == 502
+            body = resp.json()
+            assert body["success"] is False
+            assert body["error"]["error_code"] == "upstream_timeout"
+
+        # Allow cancelled coroutines to complete cleanup
+        await asyncio.sleep(0.02)
+
+        # Underlying build cancelled and active counter returns to 0
+        assert cancelled_ops >= 1
+        assert active_ops == 0
+        assert app.state.single_flight.is_inflight(flight_key) is False
+
+        # No orphan tasks remain on event loop
+        remaining = [
+            t
+            for t in asyncio.all_tasks()
+            if t is not asyncio.current_task() and not t.done()
+        ]
+        assert len(remaining) == 0
+
+
+@pytest.mark.asyncio
+async def test_forecast_waiter_cancellation_does_not_cancel_leader(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter, ForecastSlices
+    from app.adapters.mock_data import mock_time_slices
+
+    today = _future(2)
+    town = "taipei-xinyi"
+    flight_key = f"build:{town}:{today}:zh"
+    leader_running = asyncio.Event()
+    allow_finish = asyncio.Event()
+
+    async def controlled_slices(self, town_obj):
+        leader_running.set()
+        await allow_finish.wait()
+        return ForecastSlices(
+            daily=mock_time_slices("F-D0047-091", town_obj, horizon_start=_today_taipei()),
+            hourly=[],
+            source_label="test",
+        )
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", controlled_slices)
+
+    # Reset cache and single-flight
+    app.state.cache.clear()
+    app.state.single_flight.clear()
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        req_url = f"/api/forecast?town={town}&date={today}"
+
+        # Start leader request
+        t1 = asyncio.create_task(ac.get(req_url))
+        await leader_running.wait()
+
+        # Start waiter request
+        t2 = asyncio.create_task(ac.get(req_url))
+        await asyncio.sleep(0.01)
+
+        # Cancel waiter
+        t2.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await t2
+
+        # Allow leader to finish
+        allow_finish.set()
+        r1 = await t1
+        assert r1.status_code == 200
+        assert r1.json()["success"] is True
+        assert app.state.single_flight.is_inflight(flight_key) is False
+
+
+def test_forecast_unexpected_runtime_error_not_masked_by_stale_cache(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.services.ai_summary import AiSummaryService
+
+    today = _future(2)
+    # 1. Warm cache
+    warmed = client.get(f"/api/forecast?town=taipei-xinyi&date={today}").json()
+    assert warmed["success"] is True
+
+    # 2. Make the entry stale
+    key = f"forecast:taipei-xinyi:{today}:zh"
+    entry = app.state.cache._store[key]
+    app.state.cache._store[key] = (0.0, 9999999999.0, entry[2])
+
+    # 3. Simulate unexpected RuntimeError during build
+    def exploding_summarize(*args, **kwargs):
+        raise RuntimeError("database crash or unexpected bug")
+
+    monkeypatch.setattr(AiSummaryService, "summarize", exploding_summarize)
+
+    unhandled_client = TestClient(app, raise_server_exceptions=False)
+    resp = unhandled_client.get(f"/api/forecast?town=taipei-xinyi&date={today}")
+    assert resp.status_code == 500
+    body = resp.json()
+    assert body["success"] is False
+    assert body["error"]["error_code"] == "internal_error"
+
+
+def test_forecast_non_upstream_app_error_not_masked_by_stale_cache(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter
+    from app.core.errors import AppError
+
+    today = _future(2)
+    # 1. Warm cache
+    warmed = client.get(f"/api/forecast?town=taipei-xinyi&date={today}").json()
+    assert warmed["success"] is True
+
+    # 2. Make the entry stale
+    key = f"forecast:taipei-xinyi:{today}:zh"
+    entry = app.state.cache._store[key]
+    app.state.cache._store[key] = (0.0, 9999999999.0, entry[2])
+
+    # 3. Simulate non-upstream AppError during build
+    async def bad_input_error(*args, **kwargs):
+        raise AppError(
+            "Custom validation failure",
+            error_code="validation_failure",
+            status_code=400,
+        )
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", bad_input_error)
+
+    resp = client.get(f"/api/forecast?town=taipei-xinyi&date={today}")
+    assert resp.status_code == 400
+    body = resp.json()
+    assert body["success"] is False
+    assert body["error"]["error_code"] == "validation_failure"
+
+
+def test_forecast_upstream_error_uses_stale_cache(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from app.adapters.cwa import CWAAdapter
+    from app.core.errors import UpstreamError
+
+    today = _future(2)
+    # 1. Warm cache
+    warmed = client.get(f"/api/forecast?town=taipei-xinyi&date={today}").json()
+    assert warmed["success"] is True
+
+    # 2. Make the entry stale
+    key = f"forecast:taipei-xinyi:{today}:zh"
+    entry = app.state.cache._store[key]
+    app.state.cache._store[key] = (0.0, 9999999999.0, entry[2])
+
+    # 3. Simulate genuine UpstreamError
+    async def upstream_fail(*args, **kwargs):
+        raise UpstreamError("CWA connection failed", error_code="upstream_http_error")
+
+    monkeypatch.setattr(CWAAdapter, "fetch_forecast_slices", upstream_fail)
+
+    resp = client.get(f"/api/forecast?town=taipei-xinyi&date={today}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["meta"]["cached"] is True
+    assert body["meta"]["source"] == "stale-cache"

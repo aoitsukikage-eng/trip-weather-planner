@@ -234,3 +234,28 @@ async def test_single_flight_leader_caller_cancellation_preserves_task_for_waite
     waiter_res = await waiter_task
     assert waiter_res == "shielded_result"
     assert sf.is_inflight("leader_caller_cancel") is False
+
+
+@pytest.mark.asyncio
+async def test_single_flight_all_waiters_cancelled_cancels_underlying_task():
+    sf = AsyncSingleFlight()
+    underlying_cancelled = False
+
+    async def slow():
+        nonlocal underlying_cancelled
+        try:
+            await asyncio.sleep(5.0)
+            return "done"
+        except asyncio.CancelledError:
+            underlying_cancelled = True
+            raise
+
+    t = asyncio.create_task(sf.run("cancel_all", slow))
+    await asyncio.sleep(0.01)
+    t.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await t
+
+    await asyncio.sleep(0.01)
+    assert underlying_cancelled is True
+    assert sf.is_inflight("cancel_all") is False

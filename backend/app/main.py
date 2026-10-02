@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from contextlib import asynccontextmanager
 
@@ -25,10 +26,14 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     current_settings = get_settings()
+    app.state.upstream_semaphore = asyncio.Semaphore(
+        current_settings.upstream_concurrency_limit
+    )
     async with httpx.AsyncClient(timeout=current_settings.upstream_timeout_seconds) as client:
         app.state.http_client = client
         yield
         app.state.http_client = None
+        app.state.upstream_semaphore = None
 
 
 app = FastAPI(
@@ -56,6 +61,7 @@ app.state.cache = TTLCache(
 )
 app.state.single_flight = AsyncSingleFlight()
 app.state.http_client = None
+app.state.upstream_semaphore = None
 
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)
